@@ -18,6 +18,10 @@
 
 ***
 
+## Layout Info:
+* The Bitmap would be used locally on the edison
+* It would then be converted to a Vector for use on the Uno to conserve memory
+
 ## Possible Limitations:
 *  No Circles.
 *  Horizontal/Vertical Lines only.
