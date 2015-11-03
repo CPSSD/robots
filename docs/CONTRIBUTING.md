@@ -18,6 +18,7 @@ Go formatting must be done with `go fmt` before checking code into the repo to e
 `go lint` can be used to check code for style errors. `go vet` can be used to check for code that breaks Go coding practice.
 
 ## Commenting ##
+
 Comments should be used to clarify the function of any section of code which may not be obvious. 
 Comments will also be used for creating documentation for each class which will be generated with documentation generation tools.
 
@@ -42,3 +43,7 @@ These prefixes should be one of the following:
 * **doc/** -- for changes to the documentation.
 * **hotfix/** -- for quick bugfixes.
 
+## Waffle.io ##
+
+Waffle.io should be used to manage scrum items. Items in the "Ready" column are ready for work to start, when work is started on an issue it should be moved to the "In Progress" column.
+When a pull request for an issue is merged then it can be moved to the Completed column, items are only moved to the "Done" column when the Sprint is complete.
