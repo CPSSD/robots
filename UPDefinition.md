@@ -11,9 +11,9 @@ The API will be made using REST principles with HTTP and Json strings.
 ## Functionality ##
 
 ###Uri       Http Method     Post Body              Options              Response###
-   Move         POST        Json String        left/right/up/down         200/405
-  Rotate        POST        Json String      clockwise/anticlockwise      200/405
-   Stop         GET            None                  None                 200/405
+    Move         POST        Json String        left/right/up/down         200/405
+    Rotate       POST        Json String      clockwise/anticlockwise      200/405
+    Stop         GET            None                  None                 200/405
 
 
 
