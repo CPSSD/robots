@@ -1,20 +1,23 @@
 # Layouts:
 #### 1. Bitmap
-* 2D Representation of the map using points<br />
-1 1 1 1 0<br />
-0 0 0 1 1<br />
-0 0 0 0 1<br />
-0 0 0 0 1<br />
-1 1 1 1 1<br />
-<br />
+* 2D Array of the map using points<br />
+```
+[[1, 1, 1, 1, 0],
+ [0, 0, 0, 1, 1],
+ [0, 0, 0, 0, 1],
+ [0, 0, 0, 0, 1],
+ [1, 1, 1, 1, 1]]
+```
+
+* The bigger the room the bigger the array.
 
 #### 2. Vector
-* 2D Representation of the map using lines<br />
-0, 0, 3, 0<br />
-3, 0, 3, 1<br />
-3, 1, 4, 1<br />
-4, 1, 4, 4<br />
-4, 4, 0, 4<br />
+* 1D Array of map using lines<br />
+```
+[(0, 0, 3, 0), (3, 0, 3, 1), (3, 1, 4, 1), (4, 1, 4, 4), (4, 4, 0, 4)]
+```
+
+* Size of room isn't correlated to amount of lines. More complex geometry means more lines.
 
 ***
 
