@@ -14,9 +14,10 @@ The API will be made using RESTful principles with HTTP and Json.
 |-----|:-----------:|:----------:|:--------:|
 | Map | POST        | Json Array | 200/405  |
 
-###Status Code   |  Description###
-    200             OK
-    404         Unknown Uri
+| Status Code | Description |
+|-------------|-------------|
+|   200       |      Ok     |
+|   405       | Unknown Uri |
 
 
 ## Examples ##
