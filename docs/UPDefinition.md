@@ -10,9 +10,9 @@ The API will be made using RESTful principles with HTTP and Json.
 
 ## Functionality ##
 
-| Uri | Http Method | Post Body  |   Option   | Response  |
-|-----|:-----------:|:----------:|:----------:|:---------:|
-| Map | GET         | Json Object| bit/vector |200/404/405|
+| Uri | Http Method |   Option   | Response  |
+|-----|:-----------:|:----------:|:---------:|
+| Map | GET         | bit/vector |Json object|
 
 | Status Code | Description |
 |-------------|-------------|
