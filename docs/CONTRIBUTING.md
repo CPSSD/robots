@@ -36,12 +36,12 @@ A pull request must contain a single feature, several distinct features must not
 
 Branches should be used for one pull request only and should be deleted after the pull request is merged.
 
-Branches should have a short prefix describing what type of changes are contained in it.
+Branches should have a short prefix describing what type of changes are contained in it. At the end of the branch name the issue number which that branch deals with should be appended.
 These prefixes should be one of the following:
 
-* **feature/** -- for changes which add/affect a feature.
-* **doc/** -- for changes to the documentation.
-* **hotfix/** -- for quick bugfixes.
+* **feature/FEATURE_NAME-[ISSUE_NUMBER]** -- for changes which add/affect a feature.
+* **doc/DOCUMENT_NAME-[ISSUE_NUMBER]** -- for changes to the documentation.
+* **hotfix/HOTFIX_NAME-[ISSUE_NUMBER]** -- for quick bugfixes.
 
 ## Waffle.io ##
 
