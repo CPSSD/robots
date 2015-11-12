@@ -97,20 +97,20 @@ func (this Map) createExpandedMap(expandX, expandY int) (tempMap Map) {
 
 	addedHeight := int(math.Abs(float64(expandY)))
 	// fmt.Println(tempMap.floor)
-		if expandY > 0 {
-			addition := make([][]bool, addedHeight)
-			for j := 0; j < addedHeight; j++ {
-				addition[j] = make([]bool, tempMap.width)
-			}
-			tempMap.floor = append(tempMap.floor, addition...)
-		} else if expandY != 0 {
-			addition := make([][]bool, addedHeight)
-			for j := 0; j < addedHeight; j++ {
-				addition[j] = make([]bool, tempMap.width)
-			}
-			tempMap.floor = append(addition, tempMap.floor...)
-
+	if expandY > 0 {
+		addition := make([][]bool, addedHeight)
+		for j := 0; j < addedHeight; j++ {
+			addition[j] = make([]bool, tempMap.width)
 		}
+		tempMap.floor = append(tempMap.floor, addition...)
+	} else if expandY != 0 {
+		addition := make([][]bool, addedHeight)
+		for j := 0; j < addedHeight; j++ {
+			addition[j] = make([]bool, tempMap.width)
+		}
+		tempMap.floor = append(addition, tempMap.floor...)
+
+	}
 	// fmt.Println(tempMap.floor)
 
 	tempMap.height += addedHeight

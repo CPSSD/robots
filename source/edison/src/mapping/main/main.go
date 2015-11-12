@@ -1,4 +1,4 @@
-// This entire file will be removed at some point in the future. 
+// This entire file will be removed at some point in the future.
 // Its just here to test out the library.
 package main
 
@@ -19,12 +19,12 @@ func exampleRobot() {
 
 	// This section just draws a rectangle around the robots current position (changes whenever map expands) using points.
 	n := 6
-	for i:= -n; i <= n; i++ {
+	for i := -n; i <= n; i++ {
 		robotX, robotY := RobotMap.PointToBitmapCoordinate(RobotMap.GetRobot().GetX(), RobotMap.GetRobot().GetY())
-		maps.RobotMap = RobotMap.AddWall(i+robotX, -n + robotY)
+		maps.RobotMap = RobotMap.AddWall(i+robotX, -n+robotY)
 
 		robotX, robotY = RobotMap.PointToBitmapCoordinate(RobotMap.GetRobot().GetX(), RobotMap.GetRobot().GetY())
-		RobotMap = RobotMap.AddWall(i+robotX, n + robotY)
+		RobotMap = RobotMap.AddWall(i+robotX, n+robotY)
 
 		robotX, robotY = RobotMap.PointToBitmapCoordinate(RobotMap.GetRobot().GetX(), RobotMap.GetRobot().GetY())
 		RobotMap = RobotMap.AddWall(-n+robotX, i+robotY)
