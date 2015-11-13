@@ -19,3 +19,13 @@ func (this Robot) GetY() float64 {
 func (this Robot) GetRotation() int {
 	return this.rotation
 }
+
+func (this *Robot) MoveToPoint(x, y int) {
+	this.x = float64(x)
+	this.y = float64(y)
+}
+
+func (this *Map) MoveRobotTo(degree, distance float64) {
+	x, y := this.LineToBitmapCoordinate(degree, distance)
+	this.robot.MoveToPoint(x, y)
+}

@@ -21,7 +21,7 @@ type Map struct {
 }
 
 // Returns the maps robot.
-func (this Map) GetRobot() Robot {
+func (this *Map) GetRobot() Robot {
 	return this.robot
 }
 
@@ -33,8 +33,8 @@ func CreateMap() (createdMap Map) {
 }
 
 // Adds a wall in position (x, y) of the map. Expands if neccesary
-func (this Map) AddWall(x, y int) (tempMap Map) {
-	tempMap = this
+func (this *Map) AddWall(x, y int) {
+	tempMap := this
 
 	if !this.pointInMap(x, y) {
 		expandX, expandY := 0, 0
@@ -57,17 +57,16 @@ func (this Map) AddWall(x, y int) (tempMap Map) {
 	} else {
 		tempMap.floor[y][x] = true
 	}
-
-	return
+	this = tempMap
 }
 
 // Returns a boolean denoting whether the point exists inside the map.
-func (this Map) pointInMap(x, y int) bool {
+func (this *Map) pointInMap(x, y int) bool {
 	return !(x < 0 || x >= this.width || y < 0 || y >= this.height)
 }
 
 // Decides how much the map should expand by. returns: expanded map, expandX, expandY
-func (this Map) expandMap(x, y int) (Map, int, int) {
+func (this *Map) expandMap(x, y int) (*Map, int, int) {
 	expandX, expandY := x, y
 
 	if x >= this.width {
@@ -82,7 +81,7 @@ func (this Map) expandMap(x, y int) (Map, int, int) {
 }
 
 // Creates the new expanded map and fills it with the contents of the current map.
-func (this Map) createExpandedMap(expandX, expandY int) (tempMap Map) {
+func (this *Map) createExpandedMap(expandX, expandY int) (tempMap *Map) {
 	tempMap = this
 	// fmt.Println(tempMap.floor, expandX, expandY)
 	for i := 0; i < tempMap.height; i++ {
@@ -118,7 +117,7 @@ func (this Map) createExpandedMap(expandX, expandY int) (tempMap Map) {
 	return
 }
 
-func (this Map) Print() {
+func (this *Map) Print() {
 	for y := 0; y < this.height; y++ {
 		for x := 0; x < this.width; x++ {
 			robotX, robotY := this.PointToBitmapCoordinate(this.robot.x, this.robot.y)
@@ -136,12 +135,12 @@ func (this Map) Print() {
 	}
 }
 
-func (this Map) PointToBitmapCoordinate(x, y float64) (x1, y2 int) {
+func (this *Map) PointToBitmapCoordinate(x, y float64) (x1, y2 int) {
 	return int(x), int(y)
 }
 
 // Takes the robots location, draws a line out from it at the given degree and returns the bitmap (rounded down) location  of the resulting point.
-func (this Map) LineToBitmapCoordinate(degree, distance float64) (x1, y1 int) {
+func (this *Map) LineToBitmapCoordinate(degree, distance float64) (x1, y1 int) {
 	x, y := getOpposite(degree, distance)+this.robot.x, -getAdjacent(degree, distance)+this.robot.y
 	return int(x), int(y)
 }
