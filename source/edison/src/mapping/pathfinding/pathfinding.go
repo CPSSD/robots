@@ -15,8 +15,8 @@ type Node struct {
 }
 
 // Calls various functions below and returns the end result of the pathfinding algorithm.
-func GetRoute(robotMap maps.Map, x, y int) [][]bool {
-	fmt.Println("GetRouteTo(", "(", x, ",", y, ")")
+func GetRoute(robotMap maps.Map, x, y int) ([][]bool, bool) {
+	fmt.Println("GetRouteTo(", x, ",", y, ")")
 	nodeMap := createNodeMap(robotMap.GetBitmap())
 	getDistanceToGoal(nodeMap, x, y)
 	return pathfind(nodeMap, x, y)
@@ -32,7 +32,7 @@ func createNodeMap(robotMap [][]bool) (nodeMap [][]Node) {
 	return
 }
 
-func pathfind(nodeMap [][]Node, x, y int) [][]bool {
+func pathfind(nodeMap [][]Node, x, y int) ([][]bool, bool) {
 	closedList := make(map[int]*Node)
 	openList := make(map[int]*Node)
 
@@ -62,12 +62,23 @@ func pathfind(nodeMap [][]Node, x, y int) [][]bool {
 		closedList, openList = smallest.makeAMove(nodeMap, closedList, openList)
 	}
 
-	return smallest.createPath(len(nodeMap[0]), len(nodeMap))
+	if smallest == nil {
+		return nil, false
+	}
+
+
+	return smallest.createPath(len(nodeMap[0]), len(nodeMap)), true
 }
 
 func (this Node) createPath(mapWidth, mapHeight int) (path [][]bool) {
+
+
 	for y := 0; y < mapHeight; y++ {
 		path = append(path, make([]bool, mapWidth))
+	}
+
+	if &this == nil {
+		return 
 	}
 
 	// Add in all nodes except starting point (whos parent is nill)

@@ -20,6 +20,10 @@ type Map struct {
 	floor [][]bool
 }
 
+func (this *Map) GetBitmap() [][]bool {
+	return this.floor
+}
+
 // Returns the maps robot.
 func (this *Map) GetRobot() Robot {
 	return this.robot
@@ -117,17 +121,21 @@ func (this *Map) createExpandedMap(expandX, expandY int) (tempMap *Map) {
 	return
 }
 
-func (this *Map) Print() {
+func (this *Map) Print(path [][]bool) {
 	for y := 0; y < this.height; y++ {
 		for x := 0; x < this.width; x++ {
 			robotX, robotY := this.PointToBitmapCoordinate(this.robot.x, this.robot.y)
 			if x == robotX && y == robotY {
-				fmt.Print("* ")
+				fmt.Print("*  ")
 			} else {
 				if this.floor[y][x] {
-					fmt.Print("1 ")
+					fmt.Print("[] ")
 				} else {
-					fmt.Print(". ")
+					if path != nil && path[y][x] {
+						fmt.Print(".. ")
+					} else {
+						fmt.Print("   ")
+					}
 				}
 			}
 		}
@@ -143,4 +151,20 @@ func (this *Map) PointToBitmapCoordinate(x, y float64) (x1, y2 int) {
 func (this *Map) LineToBitmapCoordinate(degree, distance float64) (x1, y1 int) {
 	x, y := getOpposite(degree, distance)+this.robot.x, -getAdjacent(degree, distance)+this.robot.y
 	return int(x), int(y)
+}
+
+func (this *Map) DrawSquare(n int) {
+	for i := -n; i <= n; i++ {
+		robotX, robotY := this.PointToBitmapCoordinate(this.GetRobot().GetX(), this.GetRobot().GetY())
+		this.AddWall(i+robotX, -n+robotY)
+
+		robotX, robotY = this.PointToBitmapCoordinate(this.GetRobot().GetX(), this.GetRobot().GetY())
+		this.AddWall(i+robotX, n+robotY)
+
+		robotX, robotY = this.PointToBitmapCoordinate(this.GetRobot().GetX(), this.GetRobot().GetY())
+		this.AddWall(-n+robotX, i+robotY)
+
+		robotX, robotY = this.PointToBitmapCoordinate(this.GetRobot().GetX(), this.GetRobot().GetY())
+		this.AddWall(n+robotX, i+robotY)
+	}
 }
