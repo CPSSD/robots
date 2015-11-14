@@ -1,6 +1,6 @@
 # Layouts:
 #### 1. Bitmap
-* 2D Array of the map using points<br />
+* 2D Array of the map using booleans<br />
 ```
 [[1, 1, 1, 1, 0],
  [0, 0, 0, 1, 1],
@@ -14,6 +14,8 @@
 #### 2. Vector
 * 1D Array of map using lines<br />
 ```
+Lines represented as: (x1, y1, x2, y2)
+
 [(0, 0, 3, 0), (3, 0, 3, 1), (3, 1, 4, 1), (4, 1, 4, 4), (4, 4, 0, 4)]
 ```
 
@@ -28,6 +30,3 @@
 ## Possible Limitations:
 *  No Circles.
 *  Horizontal/Vertical Lines only.
-
-## Questions:
-* How much area should each point represent? 1cm³, 2cm³, etc..?
