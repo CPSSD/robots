@@ -111,8 +111,8 @@ func SetDelay(delayMs uint16) {
 	defaultSpiTransferData.delayMilliseconds = delayMs
 }
 
-// TransferAndRecieveData will transfer any data in dataBuffer over SPI and put the response in dataBuffer
-func TransferAndRecieveData(dataBuffer []uint8) {
+// TransferAndReceiveData will transfer any data in dataBuffer over SPI and put the response in dataBuffer
+func TransferAndReceiveData(dataBuffer []uint8) {
 	if !initialized {
 		InitializeSPI()
 	}
@@ -131,10 +131,10 @@ func TransferAndRecieveData(dataBuffer []uint8) {
 	}
 }
 
-// ReceiveData recieves n bytes of data
+// ReceiveData receives n bytes of data
 func ReceiveData(length int) []uint8 {
 	data := make([]uint8, length)
-	TransferAndRecieveData(data)
+	TransferAndReceiveData(data)
 	return data
 }
 

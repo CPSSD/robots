@@ -1,0 +1,4 @@
+*.exe
+source/go/pkg/windows_amd64/9fans.net/go/acme.a
+*.a
+source/go/pkg/windows_amd64/golang.org/x/tools/refactor/importgraph.a
