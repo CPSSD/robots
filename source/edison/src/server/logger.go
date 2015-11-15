@@ -1,5 +1,5 @@
 // logger file to log web requests
-package main
+package server
 
 import (
     "log"
