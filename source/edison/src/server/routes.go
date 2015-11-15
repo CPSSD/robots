@@ -1,6 +1,6 @@
 // Router file to send routes to handler file
 
-package main
+package server
 
 import (
 	"net/http"
