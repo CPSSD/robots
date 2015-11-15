@@ -1,6 +1,6 @@
 //File for handlers for the server calls
 
-package main 
+package server
 
 import (
 	"encoding/json"
