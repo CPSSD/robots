@@ -21,8 +21,14 @@ func pathfindingTest(){
 	RobotMap.AddWall(4, 3)
 	RobotMap.AddWall(4, 4)
 	RobotMap.AddWall(3, 4)
+	RobotMap.AddWall(1, 4)
+//	RobotMap.AddWall(4, 1)
+//	RobotMap.AddWall(4, 2)
 	RobotMap.MoveRobotTo(360-90, 2)
 	RobotMap.MoveRobotTo(0, 1)
+
+	RobotMap.Print(nil)
+	fmt.Println()
 
 	// Pathfind to point (5, 6) from point (2, 3)
 	path, success := pathfinding.GetRoute(RobotMap, 5, 6)
@@ -34,10 +40,12 @@ func pathfindingTest(){
 		RobotMap.Print(nil)
 		fmt.Println("No valid path found")
 	}
+	fmt.Println()
 
 	// Moves the robot along the path. Point by Point.
 	RobotMap.MoveRobotAlongPath(path)
 	RobotMap.Print(nil)
+	fmt.Println()
 
 	// Pathfind to point (1, 1) from point (5, 6)
 	path, success = pathfinding.GetRoute(RobotMap, 1, 1)
@@ -49,9 +57,12 @@ func pathfindingTest(){
 		RobotMap.Print(nil)
 		fmt.Println("No valid path found")
 	}
+	fmt.Println()
 
 	// Prints out the map again.
 	RobotMap.MoveRobotAlongPath(path)
 	RobotMap.Print(nil)
+
+	fmt.Println(maps.BitmapToVector(RobotMap.GetBitmap()))
 
 }

@@ -28,7 +28,20 @@ func radianToDegrees(radians float64) float64 {
 }
 
 // Takes a one-dimensional array of binary values and converts it to an array of lines.
-func BitmapToVector(array []int, width int) []Line {
+func BitmapToVector(floor [][]bool) []Line {
+	width := len(floor[0])
+	// Ignore this ugly work-around. Will replace in next sprint.
+	array := make([]int, len(floor)*len(floor[0]))
+	for y := 0; y < len(floor); y++ {
+		for x := 0; x < len(floor[y]); x++ {
+			if floor[y][x] {
+				array[(y*width)+x] = 1
+			} else {
+				array[(y*width)+x] = 0
+			}
+		}
+	}
+
 	p_array := createPointArray(array[0:], width)
 
 	// Converts Points Array into a Line Array. Possibly could be turned into stand alone function "pointsToLines(points []Point) []Line"
