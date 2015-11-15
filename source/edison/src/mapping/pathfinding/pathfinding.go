@@ -19,9 +19,10 @@ func GetRoute(robotMap maps.Map, x, y int) ([][]bool, bool) {
 	fmt.Println("GetRouteTo(", x, ",", y, ")")
 	nodeMap := createNodeMap(robotMap.GetBitmap())
 	getDistanceToGoal(nodeMap, x, y)
-	return pathfind(nodeMap, x, y)
+	return pathfind(nodeMap, int(robotMap.GetRobot().GetX()), int(robotMap.GetRobot().GetY()), x, y)
 }
 
+// Creates a Node at each point of the map.
 func createNodeMap(robotMap [][]bool) (nodeMap [][]Node) {
 	for i := 0; i < len(robotMap); i++ {
 		nodeMap = append(nodeMap, make([]Node, 0))
@@ -32,11 +33,12 @@ func createNodeMap(robotMap [][]bool) (nodeMap [][]Node) {
 	return
 }
 
-func pathfind(nodeMap [][]Node, x, y int) ([][]bool, bool) {
+// Pathfinding Algorithm. Based on A*
+func pathfind(nodeMap [][]Node, startX, startY, x, y int) ([][]bool, bool) {
 	closedList := make(map[int]*Node)
 	openList := make(map[int]*Node)
 
-	closedList, openList = nodeMap[3][2].makeAMove(nodeMap, closedList, openList)
+	closedList, openList = nodeMap[startY][startX].makeAMove(nodeMap, closedList, openList)
 	finished := false
 	var smallest *Node
 	for !finished {
@@ -66,19 +68,17 @@ func pathfind(nodeMap [][]Node, x, y int) ([][]bool, bool) {
 		return nil, false
 	}
 
-
 	return smallest.createPath(len(nodeMap[0]), len(nodeMap)), true
 }
 
+// Creates a 2D bool array (path) based on the node map.
 func (this Node) createPath(mapWidth, mapHeight int) (path [][]bool) {
-
-
 	for y := 0; y < mapHeight; y++ {
 		path = append(path, make([]bool, mapWidth))
 	}
 
 	if &this == nil {
-		return 
+		return
 	}
 
 	// Add in all nodes except starting point (whos parent is nill)
@@ -92,6 +92,7 @@ func (this Node) createPath(mapWidth, mapHeight int) (path [][]bool) {
 	return
 }
 
+// Adds all possible moves to openList and adds current node to closedList.
 func (this Node) makeAMove(nodeMap [][]Node, oldClosedList, oldOpenList map[int]*Node) (closedList, openList map[int]*Node) {
 	closedList = oldClosedList
 	openList = oldOpenList
@@ -135,12 +136,12 @@ func (this *Node) addToList(nodeMap [][]Node, x, y int, list map[int]*Node, clos
 	}
 }
 
-// Gets Heursitic of single node(minimal steps to target (horizontal and vertical))
+// Gets distance to goal for a single node(minimum steps to target (horizontal and vertical))
 func (this *Node) getDistanceToGoal(x, y int) {
 	this.distanceToGoal = int(math.Abs(float64((x - this.x))) + math.Abs(float64(y-this.y)))
 }
 
-// Gets Heursitic of all nodes (minimal steps to target (horizontal and vertical))
+// Gets distance to goal for all nodes (minimum steps to target (horizontal and vertical))
 func getDistanceToGoal(nodeMap [][]Node, x, y int) {
 	for i := 0; i < len(nodeMap); i++ {
 		for j := 0; j < len(nodeMap[i]); j++ {
