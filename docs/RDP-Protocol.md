@@ -21,11 +21,12 @@ Command => Response
 scan (id) => scanResponse (id, degree, distance, last)
 
 Comments:
-  - when 'scan' is called the 'scanResponse' will be sent back up to 360 times. (End denoted by 'last' parameter)
-
+  - when 'scan' is called the 'scanResponse' will be sent back up to 42 times. (End denoted by 'last' parameter)
+  
 Parameters Explained:
   - 'id'        => id of instruction (Unique so it can be identified at any point in time)
   - 'degree'    => current angle of the laser
+                  => measured up to 42. Not up to 360
   - 'distance'  => distance recorded by laser
   - 'last'      => boolean, true if last piece of data to be sent for current request. 
 ```
