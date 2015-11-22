@@ -35,9 +35,9 @@ func BitmapToVector(floor [][]bool) []Line {
 	for y := 0; y < len(floor); y++ {
 		for x := 0; x < len(floor[y]); x++ {
 			if floor[y][x] {
-				array[(y*width)+x] = 1
+				array[(x*width)+y] = 1
 			} else {
-				array[(y*width)+x] = 0
+				array[(x*width)+y] = 0
 			}
 		}
 	}
