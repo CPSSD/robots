@@ -1,8 +1,7 @@
-package pathfinding
+package maps
 
 import (
 	"fmt"
-	"mapping/maps"
 	"math"
 )
 
@@ -15,7 +14,7 @@ type Node struct {
 }
 
 // Calls various functions below and returns the end result of the pathfinding algorithm.
-func GetRoute(robotMap maps.Map, x, y int) ([][]bool, bool) {
+func GetRoute(robotMap Map, x, y int) ([][]bool, bool) {
 	fmt.Println("GetRouteTo(", x, ",", y, ")")
 	nodeMap := createNodeMap(robotMap.GetBitmap())
 	getDistanceToGoal(nodeMap, x, y)
@@ -136,7 +135,7 @@ func (this *Node) addToList(nodeMap [][]Node, x, y int, list map[int]*Node, clos
 	}
 }
 
-// Gets distance to goal for a single node(minimum steps to target (horizontal and vertical))
+// Gets distance to goal for a single node (minimum steps to target (horizontal and vertical))
 func (this *Node) getDistanceToGoal(x, y int) {
 	this.distanceToGoal = int(math.Abs(float64((x - this.x))) + math.Abs(float64(y-this.y)))
 }

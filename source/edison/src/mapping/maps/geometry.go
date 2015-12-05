@@ -28,21 +28,8 @@ func radianToDegrees(radians float64) float64 {
 }
 
 // Takes a one-dimensional array of binary values and converts it to an array of lines.
-func BitmapToVector(floor [][]bool) []Line {
-	width := len(floor[0])
-	// Ignore this ugly work-around. Will replace in next sprint.
-	array := make([]int, len(floor)*len(floor[0]))
-	for y := 0; y < len(floor); y++ {
-		for x := 0; x < len(floor[y]); x++ {
-			if floor[y][x] {
-				array[(x*width)+y] = 1
-			} else {
-				array[(x*width)+y] = 0
-			}
-		}
-	}
-
-	p_array := createPointArray(array[0:], width)
+func BitmapToVector(floor [][]bool) []Line {	
+	p_array := createPointArray(floor)
 
 	// Converts Points Array into a Line Array. Possibly could be turned into stand alone function "pointsToLines(points []Point) []Line"
 	l_array := pointsToLines(p_array[0:])
@@ -85,12 +72,13 @@ func pointsToLines(points []Point) (lines []Line) {
 }
 
 // Converts a One-Dimensional Array of Binary values into Points, Returns a One-Dimensional Point Array
-func createPointArray(array []int, width int) (points []Point) {
-	height := len(array) / width
+func createPointArray(array [][]bool) (points []Point) {
+	height := len(array);
+	width := len(array[0])
 
 	for y := 0; y < height; y++ {
 		for x := 0; x < width; x++ {
-			if array[(x*width)+y] == 1 {
+			if array[y][x] {
 				points = append(points, Point{x % width, y})
 			}
 		}
