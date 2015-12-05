@@ -62,6 +62,6 @@ Status          - 1 byte  (Unisgned 8 bit int)  0 for failure, non-zero for succ
 Command Number  - 1 byte  (Unsigned 8  bit int)	
 Unique ID       - 2 bytes (Unsigned 16 bit int)
 Status          - 1 byte  (Unisgned 8 bit int)  0 for failure, non-zero for success.
-Distance        - 1 byte  (Unsigned 8 bit int)  Distance in cm.
+Distance        - 1 byte  (Unsigned 16 bit int) Distance in cm.
 
 ```
