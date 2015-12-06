@@ -5,10 +5,19 @@ import (
 	"fmt"
 )
 
+var lastAction string
+var currentID int
+
 func RDPInit(){
 	fmt.Println("* Registering Response Handler");
 	RobotDriverProtocol.RegisterResponseHandler(RDPConnector)
-	RDPConnector(RobotDriverProtocol.MoveResponse{RobotDriverProtocol.Response{1, 0, "NA"}, 35, 100})
+//	RDPConnector(RobotDriverProtocol.MoveResponse{RobotDriverProtocol.Response{0, 0, "Boo"}, 0, 40})
+//	RDPConnector(RobotDriverProtocol.RotateResponse{RobotDriverProtocol.Response{0, 0, "Boo"}, 90})
+//	RDPConnector(RobotDriverProtocol.MoveResponse{RobotDriverProtocol.Response{0, 0, "Boo"}, 0, 40})
+//	for i := 0; i < 360; i+=8 {
+//		RDPConnector(RobotDriverProtocol.ScanResponse{RobotDriverProtocol.Response{0, 0, "Boo"}, uint16(i), 50, false})
+//	}
+//	RDPConnector(RobotDriverProtocol.ScanResponse{RobotDriverProtocol.Response{0, 0, "Boo"}, 360, 50, true})
 }
 
 func RDPConnector(data interface{}){
@@ -33,7 +42,8 @@ func moveResponse(response RobotDriverProtocol.MoveResponse){
 
 	// Updates robots location to the responses location.
 	RobotMap.MoveRobotAlongLine(float64(response.Angle), float64(response.Magnitude))
-
+	lastAction = "Move"
+	currentID = -1
 }
 
 func scanResponse(response RobotDriverProtocol.ScanResponse){
@@ -42,6 +52,13 @@ func scanResponse(response RobotDriverProtocol.ScanResponse){
 
 	// Add a wall at the specific location.
 	// When last response, find next location to move to in map.go
+	RobotMap.AddWallByLine(float64(response.Degree), float64(response.Distance))
+
+	if response.Last {
+		lastAction = "Scan"
+		RobotMap.ContinueToNextArea()
+		currentID = -1
+	}
 
 }
 
@@ -50,7 +67,9 @@ func rotateResponse(response RobotDriverProtocol.RotateResponse){
 	fmt.Println(" [Response] { ID:", response.ID, " // Type:", response.Type, "// Reason:", response.Reason,"}")
 
 	// Changes the rotation of the robot
-
+	RobotMap.GetRobot().Rotate(float64(response.Angle))
+	lastAction = "Rotate"
+	currentID = -1
 }
 
 func stopResponse(response RobotDriverProtocol.StopResponse){
@@ -59,5 +78,8 @@ func stopResponse(response RobotDriverProtocol.StopResponse){
 
 	// Updates robots location to the response location.
 	// Check reason, do something based on reason.
+	RobotMap.MoveRobotAlongLine(float64(response.Angle), float64(response.Magnitude))
+	lastAction = "Stop"
+	currentID = -1
 
 }

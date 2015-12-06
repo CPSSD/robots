@@ -4,8 +4,9 @@ package maps
 
 import "fmt"
 import "math"
+import "RobotDriverProtocol"
 
-const SIZE = 25 // Millimeters Per Bitmap Segment
+const SIZE = 2 // Millimeters Per Bitmap Segment
 
 var RobotMap Map
 
@@ -22,9 +23,14 @@ type Map struct {
 }
 
 func MapInit() {
+	fmt.Println("[Initialising Map]")
 	RobotMap = CreateMap()
+	fmt.Println("[Map Created]")
+	fmt.Println("[Initialising RDP]")
 	RDPInit()
+	fmt.Println("[RDP Link Ready]")
 	fmt.Println(RobotMap);
+	RobotDriverProtocol.Scan();
 }
 
 func (this *Map) GetSeenMap() [][] int {
@@ -63,9 +69,33 @@ func (this *Map) MoveRobotAlongPath(path [][]bool, stopBeforePoint bool) {
 			}
 		}
 		prevX, prevY = int(this.robot.x), int(this.robot.y)
-		this.robot.MoveToPoint(nextX, nextY, true)
+		//this.robot.MoveToPoint(nextX, nextY, true)
+		degree, magnitude := getHorizontalLine(prevX, prevY, nextX, nextY)
+
+		RobotDriverProtocol.Move(uint16(degree), uint32(magnitude))
+
+		if prevX != -1 && prevY != -1 && lastAction != "Move" {
+			fmt.Println("Think something went wrong, or maybe I just haven't recieved a response yet.")
+		}
 	}
-	fmt.Println("Finished Moving along path.")
+	fmt.Println("Finished Moving along path. [Sending Scan Request]")
+	RobotDriverProtocol.Scan()
+}
+
+func getHorizontalLine(x1, y1, x2, y2 int) (degree, magnitude float64) {
+	if x1 + 1 == x2 {
+		return 90, 1
+	}
+	if x1 - 1 == x2 {
+		return 270, 1
+	}
+	if y1 - 1 == y2 {
+		return 0, 1
+	}
+	if y1 + 1 == y2 {
+		return 180, 1
+	}
+	return 0, 0
 }
 
 func (this *Map) MoveRobotAlongLine(degree, magnitude float64){

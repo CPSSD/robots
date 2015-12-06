@@ -5,33 +5,50 @@ package main
 import (
 	"fmt"
 	"mapping/maps"
-	"mapping/pathfinding"
 )
 
 func main() {
-	pathfindingTest()
+	maps.MapInit();
+	maps.RobotMap.Print(nil);
+}
+
+
+func unseenAreaTest(){
+	RobotMap := maps.CreateMap()
+	RobotMap.AddWall(1, 1, false)
+	RobotMap.AddWall(5, 2, false)
+	RobotMap.AddWall(3, 3, false)
+	RobotMap.AddWall(2, 1, false)
+	RobotMap.AddWall(4, 2, false)
+	RobotMap.AddWall(3, 3, false)
+	RobotMap.AddWall(3, 2, false)
+	RobotMap.AddWall(2, 2, false)
+	RobotMap.Print(nil)
+
+
+	fmt.Println(maps.BitmapToVector(RobotMap.GetBitmap()));
 }
 
 func pathfindingTest(){
 	// Creating map to test in.
 	RobotMap := maps.CreateMap()
 	RobotMap.DrawSquare(4)
-	RobotMap.AddWall(4, 5)
-	RobotMap.AddWall(4, 6)
-	RobotMap.AddWall(4, 3)
-	RobotMap.AddWall(4, 4)
-	RobotMap.AddWall(3, 4)
-	RobotMap.AddWall(1, 4)
+	RobotMap.AddWall(4, 5, false)
+	RobotMap.AddWall(4, 6, false)
+	RobotMap.AddWall(4, 3, false)
+	RobotMap.AddWall(4, 4, false)
+	RobotMap.AddWall(3, 4, false)
+	RobotMap.AddWall(1, 4, false)
 //	RobotMap.AddWall(4, 1)
 //	RobotMap.AddWall(4, 2)
-	RobotMap.MoveRobotTo(360-90, 2)
-	RobotMap.MoveRobotTo(0, 1)
+//	RobotMap.MoveRobotTo(360-90, 2)
+//	RobotMap.MoveRobotTo(0, 1)
 
 	RobotMap.Print(nil)
 	fmt.Println()
 
 	// Pathfind to point (5, 6) from point (2, 3)
-	path, success := pathfinding.GetRoute(RobotMap, 5, 6)
+	path, success := maps.GetRoute(RobotMap, 5, 6)
 
 	// Prints out the map with the route denoted by .'s
 	if success {
@@ -43,12 +60,12 @@ func pathfindingTest(){
 	fmt.Println()
 
 	// Moves the robot along the path. Point by Point.
-	RobotMap.MoveRobotAlongPath(path)
+	RobotMap.MoveRobotAlongPath(path, false)
 	RobotMap.Print(nil)
 	fmt.Println()
 
 	// Pathfind to point (1, 1) from point (5, 6)
-	path, success = pathfinding.GetRoute(RobotMap, 1, 1)
+	path, success = maps.GetRoute(RobotMap, 1, 1)
 
 	// Prints out the map with the route denoted by .'s
 	if success {
@@ -60,7 +77,7 @@ func pathfindingTest(){
 	fmt.Println()
 
 	// Prints out the map again.
-	RobotMap.MoveRobotAlongPath(path)
+	RobotMap.MoveRobotAlongPath(path, false)
 	RobotMap.Print(nil)
 
 	fmt.Println(maps.BitmapToVector(RobotMap.GetBitmap()))
