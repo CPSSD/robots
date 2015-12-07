@@ -31,9 +31,9 @@ Angle 			- 2 bytes		(Unsigned 16 bit int) 	Number from 0 - 3,600 in 10ths of a d
 Checksum		- 1 byte		(Unsigned 8  bit int) 	Sum of all other bytes mod 255
 
 - scan 		(Command #4)
-Command Number	- 1 byte  		(Unsigned 8  bit int)	
-Unique ID 		- 2 bytes		(Unsigned 16 bit int)
-Checksum		- 1 byte		(Unsigned 8  bit int) 	Sum of all other bytes mod 255
+Command Number	- 1 byte  	(Unsigned 8  bit int)	
+Unique ID 		  - 2 bytes		(Unsigned 16 bit int)
+Checksum		    - 1 byte		(Unsigned 8  bit int) 	Sum of all other bytes mod 255
 
 ```
 
@@ -46,22 +46,29 @@ Parameter Name 	Size in bytes	Parameter Type  Notes
 - move  (Response #1)
 Command Number  - 1 byte  (Unsigned 8  bit int)	
 Unique ID       - 2 bytes (Unsigned 16 bit int)
-Status          - 1 byte  (Unisgned 8 bit int)  0 for failure, non-zero for success.
+Magnitude 		  - 2 bytes		(Unsigned 16 bit int)	Distance moved measured in cm.
+Angle           - 2 bytes (Unsigned 16 bit int) Angle moved at in 10ths of a degree.
+Status          - 1 byte  (Unisgned 8 bit int ) 0 for failure, non-zero for success.
 
 - stop  (Response #2)
 Command Number  - 1 byte  (Unsigned 8  bit int)	
 Unique ID       - 2 bytes (Unsigned 16 bit int)
-Status          - 1 byte  (Unisgned 8 bit int)  0 for failure, non-zero for success.
+Magnitude 		  - 2 bytes		(Unsigned 16 bit int)	Distance moved measured in cm.
+Angle           - 2 bytes (Unsigned 16 bit int) Angle moved at in 10ths of a degree.
+Status          - 1 byte  (Unisgned 8 bit int ) 0 for failure, non-zero for success.
 
 - rotate  (Response #3)
 Command Number  - 1 byte  (Unsigned 8  bit int)	
 Unique ID       - 2 bytes (Unsigned 16 bit int)
-Status          - 1 byte  (Unisgned 8 bit int)  0 for failure, non-zero for success.
+Angle           - 2 bytes (Unsigned 16 bit int) Angle rotated in 10ths of a degree.
+Status          - 1 byte  (Unisgned 8 bit int ) 0 for failure, non-zero for success.
 
 - scan  (Response #4)
 Command Number  - 1 byte  (Unsigned 8  bit int)	
 Unique ID       - 2 bytes (Unsigned 16 bit int)
-Status          - 1 byte  (Unisgned 8 bit int)  0 for failure, non-zero for success.
-Distance        - 1 byte  (Unsigned 16 bit int) Distance in cm.
+Last            - 1 byte  (8 bit boolean value) 0 for false, anything else for true.
+Angle           - 2 bytes (Unsigned 16 bit int) Angle in 10ths of a degree.
+Distance        - 2 bytes (Unsigned 16 bit int) Distance in cm.
+Status          - 1 byte  (Unisgned 8 bit int ) 0 for failure, non-zero for success.
 
 ```
