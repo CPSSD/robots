@@ -13,8 +13,6 @@ const (
 	SpiMajorVersion = byte(5)
 	// SpiMinorVersion is the minor version of SPI found in file /dev/spidev[MajorVersion].[MinorVersion]
 	SpiMinorVersion = byte(1)
-	// SpiMode is the default SPI mode
-	SpiMode = byte(0)
 
 	// SPI constants
 	spiIOCWrMode        = 0x40016B01
@@ -31,7 +29,25 @@ const (
 	// Default SPI values
 	defaultDelayMs  = 0
 	defaultSPIBPW   = 8
-	defaultSPISpeed = 1000000
+	defaultSPISpeed = 100000
+)
+
+const (
+	// SPI mode constants
+	spiCpha = 0x01
+	spiCpol = 0x02
+
+	// SPIMode0 represents the mode0 operation (CPOL=0 CPHA=0) of spi.
+	SPIMode0 = (0 | 0)
+
+	// SPIMode1 represents the mode0 operation (CPOL=0 CPHA=1) of spi.
+	SPIMode1 = (0 | spiCpha)
+
+	// SPIMode2 represents the mode0 operation (CPOL=1 CPHA=0) of spi.
+	SPIMode2 = (spiCpol | 0)
+
+	// SPIMode3 represents the mode0 operation (CPOL=1 CPHA=1) of spi.
+	SPIMode3 = (spiCpol | spiCpha)
 )
 
 type spiTransferData struct {
@@ -58,12 +74,14 @@ func InitializeSPI() {
 		return
 	}
 
+	fmt.Println("Initializing SPI")
 	var err error
 	if spiFile, err = os.OpenFile(fmt.Sprintf("/dev/spidev%v.%v", SpiMajorVersion, SpiMinorVersion), os.O_RDWR, os.ModeExclusive); err != nil {
 		log.Fatal(err)
 	}
 
-	SetMode(SpiMode)
+	var mode = uint8(SPIMode0)
+	SetMode(mode)
 
 	defaultSpiTransferData = spiTransferData{}
 
