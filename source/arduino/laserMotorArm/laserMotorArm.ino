@@ -18,6 +18,13 @@ int correction = 0;
 
 LIDARLite myLidarLite;
 
+struct LaserReading {
+  int angle;
+  int distance;
+};
+
+LaserReading lastRotationData[42];
+
 void encoderISR(){
     encoderCount++;
 }
@@ -51,6 +58,46 @@ void stopRotate(){
     analogWrite(E1,0);
 }
 
+void faceWall(){
+  oneRotation(3360);
+
+  LaserReading goal = LaserReading{-1, -1};
+  for(int i = 1; i < 41; i++){
+    if (hasApex(lastRotationData[i-1], lastRotationData[i], lastRotationData[i+1])){
+      Serial.print("Found Apex at: ");
+      Serial.println(lastRotationData[i].angle);
+      if (goal.distance == -1 || goal.distance > lastRotationData[i].distance){
+        goal = lastRotationData[i];
+      }
+    }
+  }
+  Serial.print("Wall @ ");
+  Serial.print(goal.angle);
+  Serial.print(" | In ticks: ");
+  Serial.println(goal.angle*80);
+  
+  changeDirection();
+  int offset = correctTicks(numTicks(3360));
+  changeDirection();
+  
+  encoderCount = 0;
+  oneRotation(goal.angle*80 + offset);
+  changeDirection();
+  
+  correctTicks(numTicks(goal.angle*80 + offset));
+  changeDirection();
+}
+
+bool hasApex(LaserReading left, LaserReading middle, LaserReading right){
+  if (left.distance == -1 || middle.distance == -1 || right.distance == -1){
+    return false;
+  }
+  if (left.distance > middle.distance && right.distance > middle.distance){
+    return true;
+  }
+  return false;
+}
+
 void oneRotation(int fullSpin){
     startRotate();
     int scanTick = 0;
@@ -58,10 +105,16 @@ void oneRotation(int fullSpin){
     while(encoderCount < fullSpin){
       if (lastEncoderCount != encoderCount && encoderCount > 0 && encoderCount % 80 == 0) {
           scanTick += 1;
+          if (scanTick >= 0 && scanTick <= 42){
+            lastRotationData[scanTick-1] = LaserReading{scanTick-1, int(myLidarLite.distanceContinuous())};
+            if (lastRotationData[scanTick-1].distance >= 1061) {
+              lastRotationData[scanTick-1].distance = -1; 
+            }
+          }
           Serial.print("[");
-          Serial.print(scanTick);
+          Serial.print(scanTick-1);
           Serial.print(" | ");
-          Serial.print(myLidarLite.distanceContinuous());
+          Serial.print(lastRotationData[scanTick-1].distance);
           Serial.println("]");
           lastEncoderCount = encoderCount;
       }
@@ -72,14 +125,16 @@ void oneRotation(int fullSpin){
     //correction = encoderCount - 3360;
 }
 
-int numTicks(){
-    int correction = encoderCount - 3360;
+int numTicks(int offset){
+    int correction = encoderCount - offset;
     return correction;
 }
 
 int correctTicks(int correction){
     encoderCount = 0;
     startRotate();
+    Serial.print("***** ");
+    Serial.println(correction);
     while(encoderCount < correction){}
     stopRotate();
     delay(2000);
@@ -99,6 +154,8 @@ void setup(){
 }
 
 void loop(){
+    faceWall();
+    while(true){}
     
     int i = 0;
     int fullSpin = 3360;
@@ -110,7 +167,7 @@ void loop(){
         //Serial.print("Correction: ");
         //Serial.println(correction);
         oneRotation(fullSpin);
-        correction = numTicks();
+        correction = numTicks(3360);
         changeDirection();
         //Serial.print("Fullspin: ");
         //Serial.println(fullSpin);
@@ -120,7 +177,7 @@ void loop(){
         correction = correctTicks(correction);
         //Serial.print("EncoderCount: ");
         //Serial.println(encoderCount);
-        //correction = numTicks();
+        //correction = numTicks(3360);
         fullSpin = correction + 3360;
         changeDirection();
         
