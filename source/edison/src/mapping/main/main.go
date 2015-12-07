@@ -8,14 +8,13 @@ import (
 )
 
 func main() {
-	maps.MapInit();
-	maps.RobotMap.Print(nil);
+	maps.MapInit()
+	maps.RobotMap.Print(nil)
 	_, isFinished := maps.RobotMap.GetBitmap()
 	fmt.Println("Mapping complete?: ", isFinished)
 }
 
-
-func unseenAreaTest(){
+func unseenAreaTest() {
 	RobotMap := maps.CreateMap()
 	RobotMap.AddWall(1, 1, false)
 	RobotMap.AddWall(5, 2, false)
@@ -28,10 +27,10 @@ func unseenAreaTest(){
 	RobotMap.Print(nil)
 
 	bitmap, _ := RobotMap.GetBitmap()
-	fmt.Println(maps.BitmapToVector(bitmap));
+	fmt.Println(maps.BitmapToVector(bitmap))
 }
 
-func pathfindingTest(){
+func pathfindingTest() {
 	// Creating map to test in.
 	RobotMap := maps.CreateMap()
 	RobotMap.DrawSquare(4)
@@ -41,10 +40,10 @@ func pathfindingTest(){
 	RobotMap.AddWall(4, 4, false)
 	RobotMap.AddWall(3, 4, false)
 	RobotMap.AddWall(1, 4, false)
-//	RobotMap.AddWall(4, 1)
-//	RobotMap.AddWall(4, 2)
-//	RobotMap.MoveRobotTo(360-90, 2)
-//	RobotMap.MoveRobotTo(0, 1)
+	//	RobotMap.AddWall(4, 1)
+	//	RobotMap.AddWall(4, 2)
+	//	RobotMap.MoveRobotTo(360-90, 2)
+	//	RobotMap.MoveRobotTo(0, 1)
 
 	RobotMap.Print(nil)
 	fmt.Println()
@@ -54,7 +53,7 @@ func pathfindingTest(){
 
 	// Prints out the map with the route denoted by .'s
 	if success {
-	 	RobotMap.Print(path)
+		RobotMap.Print(path)
 	} else {
 		RobotMap.Print(nil)
 		fmt.Println("No valid path found")
@@ -71,7 +70,7 @@ func pathfindingTest(){
 
 	// Prints out the map with the route denoted by .'s
 	if success {
-	 	RobotMap.Print(path)
+		RobotMap.Print(path)
 	} else {
 		RobotMap.Print(nil)
 		fmt.Println("No valid path found")
@@ -82,7 +81,7 @@ func pathfindingTest(){
 	RobotMap.MoveRobotAlongPath(path, false)
 	RobotMap.Print(nil)
 
-	bitmap,_ := RobotMap.GetBitmap()
+	bitmap, _ := RobotMap.GetBitmap()
 	fmt.Println(maps.BitmapToVector(bitmap))
 
 }

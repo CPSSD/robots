@@ -32,11 +32,11 @@ func MapInit() {
 	fmt.Println("[Initialising RDP]")
 	RDPInit()
 	fmt.Println("[RDP Link Ready]")
-	fmt.Println(RobotMap);
-	RobotDriverProtocol.Scan();
+	fmt.Println(RobotMap)
+	RobotDriverProtocol.Scan()
 }
 
-func (this *Map) GetSeenMap() [][] int {
+func (this *Map) GetSeenMap() [][]int {
 	return this.seen
 }
 
@@ -87,26 +87,26 @@ func (this *Map) MoveRobotAlongPath(path [][]bool, stopBeforePoint bool) {
 }
 
 func getHorizontalLine(x1, y1, x2, y2 int) (degree, magnitude float64) {
-	if x1 + 1 == x2 {
+	if x1+1 == x2 {
 		return 90, 1
 	}
-	if x1 - 1 == x2 {
+	if x1-1 == x2 {
 		return 270, 1
 	}
-	if y1 - 1 == y2 {
+	if y1-1 == y2 {
 		return 0, 1
 	}
-	if y1 + 1 == y2 {
+	if y1+1 == y2 {
 		return 180, 1
 	}
 	return 0, 0
 }
 
-func (this *Map) MoveRobotAlongLine(degree, magnitude float64){
+func (this *Map) MoveRobotAlongLine(degree, magnitude float64) {
 	this.robot.MoveAlongLine(degree, scale(magnitude))
 }
 
-func (this *Map) MoveRobotToPoint(x, y int){
+func (this *Map) MoveRobotToPoint(x, y int) {
 	this.robot.MoveToPoint(x, y, true)
 }
 
@@ -141,7 +141,7 @@ func (this *Map) AddWall(x, y int, resized bool) {
 		x, y = ScaleCoordinate(float64(x), float64(y))
 	}
 	tempMap := this
-	
+
 	if !this.pointInMap(x, y) {
 		expandX, expandY := 0, 0
 		tempMap, expandX, expandY = this.expandMap(x, y)
@@ -160,8 +160,8 @@ func (this *Map) AddWall(x, y int, resized bool) {
 			expandY = 0
 		}
 
-//		expandX, expandY = ScaleCoordinate(expandX, expandY)
-//		x, y = ScaleCoordinate(x, y)
+		//		expandX, expandY = ScaleCoordinate(expandX, expandY)
+		//		x, y = ScaleCoordinate(x, y)
 		tempMap.robot.x += float64(expandX)
 		tempMap.robot.y += float64(expandY)
 		tempMap.seen[y+expandY][x+expandX] = -1
@@ -261,7 +261,7 @@ func (this *Map) Print(path [][]bool) {
 				if this.floor[y][x] {
 					fmt.Print("X ")
 				} else {
-					if(this.seen[y][x] == 0){
+					if this.seen[y][x] == 0 {
 						fmt.Print(this.seen[y][x], " ")
 					} else {
 						fmt.Print("  ")
@@ -271,7 +271,7 @@ func (this *Map) Print(path [][]bool) {
 		}
 		fmt.Println("")
 	}
-	fmt.Println("----------------------------------------");
+	fmt.Println("----------------------------------------")
 }
 
 // Converts a point (float64) to a co-ordinate (int) in the bitmap.
@@ -281,7 +281,7 @@ func (this *Map) PointToBitmapCoordinate(x, y float64) (x1, y2 int) {
 
 func scale(x float64) float64 {
 	if x != 0 {
-		return float64(x/SIZE)
+		return float64(x / SIZE)
 	}
 	return 0
 }
@@ -308,7 +308,7 @@ func (this *Map) AddWallByLine(degree, distance float64) {
 }
 
 // Marks anything the line passes through as "seen".
-func (this *Map) MarkLineAsSeen(degree, distance float64){
+func (this *Map) MarkLineAsSeen(degree, distance float64) {
 	if DEBUG {
 		fmt.Println(RobotMap)
 		RobotMap.Print(nil)
@@ -323,7 +323,7 @@ func (this *Map) MarkLineAsSeen(degree, distance float64){
 			if DEBUG {
 				fmt.Println(x, y)
 			}
-			if(this.seen[y][x] == 0){
+			if this.seen[y][x] == 0 {
 				this.seen[y][x] = 1
 			}
 		}
@@ -350,22 +350,22 @@ func (this *Map) DrawSquare(n int) {
 // Counts the ammount of seen tiles (that are just empty space) surrounding the current tile (horizontaly and vertically)
 func (this *Map) getAdjacentSeenTilesCount(x, y int) (count int) {
 	count = 0
-	if y + 1 < len(this.floor) {
+	if y+1 < len(this.floor) {
 		if this.seen[y+1][x] == 1 {
 			count += 1
 		}
-	} 
-	if x + 1 < len(this.floor[y]) {
+	}
+	if x+1 < len(this.floor[y]) {
 		if this.seen[y][x+1] == 1 {
 			count += 1
 		}
 	}
-	if y - 1 >= 0 {
+	if y-1 >= 0 {
 		if this.seen[y-1][x] == 1 {
 			count += 1
 		}
 	}
-	if x - 1 >= 0 {
+	if x-1 >= 0 {
 		if this.seen[y][x-1] == 1 {
 			count += 1
 		}
@@ -374,12 +374,12 @@ func (this *Map) getAdjacentSeenTilesCount(x, y int) (count int) {
 }
 
 // Figures out where to scan next and goes there.
-func (this *Map) ContinueToNextArea(){
+func (this *Map) ContinueToNextArea() {
 	// Adds all potential tiles to a queue
 	list := make([]Node, 0)
 	for y := 0; y < len(this.floor); y++ {
 		for x := 0; x < len(this.floor[y]); x++ {
-//			x, y = ScaleCoordinate(x, y)
+			//			x, y = ScaleCoordinate(x, y)
 			if this.seen[y][x] == 0 {
 				if this.getAdjacentSeenTilesCount(x, y) >= 1 {
 					list = append(list, Node{x: x, y: y})
@@ -390,7 +390,7 @@ func (this *Map) ContinueToNextArea(){
 
 	// Cycles through getting the distance to each tile.
 	for i := 0; i < len(list); i++ {
-		list[i].getDistanceToGoal((int) (this.robot.x), (int) (this.robot.y))
+		list[i].getDistanceToGoal((int)(this.robot.x), (int)(this.robot.y))
 	}
 
 	// Sorts list by Distance to Robot.
@@ -398,7 +398,7 @@ func (this *Map) ContinueToNextArea(){
 
 	// Prints out list.
 	if DEBUG {
-		fmt.Println("Sorted: ");
+		fmt.Println("Sorted: ")
 		for i := 0; i < len(list); i++ {
 			fmt.Println(list[i].x, list[i].y, list[i].distanceToGoal)
 		}

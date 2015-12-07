@@ -2,7 +2,7 @@
 
 package maps
 
-import "fmt";
+import "fmt"
 
 type Robot struct {
 	x        float64
@@ -24,21 +24,21 @@ func (this Robot) GetRotation() float64 {
 
 func (this *Robot) Rotate(degree float64) {
 	this.rotation += degree
-	for (this.rotation > 360) {
+	for this.rotation > 360 {
 		this.rotation -= 360
 	}
 }
 
 func (this *Robot) MoveToPoint(x, y int, resized bool) {
 	if !resized {
-	//	x, y = RobotMap.PointToBitmapCoordinate(float64(x), float64(y))
+		//	x, y = RobotMap.PointToBitmapCoordinate(float64(x), float64(y))
 	}
 	this.x = float64(x)
 	this.y = float64(y)
 }
 
-func (this *Robot) MoveAlongLine(degree, magnitude float64){
-	x, y := RobotMap.LineToBitmapCoordinate(degree + this.rotation, magnitude)
+func (this *Robot) MoveAlongLine(degree, magnitude float64) {
+	x, y := RobotMap.LineToBitmapCoordinate(degree+this.rotation, magnitude)
 	this.MoveToPoint(x, y, true)
 	if DEBUG {
 		fmt.Println("Robots Current Data:", *this)
