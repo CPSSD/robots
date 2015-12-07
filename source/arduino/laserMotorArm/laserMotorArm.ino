@@ -1,3 +1,6 @@
+#include <Wire.h>
+#include <LIDARLite.h>
+
 // Motor & encoder drivers
 
 const int E1 = 5;
@@ -13,6 +16,7 @@ const int speed = 255;
 boolean anticlockwise = true;
 int correction = 0;
 
+LIDARLite myLidarLite;
 
 void encoderISR(){
     encoderCount++;
@@ -49,7 +53,20 @@ void stopRotate(){
 
 void oneRotation(int fullSpin){
     startRotate();
-    while(encoderCount < fullSpin){}
+    int scanTick = 0;
+    int lastEncoderCount = -1;
+    while(encoderCount < fullSpin){
+      if (lastEncoderCount != encoderCount && encoderCount > 0 && encoderCount % 80 == 0) {
+          scanTick += 1;
+          Serial.print("[");
+          Serial.print(scanTick);
+          Serial.print(" | ");
+          Serial.print(myLidarLite.distanceContinuous());
+          Serial.println("]");
+          lastEncoderCount = encoderCount;
+      }
+    }
+    scanTick = 0;
     stopRotate();
     delay(2000);
     //correction = encoderCount - 3360;
@@ -73,6 +90,11 @@ int correctTicks(int correction){
 void setup(){
     attachInterrupt(interupt,encoderISR,FALLING);
     Serial.begin(9600);
+
+    // Laser Scanner Setup.
+    myLidarLite.begin();
+    myLidarLite.beginContinuous();
+    
     rotateAnticlockwise();
 }
 
@@ -82,7 +104,7 @@ void loop(){
     int fullSpin = 3360;
     int correction = 0;
     
-    while(i < 50){
+    while(i < 2){
         //Serial.print("Fullspin: ");
         //Serial.println(fullSpin);
         //Serial.print("Correction: ");
