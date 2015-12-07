@@ -74,7 +74,6 @@ func InitializeSPI() {
 		return
 	}
 
-	fmt.Println("Initializing SPI")
 	var err error
 	if spiFile, err = os.OpenFile(fmt.Sprintf("/dev/spidev%v.%v", SpiMajorVersion, SpiMinorVersion), os.O_RDWR, os.ModeExclusive); err != nil {
 		log.Fatal(err)
