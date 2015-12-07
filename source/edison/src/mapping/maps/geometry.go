@@ -5,8 +5,6 @@ package maps
 import "fmt"
 import "math"
 
-const DEBUG bool = false
-
 // Sin(degree) = opposite/distance.
 func getOpposite(degree, distance float64) float64 {
 	return distance * math.Sin(degreeToRadians(degree))

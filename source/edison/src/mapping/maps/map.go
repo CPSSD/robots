@@ -4,9 +4,11 @@ package maps
 
 import "fmt"
 import "math"
+import "time"
 import "RobotDriverProtocol"
 
 const SIZE = 2 // Millimeters Per Bitmap Segment
+const DEBUG = false
 
 var RobotMap Map
 
@@ -75,7 +77,8 @@ func (this *Map) MoveRobotAlongPath(path [][]bool, stopBeforePoint bool) {
 		RobotDriverProtocol.Move(uint16(degree), uint32(magnitude))
 
 		if prevX != -1 && prevY != -1 && lastAction != "Move" {
-			fmt.Println("Think something went wrong, or maybe I just haven't recieved a response yet.")
+			fmt.Println("Think something went wrong, or maybe I just haven't recieved a response yet. [Sleeping for 3 second just incase the arduino is under load]")
+			time.Sleep(3 * 1000 * time.Millisecond)
 		}
 	}
 	fmt.Println("Finished Moving along path. [Sending Scan Request]")
@@ -137,15 +140,13 @@ func (this *Map) AddWall(x, y int, resized bool) {
 		x, y = ScaleCoordinate(float64(x), float64(y))
 	}
 	tempMap := this
-	fmt.Println("*** Upon Entering AddWall: ", x, y)
-	fmt.Println("*** After Conversion In AddWall: ", x, y)
-
-	fmt.Println("[AddWall(x, y)]: x:",x,"y:",y)
-
+	
 	if !this.pointInMap(x, y) {
 		expandX, expandY := 0, 0
 		tempMap, expandX, expandY = this.expandMap(x, y)
-		fmt.Println("expandX:", expandX, "expandY:", expandY)
+		if DEBUG {
+			fmt.Println("expandX:", expandX, "expandY:", expandY)
+		}
 		if expandX < 0 {
 			expandX = -expandX
 		} else {
@@ -165,8 +166,10 @@ func (this *Map) AddWall(x, y int, resized bool) {
 		tempMap.seen[y+expandY][x+expandX] = -1
 		tempMap.floor[y+expandY][x+expandX] = true
 	} else {
-		fmt.Println("Size of Seen Array:", len(tempMap.seen), "*", len(tempMap.seen[0]))
-		fmt.Println("Entering at location::", x, y)
+		if DEBUG {
+			fmt.Println("Size of Seen Array:", len(tempMap.seen), "*", len(tempMap.seen[0]))
+			fmt.Println("Entering at location::", x, y)
+		}
 		tempMap.seen[y][x] = -1
 		tempMap.floor[y][x] = true
 	}
@@ -194,7 +197,9 @@ func (this *Map) expandMap(x, y int) (*Map, int, int) {
 		expandY = 0
 	}
 
+	if DEBUG {
 		fmt.Println("[expandMap(x, y)]: expandY:", expandY)
+	}
 	return this.createExpandedMap(expandX, expandY), expandX, expandY
 
 }
@@ -265,7 +270,7 @@ func (this *Map) Print(path [][]bool) {
 		}
 		fmt.Println("")
 	}
-	fmt.Println("--------");
+	fmt.Println("----------------------------------------");
 }
 
 // Converts a point (float64) to a co-ordinate (int) in the bitmap.
@@ -294,21 +299,29 @@ func (this *Map) LineToBitmapCoordinate(degree, distance float64) (x1, y1 int) {
 func (this *Map) AddWallByLine(degree, distance float64) {
 	distance = scale(distance)
 	x, y := this.LineToBitmapCoordinate(degree, distance)
-	fmt.Println("Adding Wall @", x, y)
+	if DEBUG {
+		fmt.Println("Adding Wall @", x, y)
+	}
 	this.AddWall(x, y, true)
 	this.MarkLineAsSeen(degree, distance)
 }
 
 // Marks anything the line passes through as "seen".
 func (this *Map) MarkLineAsSeen(degree, distance float64){
-	fmt.Println(RobotMap)
-	RobotMap.Print(nil)
-	fmt.Println(degree, distance)
+	if DEBUG {
+		fmt.Println(RobotMap)
+		RobotMap.Print(nil)
+		fmt.Println(degree, distance)
+	}
 	for dist := 0; dist < int(distance); dist++ {
-		fmt.Println(degree, dist)
+		if DEBUG {
+			fmt.Println(degree, dist)
+		}
 		x, y := this.LineToBitmapCoordinate(degree, float64(dist))
 		if this.pointInMap(x, y) {
-			fmt.Println(x, y)
+			if DEBUG {
+				fmt.Println(x, y)
+			}
 			if(this.seen[y][x] == 0){
 				this.seen[y][x] = 1
 			}
@@ -383,9 +396,11 @@ func (this *Map) ContinueToNextArea(){
 	list = sortNodeList(list)
 
 	// Prints out list.
-	fmt.Println("Sorted: ");
-	for i := 0; i < len(list); i++ {
-		fmt.Println(list[i].x, list[i].y, list[i].distanceToGoal)
+	if DEBUG {
+		fmt.Println("Sorted: ");
+		for i := 0; i < len(list); i++ {
+			fmt.Println(list[i].x, list[i].y, list[i].distanceToGoal)
+		}
 	}
 
 	// Iterates over the list attempting to find a valid route to take.

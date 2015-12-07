@@ -15,7 +15,9 @@ type Node struct {
 
 // Calls various functions below and returns the end result of the pathfinding algorithm.
 func GetRoute(robotMap Map, x, y int) ([][]bool, bool) {
-	fmt.Println("GetRouteTo(", x, ",", y, ")")
+	if DEBUG {
+		fmt.Println("GetRouteTo(", x, ",", y, ")")
+	}
 	nodeMap := createNodeMap(robotMap.GetBitmap())
 	getDistanceToGoal(nodeMap, x, y)
 	return pathfind(nodeMap, int(robotMap.GetRobot().GetX()), int(robotMap.GetRobot().GetY()), x, y)

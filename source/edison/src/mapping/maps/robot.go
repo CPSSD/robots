@@ -40,5 +40,7 @@ func (this *Robot) MoveToPoint(x, y int, resized bool) {
 func (this *Robot) MoveAlongLine(degree, magnitude float64){
 	x, y := RobotMap.LineToBitmapCoordinate(degree + this.rotation, magnitude)
 	this.MoveToPoint(x, y, true)
-	fmt.Println("Robots Current Data:", *this)
+	if DEBUG {
+		fmt.Println("Robots Current Data:", *this)
+	}
 }

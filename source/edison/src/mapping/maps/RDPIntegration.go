@@ -11,18 +11,25 @@ var currentID int
 func RDPInit(){
 	fmt.Println("* Registering Response Handler");
 	RobotDriverProtocol.RegisterResponseHandler(RDPConnector)
-//	RDPConnector(RobotDriverProtocol.MoveResponse{RobotDriverProtocol.Response{0, 0, "Boo"}, 0, 40})
-//	RDPConnector(RobotDriverProtocol.RotateResponse{RobotDriverProtocol.Response{0, 0, "Boo"}, 90})
-//	RDPConnector(RobotDriverProtocol.MoveResponse{RobotDriverProtocol.Response{0, 0, "Boo"}, 0, 40})
-//	for i := 0; i < 360; i+=8 {
-//		RDPConnector(RobotDriverProtocol.ScanResponse{RobotDriverProtocol.Response{0, 0, "Boo"}, uint16(i), 50, false})
-//	}
-//	RDPConnector(RobotDriverProtocol.ScanResponse{RobotDriverProtocol.Response{0, 0, "Boo"}, 360, 50, true})
+	RDPConnector(RobotDriverProtocol.MoveResponse{RobotDriverProtocol.Response{0, 0, "Boo"}, 0, 40})
+	RDPConnector(RobotDriverProtocol.RotateResponse{RobotDriverProtocol.Response{0, 0, "Boo"}, 90})
+	RDPConnector(RobotDriverProtocol.MoveResponse{RobotDriverProtocol.Response{0, 0, "Boo"}, 0, 40})
+	var distance uint32 = 50
+	for i := 0; i < 360; i+=1 {
+		if i > 135 {
+			distance = 32
+		}
+		if i > 300 {
+			distance = 45
+		}
+		RDPConnector(RobotDriverProtocol.ScanResponse{RobotDriverProtocol.Response{0, 0, "Boo"}, uint16(i), distance, false})
+	}
+	RDPConnector(RobotDriverProtocol.ScanResponse{RobotDriverProtocol.Response{0, 0, "Boo"}, 360, distance, true})
 }
 
 func RDPConnector(data interface{}){
-	fmt.Println(data)
-	fmt.Println("Data Recieved..")
+	fmt.Println()
+	fmt.Println("\tData Recieved =>", data)
 
 	// Checks to see what Data Type the recieved Interface{} is.
 	if _, ok := data.(RobotDriverProtocol.MoveResponse); ok {
@@ -47,7 +54,7 @@ func moveResponse(response RobotDriverProtocol.MoveResponse){
 }
 
 func scanResponse(response RobotDriverProtocol.ScanResponse){
-	fmt.Print("[Scan Response] Degree:", response.Degree, "// Distance:", response.Distance)
+	fmt.Print("[Scan Response] Degree: ", response.Degree, " // Distance: ", response.Distance)
 	fmt.Println(" [Response] { ID:", response.ID, " // Type:", response.Type, "// Reason:", response.Reason,"}")
 
 	// Add a wall at the specific location.
@@ -55,6 +62,7 @@ func scanResponse(response RobotDriverProtocol.ScanResponse){
 	RobotMap.AddWallByLine(float64(response.Degree), float64(response.Distance))
 
 	if response.Last {
+		RobotMap.Print(nil)
 		lastAction = "Scan"
 		RobotMap.ContinueToNextArea()
 		currentID = -1
