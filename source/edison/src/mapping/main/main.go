@@ -10,6 +10,8 @@ import (
 func main() {
 	maps.MapInit();
 	maps.RobotMap.Print(nil);
+	_, isFinished := maps.RobotMap.GetBitmap()
+	fmt.Println("Mapping complete?: ", isFinished)
 }
 
 
@@ -25,8 +27,8 @@ func unseenAreaTest(){
 	RobotMap.AddWall(2, 2, false)
 	RobotMap.Print(nil)
 
-
-	fmt.Println(maps.BitmapToVector(RobotMap.GetBitmap()));
+	bitmap, _ := RobotMap.GetBitmap()
+	fmt.Println(maps.BitmapToVector(bitmap));
 }
 
 func pathfindingTest(){
@@ -80,6 +82,7 @@ func pathfindingTest(){
 	RobotMap.MoveRobotAlongPath(path, false)
 	RobotMap.Print(nil)
 
-	fmt.Println(maps.BitmapToVector(RobotMap.GetBitmap()))
+	bitmap,_ := RobotMap.GetBitmap()
+	fmt.Println(maps.BitmapToVector(bitmap))
 
 }

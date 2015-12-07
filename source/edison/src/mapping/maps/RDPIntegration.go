@@ -16,12 +16,12 @@ func RDPInit(){
 	RDPConnector(RobotDriverProtocol.MoveResponse{RobotDriverProtocol.Response{0, 0, "Boo"}, 0, 40})
 	var distance uint32 = 50
 	for i := 0; i < 360; i+=1 {
-		if i > 135 {
-			distance = 32
-		}
-		if i > 300 {
-			distance = 45
-		}
+	//	if i > 135 {
+	//		distance = 32
+	//	}
+	//	if i > 300 {
+	//		distance = 45
+	//	}
 		RDPConnector(RobotDriverProtocol.ScanResponse{RobotDriverProtocol.Response{0, 0, "Boo"}, uint16(i), distance, false})
 	}
 	RDPConnector(RobotDriverProtocol.ScanResponse{RobotDriverProtocol.Response{0, 0, "Boo"}, 360, distance, true})
