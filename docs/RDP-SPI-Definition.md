@@ -32,8 +32,8 @@ Checksum		- 1 byte		(Unsigned 8  bit int) 	Sum of all other bytes mod 255
 
 - scan 		(Command #4)
 Command Number	- 1 byte  	(Unsigned 8  bit int)	
-Unique ID 		  - 2 bytes		(Unsigned 16 bit int)
-Checksum		    - 1 byte		(Unsigned 8  bit int) 	Sum of all other bytes mod 255
+Unique ID 		- 2 bytes		(Unsigned 16 bit int)
+Checksum		- 1 byte		(Unsigned 8  bit int) 	Sum of all other bytes mod 255
 
 ```
 
@@ -46,14 +46,14 @@ Parameter Name 	Size in bytes	Parameter Type  Notes
 - move  (Response #1)
 Command Number  - 1 byte  (Unsigned 8  bit int)	
 Unique ID       - 2 bytes (Unsigned 16 bit int)
-Magnitude 		  - 2 bytes		(Unsigned 16 bit int)	Distance moved measured in cm.
+Magnitude 		- 2 bytes		(Unsigned 16 bit int)	Distance moved measured in cm.
 Angle           - 2 bytes (Unsigned 16 bit int) Angle moved at in 10ths of a degree.
 Status          - 1 byte  (Unisgned 8 bit int ) 0 for failure, non-zero for success.
 
 - stop  (Response #2)
 Command Number  - 1 byte  (Unsigned 8  bit int)	
 Unique ID       - 2 bytes (Unsigned 16 bit int)
-Magnitude 		  - 2 bytes		(Unsigned 16 bit int)	Distance moved measured in cm.
+Magnitude 		- 2 bytes		(Unsigned 16 bit int)	Distance moved measured in cm.
 Angle           - 2 bytes (Unsigned 16 bit int) Angle moved at in 10ths of a degree.
 Status          - 1 byte  (Unisgned 8 bit int ) 0 for failure, non-zero for success.
 
