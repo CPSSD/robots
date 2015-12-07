@@ -10,6 +10,7 @@ import "RobotDriverProtocol"
 const SIZE = 2 // Millimeters Per Bitmap Segment
 const DEBUG = false
 
+var finishedMapping = false
 var RobotMap Map
 
 type Map struct {
@@ -39,8 +40,8 @@ func (this *Map) GetSeenMap() [][] int {
 	return this.seen
 }
 
-func (this *Map) GetBitmap() [][]bool {
-	return this.floor
+func (this *Map) GetBitmap() ([][]bool, bool) {
+	return this.floor, finishedMapping
 }
 
 // Returns the maps robot.
@@ -404,6 +405,8 @@ func (this *Map) ContinueToNextArea(){
 	}
 
 	// Iterates over the list attempting to find a valid route to take.
+	var possible bool
+	//var path [][]bool
 	for i := 0; i < len(list); i++ {
 		path, possible := GetRoute(*this, list[i].x, list[i].y)
 		if possible {
@@ -412,6 +415,9 @@ func (this *Map) ContinueToNextArea(){
 		} else {
 			print("No valid path to node", i, "checking next node.")
 		}
+	}
+	if !possible {
+		finishedMapping = true
 	}
 }
 

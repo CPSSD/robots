@@ -18,7 +18,8 @@ func GetRoute(robotMap Map, x, y int) ([][]bool, bool) {
 	if DEBUG {
 		fmt.Println("GetRouteTo(", x, ",", y, ")")
 	}
-	nodeMap := createNodeMap(robotMap.GetBitmap())
+	bitmap, _ := robotMap.GetBitmap()
+	nodeMap := createNodeMap(bitmap)
 	getDistanceToGoal(nodeMap, x, y)
 	return pathfind(nodeMap, int(robotMap.GetRobot().GetX()), int(robotMap.GetRobot().GetY()), x, y)
 }
