@@ -94,6 +94,7 @@ void faceWall(){
 }
 
 void oneRotation(int fullSpin){
+    encoderCount = 0;
     startRotate();
     int scanTick = 0;
     int lastEncoderCount = -1;
@@ -118,7 +119,7 @@ void oneRotation(int fullSpin){
     }
     scanTick = 0;
     stopRotate();
-    delay(2000);
+    delay(500);
     //correction = encoderCount - 3360;
 }
 
@@ -134,7 +135,7 @@ int correctTicks(int correction){
     Serial.println(correction);
     while(encoderCount < correction){}
     stopRotate();
-    delay(2000);
+    delay(500);
     //Serial.println(encoderCount);
     return encoderCount - correction;
 }
@@ -158,28 +159,12 @@ void loop(){
     int fullSpin = 3360;
     int correction = 0;
     
-    while(i < 50){
-        //Serial.print("Fullspin: ");
-        //Serial.println(fullSpin);
-        //Serial.print("Correction: ");
-        //Serial.println(correction);
-        oneRotation(fullSpin);
-        correction = numTicks(fullSpin);
-        changeDirection();
-        //Serial.print("Fullspin: ");
-        //Serial.println(fullSpin);
-        //Serial.print("Correction: ");
-        //Serial.println(correction);
-        
-        correction = correctTicks(correction);
-        //Serial.print("EncoderCount: ");
-        //Serial.println(encoderCount);
-        //correction = numTicks(3360);
-        fullSpin = correction + 3360;
-        changeDirection();
-        
-        encoderCount = 0;
-        i++;
-        Serial.println(i);
-    }   
+    oneRotation(fullSpin);
+    correction = numTicks(fullSpin);
+    changeDirection();
+
+    correction = correctTicks(correction);
+    fullSpin = correction + 3360;
+    changeDirection();  
+    while(1);
 }
