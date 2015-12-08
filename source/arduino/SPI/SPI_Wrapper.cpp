@@ -23,7 +23,6 @@ void SPI_Wrapper::init()
     SPISettings(100000, MSBFIRST, SPI_MODE0);
        
     SPCR |= _BV(SPE);
-	SPCR |= _BV(SPIE);
 	
     pinMode(MISO, OUTPUT);
     SPI.attachInterrupt();
