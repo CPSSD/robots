@@ -11,12 +11,13 @@ const int M2 = 7;
 volatile unsigned long encoderCount = 0;
 volatile unsigned int completedOneRevolution = false;
 const int interupt = 0;
-const int speed = 255;
+const int speed = 200;
 
 boolean anticlockwise = true;
 int correction = 0;
 
 LIDARLite myLidarLite;
+int scanCount;
 
 struct LaserReading {
   int angle;
@@ -62,40 +63,34 @@ void faceWall(){
   oneRotation(3360);
 
   LaserReading goal = LaserReading{-1, -1};
-  for(int i = 1; i < 41; i++){
-    if (hasApex(lastRotationData[i-1], lastRotationData[i], lastRotationData[i+1])){
-      Serial.print("Found Apex at: ");
-      Serial.println(lastRotationData[i].angle);
-      if (goal.distance == -1 || goal.distance > lastRotationData[i].distance){
-        goal = lastRotationData[i];
-      }
+
+  for (int i = 0; i < 42; i++){
+    if (goal.distance == -1 || (lastRotationData[i].distance < goal.distance && lastRotationData[i].distance  >= 5)){
+      goal = lastRotationData[i];
     }
   }
+
   Serial.print("Wall @ ");
   Serial.print(goal.angle);
   Serial.print(" | In ticks: ");
-  Serial.println(goal.angle*80);
+  Serial.println(((3360*goal.angle)/42));
   
   changeDirection();
   int offset = correctTicks(numTicks(3360));
   changeDirection();
   
+  if(goal.angle == -1){
+    Serial.println("*Error, angle was set to -1. Halted movement to avoid infinite loop");
+    goal.angle = 0;
+  }
+  
   encoderCount = 0;
-  oneRotation(goal.angle*80 + offset);
+  oneRotation(((3360*goal.angle)/42) + offset);
   changeDirection();
   
-  correctTicks(numTicks(goal.angle*80 + offset));
+  Serial.print("off by about ");
+  Serial.println(correctTicks(numTicks(((3360*goal.angle)/42) + offset)));
   changeDirection();
-}
-
-bool hasApex(LaserReading left, LaserReading middle, LaserReading right){
-  if (left.distance == -1 || middle.distance == -1 || right.distance == -1){
-    return false;
-  }
-  if (left.distance > middle.distance && right.distance > middle.distance){
-    return true;
-  }
-  return false;
 }
 
 void oneRotation(int fullSpin){
@@ -106,9 +101,11 @@ void oneRotation(int fullSpin){
       if (lastEncoderCount != encoderCount && encoderCount > 0 && encoderCount % 80 == 0) {
           scanTick += 1;
           if (scanTick >= 0 && scanTick <= 42){
-            lastRotationData[scanTick-1] = LaserReading{scanTick-1, int(myLidarLite.distanceContinuous())};
-            if (lastRotationData[scanTick-1].distance >= 1061) {
-              lastRotationData[scanTick-1].distance = -1; 
+            int distance = myLidarLite.distanceContinuous();
+            if (distance >= 1061 || distance < 0) {
+              lastRotationData[scanTick-1] = LaserReading{scanTick-1, -1};
+            } else {
+              lastRotationData[scanTick-1] = LaserReading{scanTick-1, distance};
             }
           }
           Serial.print("[");
@@ -154,8 +151,8 @@ void setup(){
 }
 
 void loop(){
-    //faceWall();
-    //while(true){}
+    faceWall();
+    Serial.println("*Laser now faces wall");
     
     int i = 0;
     int fullSpin = 3360;
