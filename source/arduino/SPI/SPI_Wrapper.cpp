@@ -21,9 +21,9 @@ void SPI_Wrapper::init()
     currentState = WaitingToBegin;
 }
 
-void SPI_Wrapper::registerResponseHandler(SPI_Response_Handler newResponseHandler)
+void SPI_Wrapper::registerResponseHandler(SPI_Command_Handler newCommandHandler)
 {
-	responseHandler = newResponseHandler;
+	commandHandler = newCommandHandler;
 }
 
 ISR(SPI_STC_vect) 

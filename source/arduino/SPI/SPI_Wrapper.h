@@ -38,12 +38,12 @@ typedef enum {
 	CheckingIfFinished
 } SPI_state;
 
-typedef SPI_Response_Handler void (*responseHandler)(command);
+typedef SPI_Command_Handler void (*commandHandler)(*command);
 
 class SPI_Wrapper {
     public:
 		static void init();
-		static void registerResponseHandler(SPI_Response_Handler newResponseHandler);
+		static void registerCommandHandler(SPI_Command_Handler newCommandHandler);
 		static void sendMoveResponse(uint16_t uniqueID, uint16_t magnitude, uint16_t angle, bool status);		
 		static void sendStopResponse(uint16_t uniqueID, uint16_t magnitude, uint16_t angle, bool status);
 		static void sendRotateResponse(uint16_t uniqueID, uint16_t angle, bool status);
@@ -52,8 +52,9 @@ class SPI_Wrapper {
     private:
 		static void ProcessReceivedCommand(int length); // Processes the last recieved command, creating the right struct and calls responseHandler
 		
-		static SPI_Response_Handler responseHandler;
+		static SPI_command_Handler commandHandler;
 	
+		// Each command should be stored in the buffer preceeded by a byte telling us the length of the command
 		static uint8_t dataOutBuffer[MAX_BUFFER_SIZE]; // Circular buffer contatining each byte to send
 		static int bufferOutFillBegin;
 		static int bufferOutFillEnd;
