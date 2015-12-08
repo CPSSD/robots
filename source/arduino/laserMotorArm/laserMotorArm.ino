@@ -17,18 +17,11 @@ boolean anticlockwise = true;
 int correction = 0;
 
 LIDARLite myLidarLite;
+int scanCount;
 
 struct LaserReading {
   int angle;
   int distance;
-};
-
-struct Line {
-  int x1;
-  int y1;
-  int x2;
-  int y2;
-  int slope;
 };
 
 LaserReading lastRotationData[42];
@@ -70,147 +63,34 @@ void faceWall(){
   oneRotation(3360);
 
   LaserReading goal = LaserReading{-1, -1};
-  for(int i = 0; i < 42; i++){
-    int j = i+1;
-    int k = i+2;
-    int l = i+3;
-    
-    if (j >= 42){
-      j -= 42;
-    }
-    if (k >= 42){
-      k -= 42;
-    }
-    if (l >= 42){
-      l -= 42;
-    }
 
-    LaserReading apex = hasApex(lastRotationData[i], lastRotationData[j], lastRotationData[k], lastRotationData[l]);
-    if (apex.angle != -1){ 
-      Serial.print("Found Apex at: ");
-      Serial.println(apex.angle);
-      printData(Line{apex.angle, apex.distance, 0, 0, 0}, Line{0, 0, 0, 0, 0});
-      
-      if (goal.distance == -1 || goal.distance < apex.distance){
-        Serial.print("Found new closer intersection @ ");
-        Serial.println(apex.angle);
-        goal = apex;
-      }
+  for (int i = 0; i < 42; i++){
+    if (goal.distance == -1 || (lastRotationData[i].distance < goal.distance && lastRotationData[i].distance  >= 5)){
+      goal = lastRotationData[i];
     }
   }
+
   Serial.print("Wall @ ");
   Serial.print(goal.angle);
   Serial.print(" | In ticks: ");
-  Serial.println(goal.angle*80);
+  Serial.println(((3360*goal.angle)/42));
   
   changeDirection();
   int offset = correctTicks(numTicks(3360));
   changeDirection();
   
+  if(goal.angle == -1){
+    Serial.println("*Error, angle was set to -1. Halted movement to avoid infinite loop");
+    goal.angle = 0;
+  }
+  
   encoderCount = 0;
-  oneRotation((goal.angle*80) + offset);
+  oneRotation(((3360*goal.angle)/42) + offset);
   changeDirection();
   
   Serial.print("off by about ");
-  Serial.println(correctTicks(numTicks(goal.angle*80 + offset)));
+  Serial.println(correctTicks(numTicks(((3360*goal.angle)/42) + offset)));
   changeDirection();
-}
-
-// WILL REMOVE RIGHT AFTER I FINISH;
-void printData(Line l1, Line l2){
-    Serial.print("(");
-    Serial.print(l1.x1);
-    Serial.print(",");
-    Serial.print(l1.y1);
-    Serial.print("), ");
-    Serial.print("(");
-    Serial.print(l1.x2);
-    Serial.print(",");
-    Serial.print(l1.y2);
-    Serial.print(") => ");
-    Serial.print("C: ");
-    Serial.print(getConstant(l1));
-    Serial.print(", => ");
-    Serial.println(l1.slope);
-    
-    Serial.print("(");
-    Serial.print(l2.x1);
-    Serial.print(",");
-    Serial.print(l2.y1);
-    Serial.print("), ");
-    Serial.print("(");
-    Serial.print(l2.x2);
-    Serial.print(",");
-    Serial.print(l2.y2);
-    Serial.print(") => ");
-    Serial.print("C: ");
-    Serial.print(getConstant(l2));
-    Serial.print(", => ");
-    Serial.println(l2.slope);
-    Serial.print("... Intersection @ ");
-}
-
-LaserReading hasApex(LaserReading p1, LaserReading p2, LaserReading p3, LaserReading p4){
-  Line l1 = Line{p1.angle, p1.distance, p2.angle, p2.distance};
-  Line l2 = Line{p3.angle, p3.distance, p4.angle, p4.distance};
-  if (p1.distance == -1 || p2.distance == -1 || p3.distance == -1 || p4.distance == -1){
-    return LaserReading{-1, -1};
-  }
-
-  if (l1.y1 >= l1.y2 && l2.y2 >= l2.y1){
-    l1.slope = getSlope(l1);
-    l2.slope = getSlope(l2);
-
-    int intersection = getIntersection(l1, l2);
-    Serial.print("* => ");
-    Serial.println(intersection);
-    if (int(intersection) >= int(p1.angle) && int(intersection) <= int(p4.angle)){
-      Serial.println("*** Did it work ***");
-      return LaserReading{intersection, getDistanceAtY(l1, intersection)};
-    }
-  }
-
-  return LaserReading{-1, -1};
-}
-
-int getDistanceAtX(Line line, int y){
-  // y = mx + c
-  return (y - getConstant(line)) / getSlope(line);
-}
-
-int getDistanceAtY(Line line, int x){
-  // y = mx + c
-  return (getSlope(line) * x) + getConstant(line);
-}
-
-// returns value of x at intersection
-int getIntersection(Line l1, Line l2){
-  int intersection = (getConstant(l2) - getConstant(l1))/(l1.slope - l2.slope);
-  Serial.print("Intersection at ");
-  Serial.print(intersection);
-  if (intersection < 0){
-    intersection = -1 * intersection;
-  }
-  intersection = getDistanceAtX(l1, intersection);
-  if (intersection < 0){
-    intersection = -1 * intersection;
-  }
-  Serial.print(" | ");
-  Serial.println(intersection);
-  return intersection;
-}
-
-int getConstant(Line line){
-  // y - y1 = m(x - x1);
-  // y = mx 
-  return (line.slope*line.x1) + line.y1;
-}
-
-int getSlope(Line line){
-  if (line.x1 == line.x2) {
-    return 0;
-  }
-  return (line.y1 - line.y2) / (line.x1 - line.x2);
 }
 
 void oneRotation(int fullSpin){
@@ -221,9 +101,11 @@ void oneRotation(int fullSpin){
       if (lastEncoderCount != encoderCount && encoderCount > 0 && encoderCount % 80 == 0) {
           scanTick += 1;
           if (scanTick >= 0 && scanTick <= 42){
-            lastRotationData[scanTick-1] = LaserReading{scanTick-1, int(myLidarLite.distanceContinuous())};
-            if (lastRotationData[scanTick-1].distance >= 1061) {
-              lastRotationData[scanTick-1].distance = -1; 
+            int distance = myLidarLite.distanceContinuous();
+            if (distance >= 1061 || distance < 0) {
+              lastRotationData[scanTick-1] = LaserReading{scanTick-1, -1};
+            } else {
+              lastRotationData[scanTick-1] = LaserReading{scanTick-1, distance};
             }
           }
           Serial.print("[");
@@ -270,7 +152,7 @@ void setup(){
 
 void loop(){
     faceWall();
-    while(true){}
+    Serial.println("*Laser now faces wall");
     
     int i = 0;
     int fullSpin = 3360;
