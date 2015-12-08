@@ -66,7 +66,6 @@ class SPI_Wrapper {
 		static int receivingCommandLength;
 		static int commandBytesReceived;        
 		
-		static uint8_t getLengthOfNextCommand();
 		static uint8_t getNextCommandByte();
 };
 
