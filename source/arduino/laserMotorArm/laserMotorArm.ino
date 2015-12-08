@@ -154,20 +154,20 @@ void setup(){
 }
 
 void loop(){
-    faceWall();
-    while(true){}
+    //faceWall();
+    //while(true){}
     
     int i = 0;
     int fullSpin = 3360;
     int correction = 0;
     
-    while(i < 2){
+    while(i < 50){
         //Serial.print("Fullspin: ");
         //Serial.println(fullSpin);
         //Serial.print("Correction: ");
         //Serial.println(correction);
         oneRotation(fullSpin);
-        correction = numTicks(3360);
+        correction = numTicks(fullSpin);
         changeDirection();
         //Serial.print("Fullspin: ");
         //Serial.println(fullSpin);
