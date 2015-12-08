@@ -16,7 +16,7 @@ func RDPInit() {
 }
 
 // Demonstrates the robot handling data from the responses.
-func Demo(){
+func demo(){
 	RDPConnector(RobotDriverProtocol.MoveResponse{RobotDriverProtocol.Response{0, 0, true}, 0, 40})
 	RDPConnector(RobotDriverProtocol.RotateResponse{RobotDriverProtocol.Response{0, 0, true}, 90})
 	RDPConnector(RobotDriverProtocol.MoveResponse{RobotDriverProtocol.Response{0, 0, true}, 0, 40})

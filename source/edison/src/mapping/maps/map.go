@@ -58,6 +58,8 @@ func CreateMap() (createdMap Map) {
 }
 
 // Moves the robot along the path.
+// Set "stopBeforePoint" to true if you dont want to stop before entering the point given. 
+// Used when following a path into unseen areas to prevent crashes.
 func (this *Map) MoveRobotAlongPath(path [][]bool, stopBeforePoint bool) {
 	prevX, prevY := -1, -1
 	possibleMove := true
