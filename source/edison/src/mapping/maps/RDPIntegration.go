@@ -11,10 +11,10 @@ var currentID int
 func RDPInit() {
 	fmt.Println("* Registering Response Handler")
 	RobotDriverProtocol.RegisterResponseHandler(RDPConnector)
-	RDPConnector(RobotDriverProtocol.MoveResponse{RobotDriverProtocol.Response{0, 0, "Boo"}, 0, 40})
-	RDPConnector(RobotDriverProtocol.RotateResponse{RobotDriverProtocol.Response{0, 0, "Boo"}, 90})
-	RDPConnector(RobotDriverProtocol.MoveResponse{RobotDriverProtocol.Response{0, 0, "Boo"}, 0, 40})
-	var distance uint32 = 50
+	RDPConnector(RobotDriverProtocol.MoveResponse{RobotDriverProtocol.Response{0, 0, true}, 0, 40})
+	RDPConnector(RobotDriverProtocol.RotateResponse{RobotDriverProtocol.Response{0, 0, true}, 90})
+	RDPConnector(RobotDriverProtocol.MoveResponse{RobotDriverProtocol.Response{0, 0, true}, 0, 40})
+	var distance uint16 = 50
 	for i := 0; i < 360; i += 1 {
 		//	if i > 135 {
 		//		distance = 32
@@ -22,9 +22,9 @@ func RDPInit() {
 		//	if i > 300 {
 		//		distance = 45
 		//	}
-		RDPConnector(RobotDriverProtocol.ScanResponse{RobotDriverProtocol.Response{0, 0, "Boo"}, uint16(i), distance, false})
+		RDPConnector(RobotDriverProtocol.ScanResponse{RobotDriverProtocol.Response{0, 0, true}, uint16(i), distance, false})
 	}
-	RDPConnector(RobotDriverProtocol.ScanResponse{RobotDriverProtocol.Response{0, 0, "Boo"}, 360, distance, true})
+	RDPConnector(RobotDriverProtocol.ScanResponse{RobotDriverProtocol.Response{0, 0, true}, 360, distance, true})
 }
 
 func RDPConnector(data interface{}) {
@@ -45,7 +45,7 @@ func RDPConnector(data interface{}) {
 
 func moveResponse(response RobotDriverProtocol.MoveResponse) {
 	fmt.Print("[Move Response] Angle:", response.Angle, " // Magnitude:", response.Magnitude)
-	fmt.Println(" [Response] { ID:", response.ID, " // Type:", response.Type, "// Reason:", response.Reason, "}")
+	fmt.Println(" [Response] { ID:", response.ID, " // Type:", response.Type, "}")
 
 	// Updates robots location to the responses location.
 	RobotMap.MoveRobotAlongLine(float64(response.Angle), float64(response.Magnitude))
@@ -55,7 +55,7 @@ func moveResponse(response RobotDriverProtocol.MoveResponse) {
 
 func scanResponse(response RobotDriverProtocol.ScanResponse) {
 	fmt.Print("[Scan Response] Degree: ", response.Degree, " // Distance: ", response.Distance)
-	fmt.Println(" [Response] { ID:", response.ID, " // Type:", response.Type, "// Reason:", response.Reason, "}")
+	fmt.Println(" [Response] { ID:", response.ID, " // Type:", response.Type, "}")
 
 	// Add a wall at the specific location.
 	// When last response, find next location to move to in map.go
@@ -72,7 +72,7 @@ func scanResponse(response RobotDriverProtocol.ScanResponse) {
 
 func rotateResponse(response RobotDriverProtocol.RotateResponse) {
 	fmt.Print("[Rotate Response] Angle:", response.Angle)
-	fmt.Println(" [Response] { ID:", response.ID, " // Type:", response.Type, "// Reason:", response.Reason, "}")
+	fmt.Println(" [Response] { ID:", response.ID, " // Type:", response.Type, "}")
 
 	// Changes the rotation of the robot
 	RobotMap.GetRobot().Rotate(float64(response.Angle))
@@ -82,7 +82,7 @@ func rotateResponse(response RobotDriverProtocol.RotateResponse) {
 
 func stopResponse(response RobotDriverProtocol.StopResponse) {
 	fmt.Print("[Stop Response] Angle:", response.Angle)
-	fmt.Println(" [Response] { ID:", response.ID, " // Type:", response.Type, "// Reason:", response.Reason, "}")
+	fmt.Println(" [Response] { ID:", response.ID, " // Type:", response.Type,"}")
 
 	// Updates robots location to the response location.
 	// Check reason, do something based on reason.
