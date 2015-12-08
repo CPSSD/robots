@@ -6,6 +6,18 @@
 
 #define InitialTransferByte 100
 
+SPI_Command_Handler SPI_Wrapper::commandHandler = NULL;
+uint8_t SPI_Wrapper::dataOutBuffer[MAX_BUFFER_SIZE] = {};
+int SPI_Wrapper::bufferOutFillBegin = 0;
+int SPI_Wrapper::bufferOutFillEnd = 0;
+int SPI_Wrapper::sendingCommandLength = 0;
+		
+SPI_state SPI_Wrapper::currentState = WaitingToBegin;
+		
+uint8_t SPI_Wrapper::commandBuffer[MAX_COMMAND_LENGTH] = {};
+int SPI_Wrapper::receivingCommandLength = 0;
+int SPI_Wrapper::commandBytesReceived = 0;  
+
 void SPI_Wrapper::init() 
 {
     SPISettings(100000, MSBFIRST, SPI_MODE0);
@@ -70,7 +82,7 @@ uint8_t SPI_Wrapper::getNextCommandByte()
 	return commandByte;
 }
 
-ISR(SPI_STC_vect) 
+void SPI_Wrapper::spiIntteruptFunction()
 {
     uint8_t byteReceived = SPDR;
 
@@ -123,7 +135,7 @@ ISR(SPI_STC_vect)
 			// If we last sent 1 or byteReceived is 1 then we change state to sendingCommand. 
 			// Otherwise go to waiting
 			if ((bufferOutFillBegin == bufferOutFillEnd) || (byteReceived == 1)) {
-				SPDR = getLengthOfNextCommand();
+				SPDR = getNextCommandByte();
 				sendingCommandLength = (int)SPDR;
 				currentState = SendingLength;
 			} else {
@@ -133,4 +145,10 @@ ISR(SPI_STC_vect)
 			break;
 		}
 	}
+}
+
+// SPI interrupt
+ISR(SPI_STC_vect) 
+{
+	SPI_Wrapper::spiIntteruptFunction();
 }

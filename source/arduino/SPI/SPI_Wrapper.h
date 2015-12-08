@@ -44,13 +44,18 @@ class SPI_Wrapper {
     public:
 		static void init();
 		static void registerCommandHandler(SPI_Command_Handler newCommandHandler);
+		
+		// Response functions
 		static void sendMoveResponse(uint16_t uniqueID, uint16_t magnitude, uint16_t angle, bool status);		
 		static void sendStopResponse(uint16_t uniqueID, uint16_t magnitude, uint16_t angle, bool status);
 		static void sendRotateResponse(uint16_t uniqueID, uint16_t angle, bool status);
 		static void sendScanResponse(uint16_t uniqueID, uint16_t angle, uint16_t magnitude, bool last, bool status);
 		
-    private:
+		static void spiIntteruptFunction(); // called in the SPI interrupt
+		
+	private:	
 		static void processReceivedCommand(int length); // Processes the last recieved command, creating the right struct and calls responseHandler
+		static uint8_t getNextCommandByte();
 		
 		static SPI_Command_Handler commandHandler;
 	
@@ -65,8 +70,6 @@ class SPI_Wrapper {
 		static uint8_t commandBuffer[MAX_COMMAND_LENGTH];
 		static int receivingCommandLength;
 		static int commandBytesReceived;        
-		
-		static uint8_t getNextCommandByte();
 };
 
 #endif
