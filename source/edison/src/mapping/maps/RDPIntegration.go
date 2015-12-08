@@ -8,20 +8,20 @@ import (
 var lastAction string
 var currentID int
 
+// Initialises the RDP stuff.
 func RDPInit() {
 	fmt.Println("* Registering Response Handler")
 	RobotDriverProtocol.RegisterResponseHandler(RDPConnector)
+	RobotDriverProtocol.Init();
+}
+
+// Demonstrates the robot handling data from the responses.
+func Demo(){
 	RDPConnector(RobotDriverProtocol.MoveResponse{RobotDriverProtocol.Response{0, 0, true}, 0, 40})
 	RDPConnector(RobotDriverProtocol.RotateResponse{RobotDriverProtocol.Response{0, 0, true}, 90})
 	RDPConnector(RobotDriverProtocol.MoveResponse{RobotDriverProtocol.Response{0, 0, true}, 0, 40})
 	var distance uint16 = 50
 	for i := 0; i < 360; i += 1 {
-		//	if i > 135 {
-		//		distance = 32
-		//	}
-		//	if i > 300 {
-		//		distance = 45
-		//	}
 		RDPConnector(RobotDriverProtocol.ScanResponse{RobotDriverProtocol.Response{0, 0, true}, uint16(i), distance, false})
 	}
 	RDPConnector(RobotDriverProtocol.ScanResponse{RobotDriverProtocol.Response{0, 0, true}, 360, distance, true})
