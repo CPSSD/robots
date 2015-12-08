@@ -65,10 +65,10 @@ func CreateMap() (createdMap Map) {
 // Used when following a path into unseen areas to prevent crashes.
 func (this *Map) MoveRobotAlongPath(path [][]bool, stopBeforePoint bool) {
 	prevX, prevY := -1, -1
-	possibleMove := true
+	movesLeft := true
 	nextX, nextY := 0, 0
-	for possibleMove {
-		nextX, nextY, possibleMove = this.getNextMove(int(this.robot.x), int(this.robot.y), prevX, prevY, path)
+	for movesLeft {
+		nextX, nextY, movesLeft = this.getNextMove(int(this.robot.x), int(this.robot.y), prevX, prevY, path)
 		if stopBeforePoint {
 			_, _, moreMoves := this.getNextMove(nextX, nextY, int(this.robot.x), int(this.robot.y), path)
 			if !moreMoves {
