@@ -12,7 +12,7 @@ The API will be made using RESTful principles with HTTP and Json.
 
 | Uri | Http Method |   Option   | Response  |
 |-----|:-----------:|:----------:|:---------:|
-| Map | GET         | bit/vector |Json object|
+| map | GET         | bit        |Json object|
 
 | Status Code | Description |
 |-------------|-------------|
@@ -25,18 +25,18 @@ The API will be made using RESTful principles with HTTP and Json.
 
 Example: A square 4x4 room in vector form
 
-http://ip_address/map=vector
+http://ip_address/map/bit
 
 Response: 
 ```
 '{
     "code" : "200",
-    "message" : "ok"
+    "message" : "ok",
     "map":[
-    [0,0,0,4], 
-    [0,4,4,4],
-    [4,4,0,4],
-    [0,4,0,0],
+    [true,true,true,true], 
+    [true,false,false,true],
+    [true,false,false,true],
+    [true,true,true,true]
 ]
 }'
 ```
