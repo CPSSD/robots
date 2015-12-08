@@ -12,6 +12,7 @@ volatile unsigned long encoderCount = 0;
 volatile unsigned int completedOneRevolution = false;
 const int interupt = 0;
 const int speed = 200;
+const int singleRotation = 3360;
 
 boolean anticlockwise = true;
 int correction = 0;
@@ -60,7 +61,7 @@ void stopRotate(){
 }
 
 void faceWall(){
-  oneRotation(3360);
+  oneRotation(singleRotation);
 
   LaserReading goal = LaserReading{-1, -1};
 
@@ -73,10 +74,10 @@ void faceWall(){
   Serial.print("Wall @ ");
   Serial.print(goal.angle);
   Serial.print(" | In ticks: ");
-  Serial.println(((3360*goal.angle)/42));
+  Serial.println(((singleRotation*goal.angle)/42));
   
   changeDirection();
-  int offset = correctTicks(numTicks(3360));
+  int offset = correctTicks(numTicks(singleRotation));
   changeDirection();
   
   if(goal.angle == -1){
@@ -85,11 +86,11 @@ void faceWall(){
   }
   
   encoderCount = 0;
-  oneRotation(((3360*goal.angle)/42) + offset);
+  oneRotation(((singleRotation*goal.angle)/42) + offset);
   changeDirection();
   
   Serial.print("off by about ");
-  Serial.println(correctTicks(numTicks(((3360*goal.angle)/42) + offset)));
+  Serial.println(correctTicks(numTicks(((singleRotation*goal.angle)/42) + offset)));
   changeDirection();
 }
 
@@ -120,7 +121,6 @@ void oneRotation(int fullSpin){
     scanTick = 0;
     stopRotate();
     delay(500);
-    //correction = encoderCount - 3360;
 }
 
 int numTicks(int offset){
@@ -156,7 +156,7 @@ void loop(){
     Serial.println("*Laser now faces wall");
     
     int i = 0;
-    int fullSpin = 3360;
+    int fullSpin = singleRotation;
     int correction = 0;
     
     oneRotation(fullSpin);
@@ -164,7 +164,7 @@ void loop(){
     changeDirection();
 
     correction = correctTicks(correction);
-    fullSpin = correction + 3360;
+    fullSpin = correction + singleRotation;
     changeDirection();  
     while(1);
 }
