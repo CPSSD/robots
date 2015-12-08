@@ -18,7 +18,7 @@ The API will be made using RESTful principles with HTTP and Json.
 |-------------|-------------|
 |   200       |      Ok     |
 |   404       | No Map Found|
-|   405       | Unknown Uri |
+
 
 
 ## Examples ##
