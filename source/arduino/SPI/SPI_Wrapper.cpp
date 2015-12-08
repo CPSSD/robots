@@ -21,9 +21,10 @@ int SPI_Wrapper::commandBytesReceived = 0;
 void SPI_Wrapper::init() 
 {
     SPISettings(100000, MSBFIRST, SPI_MODE0);
-    SPI.begin();
        
-    SPCR |= bit(SPE);
+    SPCR |= _BV(SPE);
+	SPCR |= _BV(SPIE);
+	
     pinMode(MISO, OUTPUT);
     SPI.attachInterrupt();
 
@@ -85,6 +86,7 @@ uint8_t SPI_Wrapper::getNextCommandByte()
 void SPI_Wrapper::spiIntteruptFunction()
 {
     uint8_t byteReceived = SPDR;
+	Serial.println(SPDR);
 
 	switch (currentState) {
 		case WaitingToBegin:
@@ -92,6 +94,7 @@ void SPI_Wrapper::spiIntteruptFunction()
 			// If we receive 255 move to SendingLength state 
 			// and put length of command to send in SPDR
 			if (byteReceived == 255) {
+				Serial.println("Begin");
 				SPDR = getNextCommandByte();
 				sendingCommandLength = (int)SPDR;
 				currentState = SendingLength;
