@@ -25,7 +25,7 @@ func radianToDegrees(radians float64) float64 {
 	return (radians * 180) / math.Pi
 }
 
-// Takes a one-dimensional array of binary values and converts it to an array of lines.
+// BitmapToVector Takes a one-dimensional array of binary values and converts it to an array of lines.
 func BitmapToVector(floor [][]bool) []Line {
 	p_array := createPointArray(floor)
 
