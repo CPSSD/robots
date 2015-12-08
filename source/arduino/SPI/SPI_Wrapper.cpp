@@ -1,11 +1,10 @@
-#include "SPI_Wrapper.h"
-
 #include <SPI.h>
+
+#include "SPI_Wrapper.h"
 #include "Arduino.h"
 
-#define InitialTransferByte 100
 
-using namespace std;
+#define InitialTransferByte 100
 
 void SPI_Wrapper::init() 
 {

@@ -2,12 +2,10 @@
 #define SPI_WRAPPER_H
 
 #include "Arduino.h"
-#include <cstdint>
+#include "stdint.h"
 
 #define MAX_BUFFER_SIZE 1024
 #define MAX_COMMAND_LENGTH 32
-
-using namespace std;
 
 typedef struct {
 	uint8_t commandNumber;
@@ -38,7 +36,9 @@ typedef enum {
 	CheckingIfFinished
 } SPI_state;
 
-typedef SPI_Command_Handler void (*commandHandler)(*command);
+
+typedef void (*SPI_Command_Handler)(command*);
+
 
 class SPI_Wrapper {
     public:
@@ -52,7 +52,7 @@ class SPI_Wrapper {
     private:
 		static void processReceivedCommand(int length); // Processes the last recieved command, creating the right struct and calls responseHandler
 		
-		static SPI_command_Handler commandHandler;
+		static SPI_Command_Handler commandHandler;
 	
 		// Each command should be stored in the buffer preceeded by a byte telling us the length of the command
 		static uint8_t dataOutBuffer[MAX_BUFFER_SIZE]; // Circular buffer contatining each byte to send
@@ -62,7 +62,7 @@ class SPI_Wrapper {
 		
         static SPI_state currentState;
 		
-		static uint8_t commandBuffer[MAX_COMMAND_LENGTH]
+		static uint8_t commandBuffer[MAX_COMMAND_LENGTH];
 		static int receivingCommandLength;
 		static int commandBytesReceived;        
 		
