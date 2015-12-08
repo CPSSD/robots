@@ -50,7 +50,7 @@ class SPI_Wrapper {
 		static void sendScanResponse(uint16_t uniqueID, uint16_t angle, uint16_t magnitude, bool last, bool status);
 		
     private:
-		static void ProcessReceivedCommand(int length); // Processes the last recieved command, creating the right struct and calls responseHandler
+		static void processReceivedCommand(int length); // Processes the last recieved command, creating the right struct and calls responseHandler
 		
 		static SPI_command_Handler commandHandler;
 	
@@ -65,6 +65,9 @@ class SPI_Wrapper {
 		static uint8_t commandBuffer[MAX_COMMAND_LENGTH]
 		static int receivingCommandLength;
 		static int commandBytesReceived;        
+		
+		static uint8_t getLengthOfNextCommand();
+		static uint8_t getNextCommandByte();
 };
 
 #endif
