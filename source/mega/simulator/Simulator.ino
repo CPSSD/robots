@@ -45,8 +45,8 @@ float angle;
 point currentPosition, destination, nearestWall;
 String instruct;
 bool brakes, isCompletable, amMoving, amRotating;
-EquationOfLine PERIMETER[4];
 MapLine ray;
+EquationOfLine PERIMETER[4];
 EquationOfLine equOfRay;
 
 MoveCommand moveCom = {0, 0, 0};
@@ -74,51 +74,19 @@ void setup() {
   for(int i = 0; i < 4; i++) {
     PERIMETER[i] = getEquationOfLine(MAP_BOUNDS[i]);
   }
-  /*Serial.println(PERIMETER[0].m);
-  Serial.println(PERIMETER[1].m);
-  Serial.println(PERIMETER[2].m);
-  Serial.println(PERIMETER[3].m);
-  Serial.println(PERIMETER[4].m);
-  Serial.println(MAP_BOUNDS[0].x1);
-  Serial.println(MAP_BOUNDS[0].y1);
-  Serial.println(MAP_BOUNDS[0].x2);
-  Serial.println(MAP_BOUNDS[0].y2);
-  Serial.println(MAP_BOUNDS[1].x1);
-  Serial.println(MAP_BOUNDS[1].y1);
-  Serial.println(MAP_BOUNDS[1].x2);
-  Serial.println(MAP_BOUNDS[1].y2);
-  Serial.println(MAP_BOUNDS[2].x1);
-  Serial.println(MAP_BOUNDS[2].y1);
-  Serial.println(MAP_BOUNDS[2].x2);
-  Serial.println(MAP_BOUNDS[2].y2);
-  Serial.println(MAP_BOUNDS[3].x1);
-  Serial.println(MAP_BOUNDS[3].y1);
-  Serial.println(MAP_BOUNDS[3].x2);
-  Serial.println(MAP_BOUNDS[3].y2);*/
 }
 
 void loop() {
-  //Since the various protocols, libraries and APIs had not been fleshed out yet, issuing commands over Serial was the only way to simulate function calls from the main program.
-  //However, this required a lot of parsing, which was messy.
-
-
-
-
   
   if(Serial.available() > 0) {
     //Re-construct the instruction issued
     incomingByte = Serial.read();
     instruct += (char)incomingByte;
     delay(10); //Required to allow read buffer to recover
-    
-    //Serial.print("I received: ");
-    //Serial.println(incomingByte, DEC);
   }
     
   if(instruct == "moveRobot(") {
     makeMoveCommand();
-    /*Serial.print("Magnitude at creation of moveCom:\t");
-    Serial.println(moveCom.magnitude);*/
     moveRobot(moveCom);
     //Reset global variables
     id = 0;
@@ -135,15 +103,7 @@ void loop() {
     makeScanCommand();
     do{
       scanResp = scan(id, (angleInDegrees * PI) / 180);
-      //Simulate data return to main program
-      Serial.print("RESULT:\t");
-      Serial.print(scanResp.id);
-      Serial.print(",\t");
-      Serial.print(scanResp.angle);
-      Serial.print(",\t");
-      Serial.print(scanResp.distance);
-      Serial.print(",\t");
-      Serial.println(scanResp.last);
+      serialReply(scanResp);
       angleInDegrees = angleInDegrees + 8; //This will only allow for scans between 0 and 357 degrees
     }
     while(!scanResp.last);
@@ -160,20 +120,10 @@ void loop() {
     brakes = false;
   }
   if(amMoving && millis() - moveTimer >= 100UL) {
-    /*Serial.print("Magnitude going into heartbeat method:\t");
-    Serial.println(moveCom.magnitude);*/
     moveResp = giveHeartbeatMove(moveCom, (millis() - moveTimer));
-    serialReply(moveResp);
+    //serialReply(moveResp);
     if(moveResp.reason > 0) {
-      Serial.print("Millis:\t");
-      Serial.print(millis());
-      Serial.print(",\t");
-      Serial.print("Timer:\t");
-      Serial.print(moveTimer);
-      Serial.print(",\t");
-      Serial.print("Millis minus timer:\t");
-      Serial.println(millis() - moveTimer);
-      //serialReply(moveResp);
+      serialReply(moveResp);
       currentPosition = destination;
     }
   }
@@ -184,65 +134,19 @@ void loop() {
 
 void moveRobot(struct MoveCommand com) {
   ray = makeLineFromPolar(com.angle, com.magnitude);
-  /*Serial.print("Magnitude after makeLineFromPolar:\t");
-  Serial.print(com.magnitude);
-  Serial.print(" vs. ");
-  Serial.println(moveCom.magnitude);*/
   equOfRay = getEquationOfLine(ray);
-  /*Serial.print("Magnitude after getEquationOfLine:\t");
-  Serial.print(com.magnitude);
-  Serial.print(" vs. ");
-  Serial.println(moveCom.magnitude);*/
   destination = checkIfCompletable(ray, equOfRay, PERIMETER);
-  /*Serial.print("Magnitude after checkIfCompletable:\t");
-  Serial.print(com.magnitude);
-  Serial.print(" vs. ");
-  Serial.println(moveCom.magnitude);*/
   amMoving = true;
-  /*Serial.print("Magnitude after all of moveRobot:\t");
-  Serial.print(com.magnitude);
-  Serial.print(" vs. ");
-  Serial.println(moveCom.magnitude);*/
   moveTimer = millis();
 }
 
 struct MoveResponse giveHeartbeatMove(struct MoveCommand com, unsigned long time) {
-  /*Serial.print("Magnitude at Top of giveHeartbeatMove:\t");
-  Serial.print(com.magnitude);
-  Serial.print(" vs. ");
-  Serial.println(moveCom.magnitude);
-  Serial.print("Distance travelled before recalculating:\t");
-  Serial.println(distTravelled);*/
   distTravelled = distTravelled + ((SPEED * time) * 10);
-  /*Serial.print("Magnitude after recalculating distTravelled:\t");
-  Serial.print(com.magnitude);
-  Serial.print(" vs. ");
-  Serial.println(moveCom.magnitude);
-  Serial.print("Distance travelled after recalculating:\t");
-  Serial.println(distTravelled);*/
   if(distTravelled >= com.magnitude) {
     amMoving = false;
-    /*if(isCompletable) {
-      moveTimer = millis();
-      return (MoveResponse){com.id, com.angle, com.magnitude, 1};
-    }*/
-  /*Serial.print("Magnitude when distTravelled >= magnitude:\t");
-  Serial.print(com.magnitude);
-  Serial.print(" vs. ");
-  Serial.println(moveCom.magnitude);*/
     moveTimer = millis();
     return (MoveResponse){com.id, com.angle, com.magnitude, 1};
   }
-  /*if(isCompletable) {
-    moveTimer = millis();
-    return (MoveResponse){id, com.angle, (int)distTravelled, 1};
-  }*/
-  /*Serial.print("Magnitude when distTravelled < magnitude:\t");
-  Serial.print(com.magnitude);
-  Serial.print(" vs. ");
-  Serial.println(moveCom.magnitude);
-  Serial.print("Distance travelled at end of giveHeartbeatMove:\t");
-  Serial.println(distTravelled);*/
   moveTimer = millis();
   return (MoveResponse){id, com.angle, (int)distTravelled, 0};
 }
@@ -252,20 +156,9 @@ struct point checkIfCompletable(struct MapLine moveLine, struct EquationOfLine r
   point validInterceptPoints[4];
   int counterVIP = 0;
   for(int i = 0; i < 4; i++) {
-    Serial.print("Wall ");
-    Serial.print(i);
-    Serial.print(": ");
-    Serial.print("X:\t");
-    Serial.print(obstacles[i].xy.x);
-    Serial.print("\tY:\t");
-    Serial.println(obstacles[i].xy.y);
     if(hasInterception(obstacles[i], robotLine)) {
       Serial.println("Has intercept point");
       validInterceptPoints[counterVIP] = getInterceptPoint(robotLine, obstacles[i]);
-      /*Serial.print("X:\t");
-      Serial.print(validInterceptPoints[counterVIP].x);
-      Serial.print("\tY:\t");
-      Serial.println(validInterceptPoints[counterVIP].y);*/
       counterVIP++;
     }
   }
@@ -274,27 +167,18 @@ struct point checkIfCompletable(struct MapLine moveLine, struct EquationOfLine r
   float diffInYValuesDest = moveLine.x2y2.y - moveLine.x1y1.y;
   //Do the same for the first point
   float diffInXValuesWallOne = validInterceptPoints[0].x - robotLine.xy.x;
-  Serial.println(validInterceptPoints[0].x);
-  Serial.println(robotLine.xy.x);
-  Serial.println(diffInXValuesWallOne);
   float diffInYValuesWallOne = validInterceptPoints[0].y - robotLine.xy.y;
-  Serial.println(diffInYValuesWallOne);
   //If the signs match, that's the point in consideration, else it's the other one
   if(( (diffInXValuesDest > 0.0 && diffInXValuesWallOne > 0.0) || (diffInXValuesDest == 0.0 && diffInXValuesWallOne == 0.0) || (diffInXValuesDest < 0.0 && diffInXValuesWallOne < 0.0) )
   &&( (diffInYValuesDest > 0.0 && diffInYValuesWallOne > 0.0) || (diffInYValuesDest == 0.0 && diffInYValuesWallOne == 0.0) || (diffInYValuesDest < 0.0 && diffInYValuesWallOne < 0.0) )) {
     nearestWall = validInterceptPoints[0];
-    Serial.println("First Wall");
   }
   else {
     nearestWall = validInterceptPoints[1];
-    Serial.println("Second Wall");
   }
   //Get distance between robot and destination, and robot and wall
-  
   float distBetweenRobotAndDest = getDistBetweenTwoPoints(moveLine.x1y1, moveLine.x2y2);
-  Serial.println(distBetweenRobotAndDest);
   float distBetweenRobotAndNearWall = getDistBetweenTwoPoints(robotLine.xy, nearestWall);
-  Serial.println(distBetweenRobotAndNearWall);
   //If distance between robot and destination is shorter than between robot and wall, return destination, else return interception point
   if(distBetweenRobotAndDest < distBetweenRobotAndNearWall) {
     isCompletable = true;
@@ -308,7 +192,7 @@ void stopRobot() {
   brakes = true;
 }
 
-void wrapUp(int newID) { //Cannot get this to work for the life of me. Arduinos can only run one method at a time - how to overcome this??
+void wrapUp(int newID) {
   if(amMoving) {
     moveResp = giveHeartbeatMove(moveCom, (millis() - moveTimer));
     amMoving = false;
@@ -331,7 +215,7 @@ void wrapUp(int newID) { //Cannot get this to work for the life of me. Arduinos 
 struct RotateResponse giveHeartbeatRotate(struct RotateCommand com) {
   angle = angle + 1;
   if(angle >= com.angle) {
-    rotateTimer = 101112UL;
+    rotateTimer = millis();
     return (RotateResponse){id, com.angle, 1};
   }
   rotateTimer = millis();
@@ -348,7 +232,7 @@ struct ScanResponse scan(int id, float angle) {
   equOfRay = getEquationOfLine(ray);
   nearestWall = checkIfCompletable(ray, equOfRay, PERIMETER);
   reply.distance = getDistBetweenTwoPoints(ray.x1y1, nearestWall);
-  reply.last = (angleInDegrees == 357); //Condition may need fine-tuning
+  reply.last = (angleInDegrees == 357);
   return reply;
 }
 
@@ -358,23 +242,17 @@ void makeMoveCommand() {
       //To correct, we shift current id one place to right, read next number, subtract 48 to extract actual value from ASCII representation, then add to id
       id = id * 10 + (Serial.read() - 48);
     }
-    //Serial.print("ID:\t");
-    //Serial.println(id);
     Serial.read();
     Serial.read();
     while(Serial.peek() != 44) {
       angle = angle * 10 + (Serial.read() - 48);
     }
     angle = (angle * PI) / 180.0;
-    //Serial.print("ANGLE:\t");
-    //Serial.println(angle);
     Serial.read();
     Serial.read();
     while(Serial.peek() != 41) { //Next char is not " ) "
       magnitude = magnitude * 10 + (Serial.read() - 48);
     }
-    //Serial.print("MAGNITUDE:\t");
-    //Serial.println(magnitude);
     Serial.read();
     Serial.read();
     Serial.read();
@@ -386,15 +264,11 @@ void makeRotateCommand() {
     while(Serial.peek() != 44) {
       id = id * 10 + (Serial.read() - 48);
     }
-    //Serial.print("ID:\t");
-    //Serial.println(id);
     Serial.read();
     Serial.read();
     while(Serial.peek() != 41) {
       angle = angle * 10 + (Serial.read() - 48);
     }
-    //Serial.print("ANGLE:\t");
-    //Serial.println(angle);
     Serial.read();
     Serial.read();
     Serial.read();
@@ -405,8 +279,6 @@ void makeScanCommand() {
     while(Serial.peek() != 41) {
       id = id * 10 + (Serial.read() - 48);
     }
-    //Serial.print("ID:\t");
-    //Serial.println(id);
     Serial.read();
     Serial.read();
     Serial.read();
@@ -434,9 +306,15 @@ void serialReply(struct RotateResponse rotResp) {
     Serial.println(rotResp.reason);
 }
 
- //The following are placeholders while we await information on format of LIDAR data output
-int getLaserAngle(int currAngle) {
-  return currAngle + 1;
+void serialReply(struct ScanResponse scanResp) {
+    Serial.print("RESULT:\t");
+    Serial.print(scanResp.id);
+    Serial.print(",\t");
+    Serial.print(scanResp.angle);
+    Serial.print(",\t");
+    Serial.print(scanResp.distance);
+    Serial.print(",\t");
+    Serial.println(scanResp.last);
 }
 
 float getDistBetweenTwoPoints(point p1, point p2) {
@@ -444,29 +322,9 @@ float getDistBetweenTwoPoints(point p1, point p2) {
 }
 
 struct MapLine makeLineFromPolar(float angle, float distance) {
-  //Serial.print("Distance inside makeLineFromPolar:\t");
-  //Serial.println(distance);
   MapLine temp;
   temp.x1y1 = {currentPosition.x, currentPosition.y};
-  /*if(angle == 0 || angle == 360) {
-    temp.x2y2
-    
-  }*/
-  /*Serial.print("Distance to travel on x-axis:\t");
-  Serial.println(distance * cos(angle));
-  Serial.print("Distance to travel on y-axis:\t");
-  Serial.println(distance * sin(angle));*/
   temp.x2y2 = {(currentPosition.x + (distance * cos(angle))), (currentPosition.y + (distance * sin(angle)))};
-  Serial.print("Origin:\t");
-  Serial.print(temp.x1y1.x);
-  Serial.print(",\t");
-  Serial.print(temp.x1y1.y);
-  Serial.println();
-  Serial.print("Destination:\t");
-  Serial.print(temp.x2y2.x);
-  Serial.print(",\t");
-  Serial.print(temp.x2y2.y);
-  Serial.println();
   return temp;
 }
 
@@ -474,30 +332,18 @@ struct EquationOfLine getEquationOfLine(MapLine line) {
   EquationOfLine equ;
   equ.xy.x = line.x1y1.x;
   equ.xy.y = line.x1y1.y;
-  //Serial.println((line.x2y2.x - equ.xy.x));
   if((line.x2y2.x - equ.xy.x) == 0.00) {
-    //Serial.println("Is vertical");
     equ.isVertical = true;
   }
   else {
-    //Serial.println("Is NOT vertical");
     equ.isVertical = false;
-    //Serial.print("Slope of the line:\t");
-    //Serial.println(equ.m);
   }
-  equ.m = (line.x2y2.y - equ.xy.y) / (line.x2y2.x - equ.xy.x);
+  equ.m = (line.x2y2.y - equ.xy.y) / (line.x2y2.x - equ.xy.x); //Warning: this will be NaN if line is vertical (as denominator will be zero). The boolean allows for avoiding this posing a problem
   equ.c = -(equ.m * equ.xy.x) + equ.xy.y;
   return equ;
 }
 
 boolean hasInterception(EquationOfLine border, EquationOfLine robotMoveLine) {
-  /*Serial.print("Is robot's path vertical?\t");
-  Serial.println(robotMoveLine.isVertical);
-  Serial.print("Is the wall vertical?\t");
-  Serial.println(border.isVertical);
-  Serial.println((robotMoveLine.isVertical && border.isVertical));
-  Serial.println((robotMoveLine.m == border.m));
-  Serial.println(!(robotMoveLine.isVertical && border.isVertical));*/
   if((robotMoveLine.isVertical && border.isVertical) || (robotMoveLine.m == border.m && (!robotMoveLine.isVertical || !border.isVertical))) { //Lines are parallel
     return false;
   }
@@ -525,36 +371,25 @@ boolean hasInterception(EquationOfLine border, EquationOfLine robotMoveLine) {
 
 struct point getInterceptPoint(EquationOfLine robotLine, EquationOfLine other) {
   point intercept;
-  //Normally, to find the interception point of two lines, you would set the equations equal to each other (since their y values would be equal at the interception point), solve for x, then use that value to get the y value.
-  //However, the Arduino does not allow you to have uninitialised variables on the right-hand side of an assignment (it's not exactly SWI Prolog, now).
-  //The only way I could think of doing this was to substitute 1 for x (as that shouldn't affect the equation).
+  //Special case: one of the lines is vertical.
+  //In this event, the x-value of the intercept point will be constant for all values of y.
+  //Therefore, we can substitute that value into the equation of the non-vertical line and solve for y.
   if(other.isVertical) {
     intercept.x = other.xy.x;
-    //Serial.println(robotLine.c);
     intercept.y = (robotLine.m * intercept.x) + robotLine.c;
   }
   else if(robotLine.isVertical) {
-    Serial.println("Robot is vertical");
     intercept.x = robotLine.xy.x;
     intercept.y = (other.m * intercept.x) + other.c;
   }
   else {
-    float denominator = robotLine.m - other.m; //x terms on left
-    float numerator = other.c - robotLine.c; //constants on right
+    //We set the two equations equal to each other and manipulate the expression to solve for x.
+    // m1x + c1 = m2x + c2 -> m1x - m2x = c2 - c1 -> x = (c2 - c1) / (m1 - m2)
+    float denominator = robotLine.m - other.m;
+    float numerator = other.c - robotLine.c;
     intercept.x = numerator / denominator;
+    //Substitute the x-value into either equation of the lines and solve for y
     intercept.y = (robotLine.m * intercept.x) + robotLine.c;
   }
   return intercept;
 }
-
-/*struct MoveResponse moveRobot_Obsolete(struct MoveCommand com) {
-  unsigned long time = ((com.magnitude / 10) / SPEED); //Estimate time actual robot would take. Magnitude brought down to millimetres, Time = Distance / Speed
-  while(millis() - moveTimer <= time) {
-    //Wait for time to elapse, (attempt to) listen for stop command
-    if(brakes) {
-      distTravelled = (SPEED * (millis() - moveTimer)) * 10;
-      return (MoveResponse){id, com.angle, (int)distTravelled, 1};
-    }
-  }
-  return (MoveResponse){com.id, com.angle, com.magnitude, 0};
-}*/
