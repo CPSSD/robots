@@ -10,7 +10,10 @@
 
 #define InitialTransferByte 100
 
-SPI_Command_Handler SPI_Wrapper::commandHandler = NULL;
+SPI_Move_Command_Handler SPI_Wrapper::moveCommandHandler = NULL;
+SPI_Stop_Command_Handler SPI_Wrapper::stopCommandHandler = NULL;
+SPI_Rotate_Command_Handler SPI_Wrapper::rotateCommandHandler = NULL;
+SPI_Scan_Command_Handler SPI_Wrapper::scanCommandHandler = NULL;
 uint8_t SPI_Wrapper::dataOutBuffer[MAX_BUFFER_SIZE] = {};
 int SPI_Wrapper::bufferOutFillBegin = 0;
 int SPI_Wrapper::bufferOutFillEnd = 0;
@@ -110,12 +113,18 @@ void SPI_Wrapper::processReceivedCommand(int length)
 									   ((uint32_t)(commandBuffer[7]) << 16) +
 									   ((uint32_t)(commandBuffer[8]) << 8) +
 									   (uint32_t)(commandBuffer[9]));
+			if (moveCommandHandler) {
+				(*moveCommandHandler)(commandStruct);
+			}
 		}
 		case stopCode:
 		{
 			stopCommand commandStruct;
 			commandStruct.commandNumber = stopCode;
 			commandStruct.uniqueID = ((uint16_t)(commandBuffer[1]) << 8) + (uint16_t)(commandBuffer[2]);
+			if (stopCommandHandler) {
+				(*stopCommandHandler)(commandStruct);
+			}
 		}
 		case rotateCode:
 		{
@@ -123,21 +132,40 @@ void SPI_Wrapper::processReceivedCommand(int length)
 			commandStruct.commandNumber = rotateCode;
 			commandStruct.uniqueID = ((uint16_t)(commandBuffer[1]) << 8) + (uint16_t)(commandBuffer[2]);
 			commandStruct.angle = ((uint16_t)(commandBuffer[4]) << 8) + (uint16_t)(commandBuffer[5]);
+			if (rotateCommandHandler) {
+				(*rotateCommandHandler)(commandStruct);
+			}
 		}
 		case scanCode:
 		{
 			scanCommand commandStruct;
 			commandStruct.commandNumber = scanCode;
 			commandStruct.uniqueID = ((uint16_t)(commandBuffer[1]) << 8) + (uint16_t)(commandBuffer[2]);
+			if (scanCommandHandler) {
+				(*scanCommandHandler)(commandStruct);
+			}
 		}
 	}
-	// TODO: Call commandHandler here with relevant struct here
-	// requires some thought (inheritence pattern and dynamic_cast or something else?)
 }
 
-void SPI_Wrapper::registerCommandHandler(SPI_Command_Handler newCommandHandler)
+void SPI_Wrapper::registerMoveCommandHandler(SPI_Move_Command_Handler newCommandHandler)
 {
-	commandHandler = newCommandHandler;
+	moveCommandHandler = newCommandHandler;
+}
+
+void SPI_Wrapper::registerStopCommandHandler(SPI_Stop_Command_Handler newCommandHandler)
+{
+	stopCommandHandler = newCommandHandler;
+}
+
+void SPI_Wrapper::registerRotateCommandHandler(SPI_Rotate_Command_Handler newCommandHandler)
+{
+	rotateCommandHandler = newCommandHandler;
+}
+
+void SPI_Wrapper::registerScanCommandHandler(SPI_Scan_Command_Handler newCommandHandler)
+{
+	scanCommandHandler = newCommandHandler;
 }
 
 uint8_t SPI_Wrapper::getNextCommandByte()

@@ -4,7 +4,7 @@
 #include "Arduino.h"
 #include "stdint.h"
 
-#define MAX_BUFFER_SIZE 1024
+#define MAX_BUFFER_SIZE 256
 #define MAX_COMMAND_LENGTH 32
 
 typedef struct {
@@ -37,13 +37,18 @@ typedef enum {
 } SPI_state;
 
 
-typedef void (*SPI_Command_Handler)(command*);
-
+typedef void (*SPI_Move_Command_Handler)(moveCommand);
+typedef void (*SPI_Stop_Command_Handler)(stopCommand);
+typedef void (*SPI_Rotate_Command_Handler)(rotateCommand);
+typedef void (*SPI_Scan_Command_Handler)(scanCommand);
 
 class SPI_Wrapper {
     public:
 		static void init();
-		static void registerCommandHandler(SPI_Command_Handler newCommandHandler);
+		static void registerMoveCommandHandler(SPI_Move_Command_Handler newCommandHandler);
+		static void registerStopCommandHandler(SPI_Stop_Command_Handler newCommandHandler);
+		static void registerRotateCommandHandler(SPI_Rotate_Command_Handler newCommandHandler);
+		static void registerScanCommandHandler(SPI_Scan_Command_Handler newCommandHandler);
 		
 		// Response functions
 		static void sendMoveResponse(uint16_t uniqueID, uint16_t magnitude, uint16_t angle, bool status);		
@@ -57,7 +62,10 @@ class SPI_Wrapper {
 		static void processReceivedCommand(int length); // Processes the last recieved command, creating the right struct and calls responseHandler
 		static uint8_t getNextCommandByte();
 		
-		static SPI_Command_Handler commandHandler;
+		static SPI_Move_Command_Handler moveCommandHandler;
+		static SPI_Stop_Command_Handler stopCommandHandler;
+		static SPI_Rotate_Command_Handler rotateCommandHandler;
+		static SPI_Scan_Command_Handler scanCommandHandler;
 	
 		// Each command should be stored in the buffer preceeded by a byte telling us the length of the command
 		static uint8_t dataOutBuffer[MAX_BUFFER_SIZE]; // Circular buffer contatining each byte to send
