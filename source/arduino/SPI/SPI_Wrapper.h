@@ -14,7 +14,7 @@ typedef struct {
 
 typedef struct moveCommand : command {
 	uint16_t angle;
-	uint16_t magnitude;
+	uint32_t magnitude;
 } moveCommand;
 
 typedef struct stopCommand : command {
@@ -30,10 +30,10 @@ typedef struct scanCommand : command {
 } scanCommand;
 
 typedef enum {
-	WaitingToBegin,
-	SendingLength,
-	SendingCommand,
-	CheckingIfFinished
+	WaitingToBegin = 0,
+	SendingLength = 1,
+	SendingCommand = 2,
+	CheckingIfFinished = 3
 } SPI_state;
 
 
@@ -63,13 +63,13 @@ class SPI_Wrapper {
 		static uint8_t dataOutBuffer[MAX_BUFFER_SIZE]; // Circular buffer contatining each byte to send
 		static int bufferOutFillBegin;
 		static int bufferOutFillEnd;
-		static int sendingCommandLength;
+		static uint8_t sendingCommandLength;
 		
         static SPI_state currentState;
 		
 		static uint8_t commandBuffer[MAX_COMMAND_LENGTH];
-		static int receivingCommandLength;
-		static int commandBytesReceived;        
+		static uint8_t receivingCommandLength;
+		static uint8_t commandBytesReceived;       		
 };
 
 #endif

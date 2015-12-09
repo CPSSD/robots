@@ -3,6 +3,10 @@
 #include "SPI_Wrapper.h"
 #include "Arduino.h"
 
+#define moveCode 1
+#define stopCode 2
+#define rotateCode 3
+#define scanCode 4
 
 #define InitialTransferByte 100
 
@@ -10,13 +14,13 @@ SPI_Command_Handler SPI_Wrapper::commandHandler = NULL;
 uint8_t SPI_Wrapper::dataOutBuffer[MAX_BUFFER_SIZE] = {};
 int SPI_Wrapper::bufferOutFillBegin = 0;
 int SPI_Wrapper::bufferOutFillEnd = 0;
-int SPI_Wrapper::sendingCommandLength = 0;
+uint8_t SPI_Wrapper::sendingCommandLength = 0;
 		
 SPI_state SPI_Wrapper::currentState = WaitingToBegin;
 		
 uint8_t SPI_Wrapper::commandBuffer[MAX_COMMAND_LENGTH] = {};
-int SPI_Wrapper::receivingCommandLength = 0;
-int SPI_Wrapper::commandBytesReceived = 0;  
+uint8_t SPI_Wrapper::receivingCommandLength = 0;
+uint8_t SPI_Wrapper::commandBytesReceived = 0;  
 
 void SPI_Wrapper::init() 
 {
@@ -28,7 +32,6 @@ void SPI_Wrapper::init()
     SPI.attachInterrupt();
 
 	SPDR = InitialTransferByte;
-	commandBytesReceived = 0;
     currentState = WaitingToBegin;
 }
 
@@ -36,7 +39,7 @@ void SPI_Wrapper::sendMoveResponse(uint16_t uniqueID, uint16_t magnitude, uint16
 	uint8_t length = 8; // 1 byte for the command number, 2 bytes for the ID, 2 for magnitude, 2 for angle, 1 for the status
 	// It might be better to use a helper function to make this easier to read and edit
 	dataOutBuffer[bufferOutFillEnd] = length;
-	dataOutBuffer[(bufferOutFillEnd + 1) % MAX_BUFFER_SIZE] = 1; // command number
+	dataOutBuffer[(bufferOutFillEnd + 1) % MAX_BUFFER_SIZE] = moveCode;
 	dataOutBuffer[(bufferOutFillEnd + 2) % MAX_BUFFER_SIZE] = (uint8_t)(uniqueID << 8); 
 	dataOutBuffer[(bufferOutFillEnd + 3) % MAX_BUFFER_SIZE] = (uint8_t)uniqueID;
 	dataOutBuffer[(bufferOutFillEnd + 4) % MAX_BUFFER_SIZE] = (uint8_t)(magnitude << 8);
@@ -49,22 +52,87 @@ void SPI_Wrapper::sendMoveResponse(uint16_t uniqueID, uint16_t magnitude, uint16
 
 void SPI_Wrapper::sendStopResponse(uint16_t uniqueID, uint16_t magnitude, uint16_t angle, bool status) 
 {
-	// TODO: Implement
+	uint8_t length = 8; // 1 byte for the command number, 2 bytes for the ID, 2 for magnitude, 2 for angle, 1 for the status
+	dataOutBuffer[bufferOutFillEnd] = length;
+	dataOutBuffer[(bufferOutFillEnd + 1) % MAX_BUFFER_SIZE] = stopCode;
+	dataOutBuffer[(bufferOutFillEnd + 2) % MAX_BUFFER_SIZE] = (uint8_t)(uniqueID << 8); 
+	dataOutBuffer[(bufferOutFillEnd + 3) % MAX_BUFFER_SIZE] = (uint8_t)uniqueID;
+	dataOutBuffer[(bufferOutFillEnd + 4) % MAX_BUFFER_SIZE] = (uint8_t)(magnitude << 8);
+	dataOutBuffer[(bufferOutFillEnd + 5) % MAX_BUFFER_SIZE] = (uint8_t)(magnitude);
+	dataOutBuffer[(bufferOutFillEnd + 6) % MAX_BUFFER_SIZE] = (uint8_t)(angle << 8);
+	dataOutBuffer[(bufferOutFillEnd + 7) % MAX_BUFFER_SIZE] = (uint8_t)(angle);
+	dataOutBuffer[(bufferOutFillEnd + 8) % MAX_BUFFER_SIZE] = (uint8_t)(status);
+	bufferOutFillEnd = (bufferOutFillEnd + length + 1) % MAX_BUFFER_SIZE;
 }
 
 void SPI_Wrapper::sendRotateResponse(uint16_t uniqueID, uint16_t angle, bool status) 
 {
-	// TODO: Implement
+	uint8_t length = 6; // 1 byte for the command number, 2 bytes for the ID, 2 for angle, 1 for the status
+	dataOutBuffer[bufferOutFillEnd] = length;
+	dataOutBuffer[(bufferOutFillEnd + 1) % MAX_BUFFER_SIZE] = rotateCode;
+	dataOutBuffer[(bufferOutFillEnd + 2) % MAX_BUFFER_SIZE] = (uint8_t)(uniqueID << 8); 
+	dataOutBuffer[(bufferOutFillEnd + 3) % MAX_BUFFER_SIZE] = (uint8_t)uniqueID;
+	dataOutBuffer[(bufferOutFillEnd + 4) % MAX_BUFFER_SIZE] = (uint8_t)(angle << 8);
+	dataOutBuffer[(bufferOutFillEnd + 5) % MAX_BUFFER_SIZE] = (uint8_t)(angle);
+	dataOutBuffer[(bufferOutFillEnd + 6) % MAX_BUFFER_SIZE] = (uint8_t)(status);
+	bufferOutFillEnd = (bufferOutFillEnd + length + 1) % MAX_BUFFER_SIZE;
 }
 
 void SPI_Wrapper::sendScanResponse(uint16_t uniqueID, uint16_t angle, uint16_t magnitude, bool last, bool status)
 {
-	// TODO: Implement
+	uint8_t length = 8; // 1 byte for the command number, 2 bytes for the ID, 1 byte for Last, 2 for angle, 2 for magnitude, 1 for the status
+	dataOutBuffer[bufferOutFillEnd] = length;
+	dataOutBuffer[(bufferOutFillEnd + 1) % MAX_BUFFER_SIZE] = scanCode;
+	dataOutBuffer[(bufferOutFillEnd + 2) % MAX_BUFFER_SIZE] = (uint8_t)(uniqueID << 8); 
+	dataOutBuffer[(bufferOutFillEnd + 3) % MAX_BUFFER_SIZE] = (uint8_t)uniqueID;
+	dataOutBuffer[(bufferOutFillEnd + 4) % MAX_BUFFER_SIZE] = (uint8_t)(last);
+	dataOutBuffer[(bufferOutFillEnd + 5) % MAX_BUFFER_SIZE] = (uint8_t)(angle << 8);
+	dataOutBuffer[(bufferOutFillEnd + 6) % MAX_BUFFER_SIZE] = (uint8_t)(angle);
+	dataOutBuffer[(bufferOutFillEnd + 7) % MAX_BUFFER_SIZE] = (uint8_t)(magnitude << 8);
+	dataOutBuffer[(bufferOutFillEnd + 8) % MAX_BUFFER_SIZE] = (uint8_t)(magnitude);
+	dataOutBuffer[(bufferOutFillEnd + 9) % MAX_BUFFER_SIZE] = (uint8_t)(status);
+	bufferOutFillEnd = (bufferOutFillEnd + length + 1) % MAX_BUFFER_SIZE;
 }
 
 void SPI_Wrapper::processReceivedCommand(int length)
 {
-	// TODO: Create the correct struct, parse the response and call the command handler
+	// 0 is length
+	// 1 is id >> 8
+	// 2 is id && FF
+	switch (commandBuffer[3]) {
+		case moveCode:
+		{
+			moveCommand commandStruct;
+			commandStruct.commandNumber = moveCode;
+			commandStruct.uniqueID = ((uint16_t)(commandBuffer[1]) << 8) + (uint16_t)(commandBuffer[2]);
+			commandStruct.angle = ((uint16_t)(commandBuffer[4]) << 8) + (uint16_t)(commandBuffer[5]);
+			commandStruct.magnitude = (((uint32_t)(commandBuffer[6]) << 24) +
+									   ((uint32_t)(commandBuffer[7]) << 16) +
+									   ((uint32_t)(commandBuffer[8]) << 8) +
+									   (uint32_t)(commandBuffer[9]));
+		}
+		case stopCode:
+		{
+			stopCommand commandStruct;
+			commandStruct.commandNumber = stopCode;
+			commandStruct.uniqueID = ((uint16_t)(commandBuffer[1]) << 8) + (uint16_t)(commandBuffer[2]);
+		}
+		case rotateCode:
+		{
+			rotateCommand commandStruct;
+			commandStruct.commandNumber = rotateCode;
+			commandStruct.uniqueID = ((uint16_t)(commandBuffer[1]) << 8) + (uint16_t)(commandBuffer[2]);
+			commandStruct.angle = ((uint16_t)(commandBuffer[4]) << 8) + (uint16_t)(commandBuffer[5]);
+		}
+		case scanCode:
+		{
+			scanCommand commandStruct;
+			commandStruct.commandNumber = scanCode;
+			commandStruct.uniqueID = ((uint16_t)(commandBuffer[1]) << 8) + (uint16_t)(commandBuffer[2]);
+		}
+	}
+	// TODO: Call commandHandler here with relevant struct here
+	// requires some thought (inheritence pattern and dynamic_cast or something else?)
 }
 
 void SPI_Wrapper::registerCommandHandler(SPI_Command_Handler newCommandHandler)
@@ -92,8 +160,8 @@ void SPI_Wrapper::spiIntteruptFunction()
 			// If we receive 255 move to SendingLength state 
 			// and put length of command to send in SPDR
 			if (byteReceived == 255) {
-				SPDR = getNextCommandByte();
-				sendingCommandLength = (int)SPDR;
+				sendingCommandLength = getNextCommandByte();
+				SPDR = (byte)sendingCommandLength;
 				currentState = SendingLength;
 			} else {
 				SPDR = InitialTransferByte;
@@ -103,14 +171,14 @@ void SPI_Wrapper::spiIntteruptFunction()
 		case SendingLength:  
 		{
 			// byteReceived is the length of the command we are about to receive
-			receivingCommandLength = (int)byteReceived;
-			if ((receivingCommandLength == 0) && sendingCommandLength == 0) {
+			receivingCommandLength = byteReceived;
+			if ((receivingCommandLength == 0) && (sendingCommandLength == 0)) {
 				// Nothing to send
 				SPDR = InitialTransferByte;
 				currentState = WaitingToBegin;
 			} else {
 				commandBytesReceived = 0;
-				SPDR = getNextCommandByte();
+				SPDR = (byte)getNextCommandByte();
 				currentState = SendingCommand;
 			}
 			break;
@@ -123,10 +191,10 @@ void SPI_Wrapper::spiIntteruptFunction()
 			commandBytesReceived++;
 			if ((commandBytesReceived >= sendingCommandLength) && (commandBytesReceived >= receivingCommandLength)) {
 				processReceivedCommand(receivingCommandLength);
-				SPDR = (bufferOutFillBegin == bufferOutFillEnd) ? 0 : 1;
+				SPDR = ((bufferOutFillBegin == bufferOutFillEnd) ? 0 : 1);
 				currentState = CheckingIfFinished;
 			} else {
-				SPDR = getNextCommandByte();
+				SPDR = (byte)getNextCommandByte();
 			}
 			break;
 		}
@@ -134,9 +202,9 @@ void SPI_Wrapper::spiIntteruptFunction()
 		{
 			// If we last sent 1 or byteReceived is 1 then we change state to sendingCommand. 
 			// Otherwise go to waiting
-			if ((bufferOutFillBegin == bufferOutFillEnd) || (byteReceived == 1)) {
-				SPDR = getNextCommandByte();
-				sendingCommandLength = (int)SPDR;
+			if ((bufferOutFillBegin != bufferOutFillEnd) || (byteReceived == 1)) {
+				sendingCommandLength = getNextCommandByte();
+				SPDR = (byte)sendingCommandLength;
 				currentState = SendingLength;
 			} else {
 				SPDR = InitialTransferByte;
