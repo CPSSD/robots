@@ -8,20 +8,20 @@ import (
 var lastAction string
 var currentID int
 
+// Initialises the RDP stuff.
 func RDPInit() {
 	fmt.Println("* Registering Response Handler")
 	RobotDriverProtocol.RegisterResponseHandler(RDPConnector)
+	RobotDriverProtocol.Init()
+}
+
+// Demonstrates the robot handling data from the responses.
+func demo(){
 	RDPConnector(RobotDriverProtocol.MoveResponse{RobotDriverProtocol.Response{0, 0, true}, 0, 40})
 	RDPConnector(RobotDriverProtocol.RotateResponse{RobotDriverProtocol.Response{0, 0, true}, 90})
 	RDPConnector(RobotDriverProtocol.MoveResponse{RobotDriverProtocol.Response{0, 0, true}, 0, 40})
 	var distance uint16 = 50
 	for i := 0; i < 360; i += 1 {
-		//	if i > 135 {
-		//		distance = 32
-		//	}
-		//	if i > 300 {
-		//		distance = 45
-		//	}
 		RDPConnector(RobotDriverProtocol.ScanResponse{RobotDriverProtocol.Response{0, 0, true}, uint16(i), distance, false})
 	}
 	RDPConnector(RobotDriverProtocol.ScanResponse{RobotDriverProtocol.Response{0, 0, true}, 360, distance, true})
@@ -30,16 +30,16 @@ func RDPInit() {
 func RDPConnector(data interface{}) {
 	fmt.Println()
 	fmt.Println("\tData Recieved =>", data)
-
-	// Checks to see what Data Type the recieved Interface{} is.
-	if _, ok := data.(RobotDriverProtocol.MoveResponse); ok {
-		moveResponse(data.(RobotDriverProtocol.MoveResponse))
-	} else if _, ok := data.(RobotDriverProtocol.RotateResponse); ok {
-		rotateResponse(data.(RobotDriverProtocol.RotateResponse))
-	} else if _, ok := data.(RobotDriverProtocol.StopResponse); ok {
-		stopResponse(data.(RobotDriverProtocol.StopResponse))
-	} else if _, ok := data.(RobotDriverProtocol.ScanResponse); ok {
-		scanResponse(data.(RobotDriverProtocol.ScanResponse))
+	
+	switch response := data.(type) {
+	case RobotDriverProtocol.MoveResponse:
+		moveResponse(response)
+	case RobotDriverProtocol.RotateResponse:
+		rotateResponse(response)
+	case RobotDriverProtocol.ScanResponse:
+		scanResponse(response)
+	case RobotDriverProtocol.StopResponse:
+		stopResponse(response)
 	}
 }
 

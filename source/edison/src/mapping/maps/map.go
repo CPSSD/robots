@@ -7,7 +7,7 @@ import "math"
 import "time"
 import "RobotDriverProtocol"
 
-const SIZE = 2 // Millimeters Per Bitmap Segment
+const BITMAP_SIZE = 2 // Millimeters Per Bitmap Segment
 const DEBUG = false
 
 var finishedMapping = false
@@ -58,6 +58,8 @@ func CreateMap() (createdMap Map) {
 }
 
 // Moves the robot along the path.
+// Set "stopBeforePoint" to true if you dont want to stop before entering the point given. 
+// Used when following a path into unseen areas to prevent crashes.
 func (this *Map) MoveRobotAlongPath(path [][]bool, stopBeforePoint bool) {
 	prevX, prevY := -1, -1
 	possibleMove := true
@@ -77,27 +79,38 @@ func (this *Map) MoveRobotAlongPath(path [][]bool, stopBeforePoint bool) {
 
 		RobotDriverProtocol.Move(uint16(degree), uint32(magnitude))
 
-		if prevX != -1 && prevY != -1 && lastAction != "Move" {
-			fmt.Println("Think something went wrong, or maybe I just haven't recieved a response yet. [Sleeping for 3 second just incase the arduino is under load]")
-			time.Sleep(3 * 1000 * time.Millisecond)
+		tick := 0
+		waiting := true
+		
+		// While the robot hasn't moved...
+		for waiting && int(this.robot.x) == prevX && int(this.robot.y) == prevY {
+			// Wait for 5 seconds, then exit and try again.
+			if tick >= 50 {
+				waiting = false
+			}
+			fmt.Println("Waiting for response from Arduino. [Sleeping for 3 seconds]")
+			time.Sleep(100 * time.Millisecond)
+			tick += 1;
 		}
 	}
+	
 	fmt.Println("Finished Moving along path. [Sending Scan Request]")
 	RobotDriverProtocol.Scan()
 }
 
+// Ge
 func getHorizontalLine(x1, y1, x2, y2 int) (degree, magnitude float64) {
 	if x1+1 == x2 {
-		return 90, 1
+		return 90, BITMAP_SIZE
 	}
 	if x1-1 == x2 {
-		return 270, 1
+		return 270, BITMAP_SIZE
 	}
 	if y1-1 == y2 {
-		return 0, 1
+		return 0, BITMAP_SIZE
 	}
 	if y1+1 == y2 {
-		return 180, 1
+		return 180, BITMAP_SIZE
 	}
 	return 0, 0
 }
@@ -135,7 +148,7 @@ func (this *Map) getNextMove(x, y, prevX, prevY int, path [][]bool) (x1 int, y1 
 	return x, y, false
 }
 
-// Adds a wall in position (x, y) of the map. Resized represents if the co-ordinates have been modified due to the SIZE const or not. Expands if neccesary
+// Adds a wall in position (x, y) of the map. Resized represents if the co-ordinates have been modified due to the BITMAP_SIZE const or not. Expands if neccesary
 func (this *Map) AddWall(x, y int, resized bool) {
 	if !resized {
 		x, y = ScaleCoordinate(float64(x), float64(y))
@@ -254,7 +267,7 @@ func (this *Map) createExpandedMap(expandX, expandY int) (tempMap *Map) {
 func (this *Map) Print(path [][]bool) {
 	for y := 0; y < this.height; y++ {
 		for x := 0; x < this.width; x++ {
-			robotX, robotY := this.PointToBitmapCoordinate(this.robot.x, this.robot.y)
+			robotX, robotY := int(this.robot.x), int(this.robot.y)
 			if x == robotX && y == robotY {
 				fmt.Print("* ")
 			} else {
@@ -274,14 +287,9 @@ func (this *Map) Print(path [][]bool) {
 	fmt.Println("----------------------------------------")
 }
 
-// Converts a point (float64) to a co-ordinate (int) in the bitmap.
-func (this *Map) PointToBitmapCoordinate(x, y float64) (x1, y2 int) {
-	return int(x), int(y)
-}
-
 func scale(x float64) float64 {
 	if x != 0 {
-		return float64(x / SIZE)
+		return float64(x / BITMAP_SIZE)
 	}
 	return 0
 }
@@ -333,16 +341,16 @@ func (this *Map) MarkLineAsSeen(degree, distance float64) {
 // Draws a square around the robot. (Used While Testing Pathfinding)
 func (this *Map) DrawSquare(n int) {
 	for i := -n; i <= n; i++ {
-		robotX, robotY := this.PointToBitmapCoordinate(this.GetRobot().GetX(), this.GetRobot().GetY())
+		robotX, robotY := int(this.GetRobot().GetX()), int(this.GetRobot().GetY())
 		this.AddWall(i+robotX, -n+robotY, true)
 
-		robotX, robotY = this.PointToBitmapCoordinate(this.GetRobot().GetX(), this.GetRobot().GetY())
+		robotX, robotY = int(this.GetRobot().GetX()), int(this.GetRobot().GetY())
 		this.AddWall(i+robotX, n+robotY, true)
 
-		robotX, robotY = this.PointToBitmapCoordinate(this.GetRobot().GetX(), this.GetRobot().GetY())
+		robotX, robotY = int(this.GetRobot().GetX()), int(this.GetRobot().GetY())
 		this.AddWall(-n+robotX, i+robotY, true)
 
-		robotX, robotY = this.PointToBitmapCoordinate(this.GetRobot().GetX(), this.GetRobot().GetY())
+		robotX, robotY = int(this.GetRobot().GetX()), int(this.GetRobot().GetY())
 		this.AddWall(n+robotX, i+robotY, true)
 	}
 }

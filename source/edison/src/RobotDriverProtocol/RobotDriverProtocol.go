@@ -100,13 +100,13 @@ func processResponse(responseBuffer []uint8) {
 	fmt.Println(responseBuffer)
 	switch responseBuffer[0] {
 	case 1: //move response
-		processMoveResponse(responseBuffer[:1])
+		processMoveResponse(responseBuffer[1:])
 	case 2: // stop response
-		processStopResponse(responseBuffer[:1])
+		processStopResponse(responseBuffer[1:])
 	case 3: // rotate response
-		processRotateResponse(responseBuffer[:1])
+		processRotateResponse(responseBuffer[1:])
 	case 4: // scan response
-		processScanResponse(responseBuffer[:1])
+		processScanResponse(responseBuffer[1:])
 	}
 }
 
