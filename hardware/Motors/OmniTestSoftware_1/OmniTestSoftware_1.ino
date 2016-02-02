@@ -2,11 +2,10 @@
 // Attempt to make each encoder yield the same number of ticks over time and
 // hopefully move in a straight line.
 //
-// We reset the encoder counts every 'delayTime' milliseconds, and reset the
-// counters, but we keep a running total, i.e., we adjust speed based on the
-// counts for the last period
+// We reset the encoder counts every 'delayTime' milliseconds, but we keep a running total, 
+// i.e., we adjust speed based on the counts for the last period
 //
-// ** This does not seem to work and the total accounts diverge.
+// ** This does not seem to work and the total counts diverge.
 //
 
 int D1 = 4;   // direction
