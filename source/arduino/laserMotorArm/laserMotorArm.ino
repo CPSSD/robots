@@ -1,170 +1,75 @@
-#include <Wire.h>
 #include <LIDARLite.h>
 
-// Motor & encoder drivers
+#include <Motor.h>
+#include <LaserScanner.h>
+#include <Wire.h>
 
-const int E1 = 5;
-const int M1 = 4;
-const int E2 = 6;
-const int M2 = 7;
-
-volatile unsigned long encoderCount = 0;
-volatile unsigned int completedOneRevolution = false;
-const int interupt = 0;
-const int speed = 200;
-const int singleRotation = 3360;
-
-boolean anticlockwise = true;
-int correction = 0;
-
-LIDARLite myLidarLite;
-int scanCount;
-
-struct LaserReading {
-  int angle;
-  int distance;
-};
-
-LaserReading lastRotationData[42];
-
-void encoderISR(){
-    encoderCount++;
-}
-
-void rotateAnticlockwise(){
-    anticlockwise = true;
-    digitalWrite(M1,HIGH);
-    digitalWrite(M2,HIGH);
-
-}
-
-void rotateClockwise(){
-    anticlockwise = false;
-    digitalWrite(M1,LOW);
-    digitalWrite(M2,LOW);
-}
-
-void changeDirection(){
-    if(anticlockwise){
-        rotateClockwise();
-    }else{
-        rotateAnticlockwise();
-    }
-}
-
-void startRotate(){
-    analogWrite(E1,speed);
-}
-
-void stopRotate(){
-    analogWrite(E1,0);
-}
+Motor motor = Motor();
+LaserScanner scanner = LaserScanner();
 
 void faceWall(){
-  oneRotation(singleRotation);
-
+  //while(1)
+  motor.registerRotationFunction(&LaserScanner::getContinuousReading);
   LaserReading goal = LaserReading{-1, -1};
+  int offset = motor.rotateWithCorrection(motor.singleRotation);
+  motor.encoderCount = 0;
 
   for (int i = 0; i < 42; i++){
-    if (goal.distance == -1 || (lastRotationData[i].distance < goal.distance && lastRotationData[i].distance  >= 5)){
-      goal = lastRotationData[i];
+    if (goal.distance == -1 || (LaserScanner::lastRotationData[i].distance < goal.distance && LaserScanner::lastRotationData[i].distance  >= 5)){
+      goal = LaserScanner::lastRotationData[i];
     }
   }
+
+  Serial.print(goal.angle);
+  Serial.print(", ");
+  Serial.print(goal.distance);
+  Serial.print(" ||| ");
+  Serial.println(motor.singleRotation);
+
+  int ticksToTravel = (motor.singleRotation * goal.angle) / 42;
 
   Serial.print("Wall @ ");
   Serial.print(goal.angle);
   Serial.print(" | In ticks: ");
-  Serial.println(((singleRotation*goal.angle)/42));
-  
-  changeDirection();
-  int offset = correctTicks(numTicks(singleRotation));
-  changeDirection();
-  
-  if(goal.angle == -1){
-    Serial.println("*Error, angle was set to -1. Halted movement to avoid infinite loop");
+  Serial.println(ticksToTravel);
+
+  if (ticksToTravel < 0){
+    while (ticksToTravel < 0){
+      ticksToTravel += motor.singleRotation;
+    }
+
+    Serial.print("New Ticks to travel: ");
+    Serial.println(ticksToTravel);
+  }
+
+  if (goal.angle <= -1) {
+    Serial.println("*Error, angle was set to negative value. Halted movement to avoid infinite loop");
     goal.angle = 0;
   }
   
-  encoderCount = 0;
-  oneRotation(((singleRotation*goal.angle)/42) + offset);
-  changeDirection();
+  motor.encoderCount = 0;
+  int correction = motor.rotateWithCorrection(ticksToTravel + offset);
   
   Serial.print("off by about ");
-  Serial.println(correctTicks(numTicks(((singleRotation*goal.angle)/42) + offset)));
-  changeDirection();
-}
-
-void oneRotation(int fullSpin){
-    encoderCount = 0;
-    startRotate();
-    int scanTick = 0;
-    int lastEncoderCount = -1;
-    while(encoderCount < fullSpin){
-      if (lastEncoderCount != encoderCount && encoderCount > 0 && encoderCount % 80 == 0) {
-          scanTick += 1;
-          if (scanTick >= 0 && scanTick <= 42){
-            int distance = myLidarLite.distanceContinuous();
-            if (distance >= 1061 || distance < 0) {
-              lastRotationData[scanTick-1] = LaserReading{scanTick-1, -1};
-            } else {
-              lastRotationData[scanTick-1] = LaserReading{scanTick-1, distance};
-            }
-          }
-          Serial.print("[");
-          Serial.print(scanTick-1);
-          Serial.print(" | ");
-          Serial.print(lastRotationData[scanTick-1].distance);
-          Serial.println("]");
-          lastEncoderCount = encoderCount;
-      }
-    }
-    scanTick = 0;
-    stopRotate();
-    delay(500);
-}
-
-int numTicks(int offset){
-    int correction = encoderCount - offset;
-    return correction;
-}
-
-int correctTicks(int correction){
-    encoderCount = 0;
-    startRotate();
-    Serial.print("***** ");
-    Serial.println(correction);
-    while(encoderCount < correction){}
-    stopRotate();
-    delay(500);
-    //Serial.println(encoderCount);
-    return encoderCount - correction;
+  Serial.println(correction);
+  
+  motor.changeDirection();
 }
 
 void setup(){
-    attachInterrupt(interupt,encoderISR,FALLING);
+    motor.setup();
+    scanner.setup();
     Serial.begin(9600);
-
-    // Laser Scanner Setup.
-    myLidarLite.begin();
-    myLidarLite.beginContinuous();
-    
-    rotateAnticlockwise();
 }
 
 void loop(){
     faceWall();
     Serial.println("*Laser now faces wall");
     
-    int i = 0;
-    int fullSpin = singleRotation;
-    int correction = 0;
+    int fullSpin = motor.singleRotation;
     
-    oneRotation(fullSpin);
-    correction = numTicks(fullSpin);
-    changeDirection();
-
-    correction = correctTicks(correction);
-    fullSpin = correction + singleRotation;
-    changeDirection();  
+    //motor.rotateWithCorrection(fullSpin);
+    //motor.rotateByAngle(360);
+  
     while(1);
 }
