@@ -2,7 +2,7 @@
 
 ### Directory Contents
 
-This directory contains number of simple sketches for testing the laser scanner.
+This directory contains a number of simple sketches for testing the laser scanner.
 
 #### laser_moto_test_1
 
