@@ -92,7 +92,9 @@ class I2C_Wrapper {
 		static void registerStopResponseHandler(I2C_Stop_Response_Handler newResponseHandler);
 		static void registerRotateResponseHandler(I2C_Rotate_Response_Handler newResponseHandler);
 		
-		static void i2cIntteruptFunction(); // called in the I2C interrupt
+		static void i2cOnReceive(int numBytes); // called when data is received over I2C
+		static void i2cOnRequest(); // called when data is requested by the master
+		static void stepI2C(); // should be called every loop() in Arduino so that saved commands can be sent and the slave can be polled for responses
 		
 	private:		
 		static void processReceivedCommand(int length); // Processes the last recieved command, creating the right struct and calls responseHandler
@@ -101,6 +103,10 @@ class I2C_Wrapper {
 		static I2C_Move_Command_Handler moveCommandHandler;
 		static I2C_Stop_Command_Handler stopCommandHandler;
 		static I2C_Rotate_Command_Handler rotateCommandHandler;
+		
+		static I2C_Move_Response_Handler moveResponseHandler;
+		static I2C_Stop_Response_Handler stopResponseHandler;
+		static I2C_Rotate_Command_Handler rotateResponseHandler;
 	
 		// Each command should be stored in the buffer preceeded by a byte telling us the length of the command
 		static uint8_t dataOutBuffer[MAX_BUFFER_SIZE]; // Circular buffer contatining each byte to send
@@ -108,6 +114,7 @@ class I2C_Wrapper {
 		static int bufferOutFillEnd;
 		static uint8_t sendingCommandLength;
 		
+		static I2C_Mode currentMode;
 		static uint16_t currentID;
 		static uint8_t deviceNumber;
         static I2C_state currentState;
