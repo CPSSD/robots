@@ -83,22 +83,48 @@ void I2C_Wrapper::sendRotateResponse(uint16_t uniqueID, uint16_t angle, bool sta
 
 static uint16_t sendMoveCommand(uint16_t angle, uint32_t magnitude)
 {
-	// Todo: Implement
 	// Send move command when operating as master
+	currentID++;
+	uint8_t length = 10; // 1 byte for the length of the request, 2 bytes for the id, 1 byte for the code, 2 bytes for the angle and 4 bytes for the magnitude
+	dataOutBuffer[bufferOutFillEnd] = length;
+	dataOutBuffer[(bufferOutFillEnd + 1) % MAX_BUFFER_SIZE] = (uint8_t)((currentID >> 8);
+	dataOutBuffer[(bufferOutFillEnd + 2) % MAX_BUFFER_SIZE] = (uint8_t)id;
+	dataOutBuffer[(bufferOutFillEnd + 3) % MAX_BUFFER_SIZE] = moveCode;
+	dataOutBuffer[(bufferOutFillEnd + 4) % MAX_BUFFER_SIZE] = (uint8_t)(angle >> 8);
+	dataOutBuffer[(bufferOutFillEnd + 5) % MAX_BUFFER_SIZE] = (uint8_t)angle;
+	dataOutBuffer[(bufferOutFillEnd + 6) % MAX_BUFFER_SIZE] = (uint8_t)(magnitude >> 24);
+	dataOutBuffer[(bufferOutFillEnd + 7) % MAX_BUFFER_SIZE] = (uint8_t)(magnitude >> 16);
+	dataOutBuffer[(bufferOutFillEnd + 8) % MAX_BUFFER_SIZE] = (uint8_t)(magnitude >> 8);
+	dataOutBuffer[(bufferOutFillEnd + 9) % MAX_BUFFER_SIZE] = (uint8_t)magnitude;
+	bufferOutFillEnd = (bufferOutFillEnd + length + 1) % MAX_BUFFER_SIZE;
 	return currentID;
 }
 
 static uint16_t sendStopCommand()
 {
-	// Todo: Implement
 	// Send stop command when operating as master
+	currentID++;
+	uint8_t length = 4; // 1 byte for the length of the request, 2 bytes for the id, 1 byte for the code
+	dataOutBuffer[bufferOutFillEnd] = length;
+	dataOutBuffer[(bufferOutFillEnd + 1) % MAX_BUFFER_SIZE] = (uint8_t)((currentID >> 8);
+	dataOutBuffer[(bufferOutFillEnd + 2) % MAX_BUFFER_SIZE] = (uint8_t)id;
+	dataOutBuffer[(bufferOutFillEnd + 3) % MAX_BUFFER_SIZE] = moveCode;
+	bufferOutFillEnd = (bufferOutFillEnd + length + 1) % MAX_BUFFER_SIZE;
 	return currentID;
 }	
 	
 static uint16_t sendRotateCommand(uint16_t angle)
 {
-	// Todo: Implement
 	// Send rotate command when operating as master
+	currentID++;
+	uint8_t length = 6; // 1 byte for the length of the request, 2 bytes for the id, 1 byte for the code, 2 bytes for the angle
+	dataOutBuffer[bufferOutFillEnd] = length;
+	dataOutBuffer[(bufferOutFillEnd + 1) % MAX_BUFFER_SIZE] = (uint8_t)((currentID >> 8);
+	dataOutBuffer[(bufferOutFillEnd + 2) % MAX_BUFFER_SIZE] = (uint8_t)id;
+	dataOutBuffer[(bufferOutFillEnd + 3) % MAX_BUFFER_SIZE] = moveCode;
+	dataOutBuffer[(bufferOutFillEnd + 4) % MAX_BUFFER_SIZE] = (uint8_t)(angle >> 8);
+	dataOutBuffer[(bufferOutFillEnd + 5) % MAX_BUFFER_SIZE] = (uint8_t)angle;
+	bufferOutFillEnd = (bufferOutFillEnd + length + 1) % MAX_BUFFER_SIZE;
 	return currentID;
 }
 
