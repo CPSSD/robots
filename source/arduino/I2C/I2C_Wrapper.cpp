@@ -24,7 +24,6 @@ I2C_Mode I2C_Wrapper::currentMode = Master;
 I2C_state I2C_Wrapper::currentState = WaitingToBegin;
 		
 uint8_t I2C_Wrapper::commandBuffer[MAX_COMMAND_LENGTH] = {};
-uint8_t I2C_Wrapper::receivingCommandLength = 0;
 uint8_t I2C_Wrapper::commandBytesReceived = 0;  
 
 void I2C_Wrapper::init(I2C_Mode mode, uint8_t deviceId)
@@ -214,14 +213,23 @@ uint8_t I2C_Wrapper::getNextCommandByte()
 void I2C_Wrapper::i2cOnReceive(int numBytes) 
 {
 	// Called when a command is recieved over I2C
-	// Todo: Implement
+	for (int i = 0; i < numBytes; i++) {
+		commandBuffer[i] = Wire.read();
+	}
+	processReceivedCommand(numBytes);
 }
 	
 		
 void I2C_Wrapper::i2cOnRequest() 
 {
 	// Called when data is requested by the master
-	// Todo: Implement
+	if ((bufferOutFillBegin == bufferOutFillEnd) || (commandBytesReceived > sendingCommandLength)) {
+		Wire.send(0);
+	} else {
+		uint8_t length = dataOutBuffer[bufferOutFillBegin];
+		Wire.send(dataOutBuffer + bufferOutFillBegin, length);  
+		bufferOutFillBegin = (bufferOutFillBegin + length) % MAX_BUFFER_SIZE;
+	}
 }
 
 void I2C_Wrapper::stepI2C() 

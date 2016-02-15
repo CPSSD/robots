@@ -120,7 +120,6 @@ class I2C_Wrapper {
         static I2C_state currentState;
 		
 		static uint8_t commandBuffer[MAX_COMMAND_LENGTH];
-		static uint8_t receivingCommandLength;
 		static uint8_t commandBytesReceived;       		
 };
 
