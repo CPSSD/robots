@@ -19,6 +19,10 @@ PID myPID2(&M2_Input, &M2_Output, &Setpoint, .5, 0, 0, DIRECT);
 
 //PID_ATune PIDTuner(&Input,&Output);
 
+void doPID(){
+
+}
+
 void M1_EncoderISR() {
   M1_EncoderCount++;
 }
@@ -61,10 +65,10 @@ void printInfo(){
     Serial.println();
 }
 
-void reset(){
+void reset(/*boolean setpointReached*/){
     M1_EncoderCount = 0;
     M2_EncoderCount = 0;
-    setpointReached = false;
+    //setpointReached = false;
 }
 
 
@@ -72,6 +76,8 @@ void stop(){
     analogWrite(M1,0);
     analogWrite(M2,0);
 }
+
+boolean start = true;
 
 void setup()
 {
@@ -102,6 +108,13 @@ void setup()
 void loop(){
     
    // reset(M1_EncoderCount,M2_EncoderCount);
+    if(start){
+        delay(2000);
+        M1_EncoderCount = 0;
+        M2_EncoderCount = 0;
+        start = false;
+    }
+    
     
     if(M1_Total + M1_EncoderCount > dist && M2_Total + M2_EncoderCount > dist){
         finished = true;
