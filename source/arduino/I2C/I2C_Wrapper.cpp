@@ -315,11 +315,11 @@ void I2C_Wrapper::i2cOnRequest()
 		uint8_t length = getNextCommandByte(); // first byte in command gives us the length of the command
 		commandOutBuffer[0] = length;
 		
-		for (uint8_t i = 1; i < length; i++) {
+		for (uint8_t i = 1; i <= length; i++) {
 			commandOutBuffer[i] = getNextCommandByte();
-		}
+		} 
 		
-		Wire.write(commandOutBuffer, length);
+		Wire.write(commandOutBuffer, length + 1);
 	}
 }
 
@@ -332,13 +332,18 @@ void I2C_Wrapper::stepI2C()
 		
 	for (int i = 0; i < numberOfSlaves; i++) {
 		Wire.requestFrom(slaveDevices[i], (uint8_t)MAX_COMMAND_LENGTH);
-		uint8_t length = Wire.read();
-		if (length > 0) {
-			commandBuffer[0] = length;
-			for (int j = 1; j < length; j++) {
-				commandBuffer[i] = Wire.read();
+		
+		if (Wire.available()) {
+			uint8_t length = Wire.read();
+			
+			if (length > 0) {
+				commandBuffer[0] = length;
+				for (int j = 1; j <= length; j++) {
+					commandBuffer[j] = Wire.available() ? Wire.read() : 0;
+				}
+	
+				processReceivedResponse(length);
 			}
-			processReceivedResponse(length);
 		}
 	}
 }
