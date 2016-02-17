@@ -326,12 +326,12 @@ void I2C_Wrapper::i2cOnRequest()
 void I2C_Wrapper::stepI2C() 
 {
 	// Need to call this every loop() so that we can poll the slave devices for responses
-	if (mode != Master) {
+	if (currentMode != Master) {
 		return;
 	}
 		
 	for (int i = 0; i < numberOfSlaves; i++) {
-		Wire.requestFrom(slaveDevices[i], MAX_COMMAND_LENGTH);
+		Wire.requestFrom(slaveDevices[i], (uint8_t)MAX_COMMAND_LENGTH);
 		uint8_t length = Wire.read();
 		if (length > 0) {
 			commandBuffer[0] = length;
