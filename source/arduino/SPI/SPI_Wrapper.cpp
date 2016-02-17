@@ -83,7 +83,7 @@ void SPI_Wrapper::sendRotateResponse(uint16_t uniqueID, uint16_t angle, bool sta
 
 void SPI_Wrapper::sendScanResponse(uint16_t uniqueID, uint16_t angle, uint16_t magnitude, bool last, bool status)
 {
-	uint8_t length = 8; // 1 byte for the command number, 2 bytes for the ID, 1 byte for Last, 2 for angle, 2 for magnitude, 1 for the status
+	uint8_t length = 9; // 1 byte for the command number, 2 bytes for the ID, 1 byte for Last, 2 for angle, 2 for magnitude, 1 for the status
 	dataOutBuffer[bufferOutFillEnd] = length;
 	dataOutBuffer[(bufferOutFillEnd + 1) % MAX_BUFFER_SIZE] = scanCode;
 	dataOutBuffer[(bufferOutFillEnd + 2) % MAX_BUFFER_SIZE] = (uint8_t)(uniqueID >> 8); 
@@ -116,6 +116,7 @@ void SPI_Wrapper::processReceivedCommand(int length)
 			if (moveCommandHandler) {
 				(*moveCommandHandler)(commandStruct);
 			}
+			break;
 		}
 		case stopCode:
 		{
@@ -125,6 +126,7 @@ void SPI_Wrapper::processReceivedCommand(int length)
 			if (stopCommandHandler) {
 				(*stopCommandHandler)(commandStruct);
 			}
+			break;
 		}
 		case rotateCode:
 		{
@@ -135,6 +137,7 @@ void SPI_Wrapper::processReceivedCommand(int length)
 			if (rotateCommandHandler) {
 				(*rotateCommandHandler)(commandStruct);
 			}
+			break;
 		}
 		case scanCode:
 		{
@@ -144,6 +147,7 @@ void SPI_Wrapper::processReceivedCommand(int length)
 			if (scanCommandHandler) {
 				(*scanCommandHandler)(commandStruct);
 			}
+			break;
 		}
 	}
 }
