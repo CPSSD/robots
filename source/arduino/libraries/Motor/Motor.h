@@ -18,6 +18,7 @@ class Motor {
 		void setup();
 		void oneRotation(int fullSpin);
 		void setSpeed(int newSpeed);
+		void rotateContinuous(int ticks);
 		
 		void registerRotationFunction(Rotation_Function function);
 		

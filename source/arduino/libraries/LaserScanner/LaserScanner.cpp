@@ -53,22 +53,21 @@ void LaserScanner::setDetectionRange(int range){
 
 
 void LaserScanner::detectObjects(int encoderCount){
-	if (encoderCount == 0) {
+	if (encoderCount < detectionAngle) {
 		detectedDuringSpin = false;
 	}
+	
 	if (encoderCount != lastEncoderCount && (encoderCount >= detectionAngle - 10 && encoderCount <= detectionAngle + 10) && !detectedDuringSpin){
-		scanTick += 1;
 		Serial.println("At correct angle....");
 		LaserReading reading = getSingleReading(encoderCount);
 		Serial.print("Distance away: ");
 		Serial.println(reading.distance);
 		if (reading.distance <= detectionRange){
-			Serial.println("Found object!");
-			detectedDuringSpin = true;
+			Serial.println("-> Found object! Be careful!");
 		}
 			
 		Serial.print("[");
-		Serial.print(scanTick-1);
+		Serial.print(encoderCount);
 		Serial.print(" | ");
 		Serial.print(reading.distance);
 		Serial.println("]");

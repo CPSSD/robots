@@ -86,6 +86,21 @@ int Motor::correctTicks(int correction){
 void Motor::registerRotationFunction(Rotation_Function function){
 	rotationFunction = function;
 }
+
+void Motor::rotateContinuous(int rotations){
+	startRotate();
+	while(rotations >= 0){
+		if (encoderCount > singleRotation){
+			rotations--;
+			encoderCount -= singleRotation;
+		}
+			
+		(*rotationFunction)(encoderCount);
+	}
+	stopRotate();
+	
+}
+
 void Motor::oneRotation(int fullSpin){
 	encoderCount = 0;
     startRotate();
