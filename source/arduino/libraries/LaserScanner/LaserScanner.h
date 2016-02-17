@@ -14,6 +14,10 @@ class LaserScanner {
 		LaserScanner();
 		~LaserScanner();
 		
+		static void setScanFreq(int freq);
+		static void setDetectionAngle(int encoderCount);
+		static void setDetectionRange(int range);
+		
 		static void reset();
 		static void setup();
 		
@@ -21,6 +25,7 @@ class LaserScanner {
 		
 		static void getContinuousReading(int encoderCount);
 		static LaserReading getSingleReading(int angle);
+		static void detectObjects(int encoderCount);
 		
 		static LaserReading lastRotationData[42];
 		static LIDARLite myLidarLite;
@@ -28,6 +33,10 @@ class LaserScanner {
 		static int lastEncoderCount;
 		static int scanCount;
 		static int scanTick;
+		static int scanFreq;
+		static int detectionAngle;
+		static int detectionRange;
+		static bool detectedDuringSpin;
 };
 
 #endif

@@ -17,6 +17,7 @@ class Motor {
 		void stopRotate();
 		void setup();
 		void oneRotation(int fullSpin);
+		void setSpeed(int newSpeed);
 		
 		void registerRotationFunction(Rotation_Function function);
 		
@@ -28,7 +29,7 @@ class Motor {
 		static volatile unsigned long encoderCount;
 		volatile unsigned int completedOneRevolution;
 		const int interupt = 0;
-		const int speed = 200;
+		int speed;
 		const int singleRotation = 3360;
 		
 	private:

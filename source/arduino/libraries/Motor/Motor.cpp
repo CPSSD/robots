@@ -6,10 +6,21 @@ Motor::Motor(){
 	completedOneRevolution = false;
 	anticlockwise = true;
 	correction = 0;
+	speed = 200;
 	rotationFunction = NULL;
 }
 
 Motor::~Motor(){
+}
+
+void Motor::setSpeed(int newSpeed){
+	if(newSpeed <= 150){
+		speed = 150;
+	} else if (newSpeed >= 200){
+		speed = 200;
+	} else {
+		speed = newSpeed;
+	}
 }
 
 void encoderISR(){
@@ -75,7 +86,6 @@ int Motor::correctTicks(int correction){
 void Motor::registerRotationFunction(Rotation_Function function){
 	rotationFunction = function;
 }
-
 void Motor::oneRotation(int fullSpin){
 	encoderCount = 0;
     startRotate();
