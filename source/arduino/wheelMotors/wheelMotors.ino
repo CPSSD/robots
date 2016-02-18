@@ -19,10 +19,6 @@ PID myPID2(&M2_Input, &M2_Output, &Setpoint, .5, 0, 0, DIRECT);
 
 //PID_ATune PIDTuner(&Input,&Output);
 
-void doPID(){
-
-}
-
 void M1_EncoderISR() {
   M1_EncoderCount++;
 }
@@ -80,8 +76,8 @@ void stop(){
 }
 
 //stop when desired number of ticks have been reached
-void checkEndpointReached(){
-    if(M1_Total + M1_EncoderCount > dist && M2_Total + M2_EncoderCount > dist){
+void checkEndpointReached(int distance){
+    if(M1_Total + M1_EncoderCount > distance && M2_Total + M2_EncoderCount > distance){
         finished = true;
         stop();
     }
@@ -109,13 +105,35 @@ void runPID(){
     printInfo();
 }
 
+void diffTicks(){
+    if ((M1_Total + M1_EncoderCount) > (M2_Total + M2_EncoderCount) && (M1_Total + M1_EncoderCount) - (M2_Total + M2_EncoderCount) > 50){
+        /*Serial.print("M1 Total + M1 EncoderCount: ");
+        Serial.println(M1_Total + M1_EncoderCount);
+        Serial.print("M2 Total + M1 EncoderCount: ");
+        Serial.println(M2_Total + M2_EncoderCount);*/
+        // if M1 gets bigger than M2, lower M1 max speed and increase M2's min speed  
+        myPID1.SetOutputLimits(100,200);
+        myPID2.SetOutputLimits(150,250);
+        //Serial.println("M1 Higher");
+    }else if((M1_Total + M1_EncoderCount) < (M2_Total + M2_EncoderCount) && (M2_Total + M2_EncoderCount) - (M1_Total + M1_EncoderCount) > 50){
+        // if M2 gets bigger than M1, lower M2 max speed and increase M1's min speed
+        myPID2.SetOutputLimits(100,200);
+        myPID1.SetOutputLimits(150,250);
+        //Serial.println("M2 Higher");
+        
+    }else{
+        myPID1.SetOutputLimits(100,250);
+        myPID2.SetOutputLimits(100,250);
+        Serial.println("Here");
+    }
+}
 
 void setup()
 {
     attachInterrupt(M1_Interrupt,M1_EncoderISR,FALLING);
     attachInterrupt(M2_Interrupt,M2_EncoderISR,FALLING);
     
-    myPID1.SetOutputLimits(100, 249);
+    myPID1.SetOutputLimits(100, 250);
     myPID1.SetSampleTime(10);
     myPID2.SetOutputLimits(100, 250);
     myPID2.SetSampleTime(10);    
@@ -127,7 +145,7 @@ void setup()
 
     M1_Input = M1_EncoderCount; 
     M2_Input = M2_EncoderCount;
-    Setpoint = 100;
+    Setpoint = 800;
     
     digitalWrite(D1,HIGH);
     digitalWrite(D2,HIGH);
@@ -139,7 +157,9 @@ void setup()
 void loop(){
     
     //stop when desired number of ticks have been reached
-    checkEndpointReached();
+    diffTicks();
+    
+    checkEndpointReached(5000);
     
     //reset Motor encoders after setpoint ticks has been reached
     checkSetpointReached();
