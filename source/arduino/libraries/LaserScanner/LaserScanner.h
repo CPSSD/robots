@@ -3,6 +3,7 @@
 
 #include <Arduino.h>
 #include "../LIDARLite/LIDARLite.h"
+#include "../SPI/SPI_Wrapper.h"
 
 struct LaserReading {
 	int angle;
@@ -17,6 +18,7 @@ class LaserScanner {
 		static void setScanFreq(int freq, int distance);
 		static void setDetectionAngle(int encoderCount);
 		static void setDetectionRange(int range);
+		static void sendScanResponse(LaserReading reading);
 		
 		static void reset();
 		static void setup();
@@ -29,7 +31,7 @@ class LaserScanner {
 		
 		static LaserReading* lastRotationData;
 		static LIDARLite myLidarLite;
-		
+			
 		static int lastEncoderCount;
 		static int scansToDo;
 		static int scanCount;
@@ -38,6 +40,7 @@ class LaserScanner {
 		static int detectionAngle;
 		static int detectionRange;
 		static bool detectedDuringSpin;
+		static bool pushScanData;
 };
 
 #endif

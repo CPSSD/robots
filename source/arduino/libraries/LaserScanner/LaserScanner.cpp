@@ -8,12 +8,15 @@ int LaserScanner::scanFreq;
 int LaserScanner::detectionAngle;
 int LaserScanner::detectionRange;
 bool LaserScanner::detectedDuringSpin;
+bool LaserScanner::pushScanData;
 LaserReading* LaserScanner::lastRotationData;
+
 LIDARLite LaserScanner::myLidarLite;
 
 LaserScanner::LaserScanner(){
 	lastEncoderCount = 0;
 	detectedDuringSpin = false;
+	pushScanData = false;
 	scanTick = 0;
 	scanFreq = 0;
 	scansToDo = 1;
@@ -22,6 +25,18 @@ LaserScanner::LaserScanner(){
 
 LaserScanner::~LaserScanner(){
 	
+}
+
+void LaserScanner::sendScanResponse(LaserReading reading){
+	bool lastScan = false;
+	if (reading.distance >= 1061 || reading.distance < 0){
+		reading.distance = 0;
+	}
+	if (scanTick == scansToDo){
+		lastScan = true;
+	}
+	int angle = (360 / scansToDo) * reading.angle;
+	SPI_Wrapper::sendScanResponse(scanTick, (uint16_t) reading.distance, (uint16_t) angle, lastScan, true);
 }
 
 void LaserScanner::setup(){
@@ -91,6 +106,11 @@ void LaserScanner::getContinuousReading(int encoderCount){
 			LaserReading reading = getSingleReading(scanTick-1);
 			lastRotationData[scanTick-1] = reading;
 			
+			if (pushScanData){
+				Serial.println("Sending Scan Data...");
+				sendScanResponse(reading);
+			}
+			
 			Serial.print("[");
 			Serial.print(scanTick-1);
 			Serial.print(" | ");
@@ -104,6 +124,7 @@ void LaserScanner::getContinuousReading(int encoderCount){
 
 void LaserScanner::reset(){
 	lastEncoderCount = 0;
+	pushScanData = false;
 	scanTick = 0;
 }
 

@@ -3,6 +3,7 @@
 #include <Motor.h>
 #include <LaserScanner.h>
 #include <Wire.h>
+#include "SPI_Wrapper.h"
 
 Motor motor = Motor();
 LaserScanner scanner = LaserScanner();
@@ -79,23 +80,37 @@ void detectObjects(int angle, int rotations) {
   Serial.println("Finished Rotating Continuously");
 }
 
+void scanArea(int scanFreq, int distance){
+  motor.setSpeed(150);
+  Serial.println("Scanning Area...");
+  
+  LaserScanner::setScanFreq(scanFreq, distance);
+  totalScans = LaserScanner::scansToDo;
+  LaserScanner::reset();
+  
+  motor.registerRotationFunction(&LaserScanner::getContinuousReading);
+  LaserScanner::pushScanData = true;
+  motor.rotateWithCorrection(distance);
+
+  Serial.println("Finished sending data...");
+}
+
 void setup() {
+  SPI_Wrapper::init();
   motor.setup();
   scanner.setup();
   Serial.begin(9600);
 }
 
 void loop() {
-  faceWall(3360/180, motor.singleRotation, 210, false);
-  faceWall(10, 420, 0, true);
+  Serial.println("Starting LaserMotorArm");
+  //faceWall(3360/180, motor.singleRotation, 210, false);
+  //faceWall(10, 420, 0, true);
   Serial.println("*Laser now faces wall");
 
   //detectObjects(0, 2);
 
-  int fullSpin = motor.singleRotation;
-
-  //motor.rotateWithCorrection(fullSpin);
-  //motor.rotateByAngle(360);
+  scanArea(3360/70, motor.singleRotation);
 
   while (1);
 }
