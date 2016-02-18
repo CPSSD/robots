@@ -3,11 +3,12 @@
 int LaserScanner::lastEncoderCount;
 int LaserScanner::scanTick;
 int LaserScanner::scanCount;
+int LaserScanner::scansToDo;
 int LaserScanner::scanFreq;
 int LaserScanner::detectionAngle;
 int LaserScanner::detectionRange;
 bool LaserScanner::detectedDuringSpin;
-LaserReading LaserScanner::lastRotationData[42];
+LaserReading* LaserScanner::lastRotationData;
 LIDARLite LaserScanner::myLidarLite;
 
 LaserScanner::LaserScanner(){
@@ -15,6 +16,8 @@ LaserScanner::LaserScanner(){
 	detectedDuringSpin = false;
 	scanTick = 0;
 	scanFreq = 0;
+	scansToDo = 1;
+	lastRotationData = new LaserReading[scansToDo];
 }
 
 LaserScanner::~LaserScanner(){
@@ -26,15 +29,20 @@ void LaserScanner::setup(){
 	myLidarLite.beginContinuous();
 }
 
-// Sets ScanFreq in terms of encoder ticks (maximum of 3360 per rotation)
-void LaserScanner::setScanFreq(int freq){
+// Sets ScanFreq in terms of encoder ticks (maximum of 'distance' per rotation)
+void LaserScanner::setScanFreq(int freq, int distance){
 	if (freq <= 0){
 		scanFreq = 0;
-	} else if (freq >= 3360){
-		scanFreq = 3360;
+		scansToDo = 1;
+	} else if (freq >= distance){
+		scanFreq = distance;
+		scansToDo = 1;
 	} else {
 		scanFreq = freq;
+		scansToDo = distance/freq;
 	}
+	delete lastRotationData;
+	lastRotationData = new LaserReading[scansToDo];
 }
 
 void LaserScanner::setDetectionAngle(int angle){
@@ -79,7 +87,7 @@ void LaserScanner::detectObjects(int encoderCount){
 void LaserScanner::getContinuousReading(int encoderCount){	
 	if (lastEncoderCount != encoderCount && encoderCount > 0 && encoderCount % scanFreq == 0) {
 		scanTick += 1;
-		if (scanTick >= 0 && scanTick <= 42){
+		if (scanTick >= 0 && scanTick <= scansToDo){
 			LaserReading reading = getSingleReading(scanTick-1);
 			lastRotationData[scanTick-1] = reading;
 			

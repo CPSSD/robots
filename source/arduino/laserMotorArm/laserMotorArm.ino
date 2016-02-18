@@ -7,15 +7,17 @@
 Motor motor = Motor();
 LaserScanner scanner = LaserScanner();
 const boolean DEBUG = false;
+int totalScans = 0;
 
 void faceWall(int scanFreq, int distance, int finishOffset, bool isPartialMove) {
-  motor.setSpeed(200);
-  LaserScanner::setScanFreq(scanFreq);
+  motor.setSpeed(150);
+  LaserScanner::setScanFreq(scanFreq, distance);
+  totalScans = LaserScanner::scansToDo;
   motor.registerRotationFunction(&LaserScanner::getContinuousReading);
   LaserReading goal = LaserReading{ -1, -1};
   LaserScanner::reset();
 
-  for (int i = 0; i < 42; i++) {
+  for (int i = 0; i < totalScans; i++) {
     LaserScanner::lastRotationData[i] = { -1, -1};
   }
 
@@ -24,14 +26,14 @@ void faceWall(int scanFreq, int distance, int finishOffset, bool isPartialMove) 
 
   long ticksToTravel = 0;
 
-  for (int i = 0; i < 42; i++) {
+  for (int i = 0; i < totalScans; i++) {
 
     LaserReading reading = LaserScanner::lastRotationData[i];
     if (reading.distance != -1 && ((goal.distance == -1)  || (reading.distance < goal.distance))) {
       goal = LaserScanner::lastRotationData[i];
     }
 
-    ticksToTravel = ((long)(distance / 42)) * goal.angle;
+    ticksToTravel = ((long)(distance / totalScans)) * goal.angle;
 
     if (DEBUG) {
       Serial.print(i);
@@ -64,7 +66,7 @@ void faceWall(int scanFreq, int distance, int finishOffset, bool isPartialMove) 
 
 }
 
-void detectObjects(int angle) {
+void detectObjects(int angle, int rotations) {
   boolean detectingObjects = true;
   int rotationTick = 0;
 
@@ -73,7 +75,7 @@ void detectObjects(int angle) {
   LaserScanner::setDetectionAngle(angle);
   LaserScanner::setDetectionRange(25);
 
-  motor.rotateContinuous(2);
+  motor.rotateContinuous(rotations);
   Serial.println("Finished Rotating Continuously");
 }
 
@@ -84,11 +86,11 @@ void setup() {
 }
 
 void loop() {
-  faceWall(80, motor.singleRotation, 210, false);
+  faceWall(3360/180, motor.singleRotation, 210, false);
   faceWall(10, 420, 0, true);
   Serial.println("*Laser now faces wall");
 
-  detectObjects(0);
+  //detectObjects(0, 2);
 
   int fullSpin = motor.singleRotation;
 
