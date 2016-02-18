@@ -44,9 +44,11 @@ boolean finished = false;
 int M1_Total = 0;
 int M2_Total = 0;
 
+//returns number of ticks for required distance
 int distance(int targetDistance){
     return (targetDistance/circumference)*800;
 }
+
 
 void printInfo(){
     Serial.print("Motor 1 Output: ");
@@ -65,19 +67,48 @@ void printInfo(){
     Serial.println();
 }
 
-void reset(/*boolean setpointReached*/){
+//sets Motor encoders to 0
+void reset(){
     M1_EncoderCount = 0;
     M2_EncoderCount = 0;
-    //setpointReached = false;
 }
 
-
+//stops motors
 void stop(){
     analogWrite(M1,0);
     analogWrite(M2,0);
 }
 
-boolean start = true;
+//stop when desired number of ticks have been reached
+void checkEndpointReached(){
+    if(M1_Total + M1_EncoderCount > dist && M2_Total + M2_EncoderCount > dist){
+        finished = true;
+        stop();
+    }
+}
+
+//reset Motor encoders after setpoint ticks has been reached
+void checkSetpointReached(){
+    if(M1_EncoderCount > Setpoint && M2_EncoderCount > Setpoint){
+        M1_Total += M1_EncoderCount;
+        M2_Total += M2_EncoderCount;
+        reset();
+    }
+}
+
+//runs PID
+void runPID(){
+    M1_Input = M1_EncoderCount;
+    M2_Input = M2_EncoderCount;
+        
+    myPID1.Compute();
+    myPID2.Compute();
+        
+    analogWrite(M1, M1_Output);
+    analogWrite(M2, M2_Output);
+    printInfo();
+}
+
 
 void setup()
 {
@@ -96,7 +127,7 @@ void setup()
 
     M1_Input = M1_EncoderCount; 
     M2_Input = M2_EncoderCount;
-    Setpoint = 800;
+    Setpoint = 100;
     
     digitalWrite(D1,HIGH);
     digitalWrite(D2,HIGH);
@@ -107,36 +138,15 @@ void setup()
 
 void loop(){
     
-   // reset(M1_EncoderCount,M2_EncoderCount);
-    if(start){
-        delay(2000);
-        M1_EncoderCount = 0;
-        M2_EncoderCount = 0;
-        start = false;
-    }
+    //stop when desired number of ticks have been reached
+    checkEndpointReached();
     
+    //reset Motor encoders after setpoint ticks has been reached
+    checkSetpointReached();
     
-    if(M1_Total + M1_EncoderCount > dist && M2_Total + M2_EncoderCount > dist){
-        finished = true;
-        stop();
-    }
-    
-    if(M1_EncoderCount > Setpoint && M2_EncoderCount > Setpoint){
-        M1_Total += M1_EncoderCount;
-        M2_Total += M2_EncoderCount;
-        reset();
-    }
-    
+    //runs PID - needs to run ever loop()
     if(!finished){
-        M1_Input = M1_EncoderCount;
-        M2_Input = M2_EncoderCount;
-        
-        myPID1.Compute();
-        myPID2.Compute();
-        
-        analogWrite(M1, M1_Output);
-        analogWrite(M2, M2_Output);
-        printInfo();
+        runPID();
     }
 }
 
