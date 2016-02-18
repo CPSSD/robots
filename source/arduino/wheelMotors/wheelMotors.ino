@@ -1,4 +1,8 @@
 #include <PID_v1.h>
+#include <Wire.h>
+#include <I2C_Wrapper.h>
+
+const byte slaveAddress = 27;
 
 int D1 = 4;   // direction
 int M1 = 5;   // PWM
@@ -34,14 +38,14 @@ void M2_EncoderISR() {
 float circumference = 31.4159265; // cm
 int ticksPerRevolution = 800; 
 
+moveCommand currentMove;
 
-int dist = 5000;
-boolean finished = false;
+boolean finished = true;
 int M1_Total = 0;
 int M2_Total = 0;
 
 //returns number of ticks for required distance
-int distance(int targetDistance){
+int distanceInTicks(int targetDistance){
     return (targetDistance/circumference)*800;
 }
 
@@ -69,10 +73,20 @@ void reset(){
     M2_EncoderCount = 0;
 }
 
+void resetAll() {
+    reset();
+    M1_Total = 0;
+    M2_Total = 0;
+}
+
 //stops motors
 void stop(){
     analogWrite(M1,0);
     analogWrite(M2,0);
+
+    I2C_Wrapper::sendMoveResponse(currentMove.uniqueID, currentMove.magnitude, currentMove.angle, true);
+
+    resetAll();
 }
 
 //stop when desired number of ticks have been reached
@@ -128,10 +142,24 @@ void diffTicks(){
     }
 }
 
+void moveCommandHandler(moveCommand command) {
+  Serial.println("Received command");
+  Serial.println(command.magnitude);
+  
+  if (finished == true) {
+    currentMove = command;
+    finished = false;
+  }
+}
+
 void setup()
 {
     attachInterrupt(M1_Interrupt,M1_EncoderISR,FALLING);
     attachInterrupt(M2_Interrupt,M2_EncoderISR,FALLING);
+
+    I2C_Wrapper::init(Slave, slaveAddress);
+    I2C_Wrapper::registerMoveCommandHandler(&moveCommandHandler);
+    currentMove.magnitude = 0;
     
     myPID1.SetOutputLimits(100, 250);
     myPID1.SetSampleTime(10);
@@ -159,7 +187,7 @@ void loop(){
     //stop when desired number of ticks have been reached
     diffTicks();
     
-    checkEndpointReached(5000);
+    checkEndpointReached(distanceInTicks(currentMove.magnitude));
     
     //reset Motor encoders after setpoint ticks has been reached
     checkSetpointReached();
