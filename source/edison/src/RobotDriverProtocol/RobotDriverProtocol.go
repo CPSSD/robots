@@ -7,10 +7,10 @@ import (
 )
 
 const (
-	moveCode         = byte(0)
-	stopCode         = byte(1)
-	rotateCode       = byte(2)
-	scanCode         = byte(3)
+	moveCode         = byte(1)
+	stopCode         = byte(2)
+	rotateCode       = byte(3)
+	scanCode         = byte(4)
 	initiateTransfer = byte(255)
 )
 
@@ -56,6 +56,9 @@ var buffersToSend [][]uint8
 var responseHandler func(interface{})
 
 func processMoveResponse(responseBuffer []uint8) {
+	if len(responseBuffer) < 7 {
+		return
+	}
 	var moveResponse MoveResponse
 	moveResponse.Type = 1
 	moveResponse.ID = (uint16(responseBuffer[0]) << 8) + uint16(responseBuffer[1])
@@ -66,6 +69,9 @@ func processMoveResponse(responseBuffer []uint8) {
 }
 
 func processStopResponse(responseBuffer []uint8) {
+	if len(responseBuffer) < 7 {
+		return
+	}
 	var stopResponse StopResponse
 	stopResponse.Type = 2
 	stopResponse.ID = (uint16(responseBuffer[0]) << 8) + uint16(responseBuffer[1])
@@ -76,6 +82,9 @@ func processStopResponse(responseBuffer []uint8) {
 }
 
 func processRotateResponse(responseBuffer []uint8) {
+	if len(responseBuffer) < 5 {
+		return
+	}
 	var rotateResponse RotateResponse
 	rotateResponse.Type = 3
 	rotateResponse.ID = (uint16(responseBuffer[0]) << 8) + uint16(responseBuffer[1])
@@ -85,13 +94,17 @@ func processRotateResponse(responseBuffer []uint8) {
 }
 
 func processScanResponse(responseBuffer []uint8) {
+	if len(responseBuffer) < 8 {
+		return
+	}
 	var scanResponse ScanResponse
 	scanResponse.Type = 4
 	scanResponse.ID = (uint16(responseBuffer[0]) << 8) + uint16(responseBuffer[1])
 	scanResponse.Last = (responseBuffer[2] > 0)
-	scanResponse.Degree = (uint16(responseBuffer[3]) << 8) + uint16(responseBuffer[4])
-	scanResponse.Distance = (uint16(responseBuffer[5]) << 8) + uint16(responseBuffer[6])
+	scanResponse.Distance = (uint16(responseBuffer[3]) << 8) + uint16(responseBuffer[4])
+	scanResponse.Degree = (uint16(responseBuffer[5]) << 8) + uint16(responseBuffer[6])
 	scanResponse.Success = (responseBuffer[7] > 0)
+	fmt.Println("Passing scanResponse to responseHandler")
 	responseHandler(scanResponse)
 }
 
@@ -119,6 +132,7 @@ func sendNextCommand() bool {
 
 	data := make([]uint8, 1)
 	data[0] = length
+	time.Sleep(time.Millisecond)
 	SPI.TransferAndReceiveData(data)
 	if data[0] > length {
 		length = data[0]
@@ -129,12 +143,19 @@ func sendNextCommand() bool {
 
 		dataBuffer := make([]uint8, length)
 		if len(buffersToSend) > 0 {
-			fmt.Println("Copying buffer")
 			copy(dataBuffer, buffersToSend[0])
 			buffersToSend = buffersToSend[1:]
 		}
 
-		SPI.TransferAndReceiveData(dataBuffer)
+		time.Sleep(time.Millisecond)
+
+		for i := 0; i < len(dataBuffer); i++ {
+			time.Sleep(time.Millisecond)
+			data[0] = dataBuffer[i]
+			SPI.TransferAndReceiveData(data)
+			dataBuffer[i] = data[0]
+		}
+
 		processResponse(dataBuffer)
 
 		// repeat if we have more data to send
@@ -146,6 +167,7 @@ func sendNextCommand() bool {
 			notFinished = true
 		}
 
+		time.Sleep(time.Millisecond)
 		SPI.TransferAndReceiveData(data)
 
 		return (notFinished == true || data[0] == 1)
