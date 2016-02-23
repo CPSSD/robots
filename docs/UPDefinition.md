@@ -14,10 +14,11 @@ The API will be made using RESTful principles with HTTP and Json.
 |-----|:-----------:|:----------:|:---------:|
 | map | GET         | bit        |Json object|
 
-| Status Code | Description |
-|-------------|-------------|
-|   200       |      Ok     |
-|   404       | No Map Found|
+| Status Code | Description    |
+|-------------|----------------|
+|   200       |       Ok       |
+|   404       | Page not found |
+|   405       |  No Map Found  |
 
 
 
