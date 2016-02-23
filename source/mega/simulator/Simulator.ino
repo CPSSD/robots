@@ -1,3 +1,6 @@
+#include <SPI.h>
+#include <SPI_Wrapper.h>
+
 #include <comms.h>
 #include <structs.h>
 #include <calc.h>
@@ -24,7 +27,7 @@ MapLine ray;
 EquationOfLine PERIMETER[4];
 EquationOfLine equOfRay;
 
-MoveCommand moveCom = {0, 0, 0};
+MoveCommand moveCom;
 MoveResponse moveResp = {0, 0, 0, 0};
 
 RotateCommand rotCom = {0, 0};
@@ -33,6 +36,8 @@ RotateResponse rotResp = {0, 0, 0};
 ScanResponse scanResp = {0, 0, 0, false};
 
 void setup() {
+  SPI_Wrapper::init();
+  SPI_Wrapper::registerMoveCommandHandler(&moveCommandHandler);
   Serial.begin(9600);
   instruct = "";
   incomingByte = 0;
@@ -127,7 +132,7 @@ void makeMoveCommand() {
     Serial.read();
     Serial.read();
     instruct = "";
-    moveCom = {id, angle, magnitude};
+    //moveCom = {id, angle, magnitude};
 }
 
 void makeRotateCommand() {
@@ -145,6 +150,16 @@ void makeRotateCommand() {
     instruct = "";
 }
 
+void moveCommandHandler(moveCommand movCom) {
+  Serial.println("Received move command over SPI, echoing back...");
+  respond(movCom);
+}
+
+void respond(moveCommand com) {
+  SPI_Wrapper::sendMoveResponse(com.uniqueID, com.magnitude, com.angle, true);
+  Serial.println("Response sending function invoked successfully!");
+}
+
 void moveRobot(struct MoveCommand com) {
   ray = calculations.makeLineFromPolar(com.angle, com.magnitude, currentPosition);
   equOfRay = calculations.getEquationOfLine(ray);
@@ -159,7 +174,7 @@ struct MoveResponse giveHeartbeatMove(struct MoveCommand com, unsigned long time
   if(distTravelled >= com.magnitude) {
     amMoving = false;
     moveTimer = millis();
-    return (MoveResponse){com.id, com.angle, com.magnitude, 1};
+    return (MoveResponse){com.uniqueID, com.angle, com.magnitude, 1};
   }
   moveTimer = millis();
   return (MoveResponse){id, com.angle, (int)distTravelled, 0};

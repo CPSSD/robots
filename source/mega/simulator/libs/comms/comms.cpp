@@ -9,12 +9,12 @@ char comms::parseCommand() {
 }
 
 struct MoveCommand comms::constructMoveCommand() {
-	MoveCommand moveCom = {0, 0, 0};
+	MoveCommand moveCom;
 	while(Serial.peek() != 44) { //Next char is not " , "
       //As Serial.read() returns single chars as ASCII values, an id of 127 would be read as 49 then 50 then 55.
       //To correct, we shift current id one place to right, read next number, subtract 48 to extract actual value from ASCII representation, then add to id
 	  Serial.println(Serial.peek());
-      moveCom.id = moveCom.id * 10 + (Serial.read() - 48);
+      moveCom.uniqueID = moveCom.uniqueID * 10 + (Serial.read() - 48);
 	  Serial.println(Serial.peek());
     }
     Serial.read();
