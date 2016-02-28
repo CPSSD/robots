@@ -19,7 +19,7 @@ const byte INTERR_2 = 3;
 const MapLine MAP_BOUNDS[4] = {0, 0, 41, 0, 41, 0, 41, 41, 41, 41, 0, 41, 0, 41, 0, 0};
 unsigned long moveTimer, rotateTimer, distTravelled;
 int incomingByte, id, magnitude, angleInDegrees;
-float angle;
+unsigned int angle; //Measured in 1/10ths of a degree
 point currentPosition, destination, nearestWall;
 String instruct;
 bool brakes, amMoving, amRotating;
@@ -38,11 +38,12 @@ ScanResponse scanResp = {0, 0, 0, false};
 void setup() {
   SPI_Wrapper::init();
   SPI_Wrapper::registerMoveCommandHandler(&moveCommandHandler);
+  SPI_Wrapper::registerScanCommandHandler(&scanCommandHandler);
   Serial.begin(9600);
   instruct = "";
   incomingByte = 0;
   id = 0;
-  angle = 0.0;
+  angle = 0;
   angleInDegrees = 0;
   magnitude = 0;
   currentPosition.x = STARTING_X;
@@ -122,7 +123,7 @@ void makeMoveCommand() {
     while(Serial.peek() != 44) {
       angle = angle * 10 + (Serial.read() - 48);
     }
-    angle = (angle * PI) / 180.0;
+    //angle = (angle * PI) / 180.0;
     Serial.read();
     Serial.read();
     while(Serial.peek() != 41) { //Next char is not " ) "
@@ -155,9 +156,30 @@ void moveCommandHandler(moveCommand movCom) {
   respond(movCom);
 }
 
+void scanCommandHandler(scanCommand scanCom) {
+  Serial.println("Received scan command over SPI.");
+  while(angle <= 10) {
+    ScanResponse scanResp = {scanCom.uniqueID, angle, 65530, false, false};
+    ray = calculations.makeLineFromPolar(((((float)angle) * PI) / 180), (float)scanResp.distance, currentPosition);
+    equOfRay = calculations.getEquationOfLine(ray);
+    nearestWall = calculations.getDestination(ray, equOfRay, PERIMETER);
+    scanResp.distance = (unsigned int)calculations.getDistBetweenTwoPoints(ray.x1y1, nearestWall);
+    scanResp.last = (angle == 3600);
+    respond(scanResp);
+    angle++;
+  }
+  angle = 0;
+}
+
 void respond(moveCommand com) {
   SPI_Wrapper::sendMoveResponse(com.uniqueID, com.magnitude, com.angle, true);
   Serial.println("Response sending function invoked successfully!");
+}
+
+void respond(ScanResponse scanResp) {
+  SPI_Wrapper::sendScanResponse(scanResp.uniqueID, scanResp.angle, scanResp.distance, scanResp.last, scanResp.status);
+  Serial.println("Response sending function invoked successfully!");
+  communications.serialReply(scanResp);
 }
 
 void moveRobot(struct MoveCommand com) {
@@ -218,7 +240,7 @@ void rotate(struct RotateCommand com) {
   rotateTimer = millis();
 }
 
-struct ScanResponse scan(int id, float angle) {
+/*struct ScanResponse scan(int id, float angle) {
   ScanResponse reply = {id, angle, 66.0, false};
   ray = calculations.makeLineFromPolar(reply.angle, reply.distance, currentPosition);
   equOfRay = calculations.getEquationOfLine(ray);
@@ -237,4 +259,4 @@ void makeScanCommand() {
     Serial.read();
     instruct = "";
     rotCom = {id, angle};
-}
+}*/

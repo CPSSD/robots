@@ -31,20 +31,42 @@ struct EquationOfLine calc::getEquationOfLine(MapLine line) {
 
 struct point calc::getDestination(struct MapLine moveLine, struct EquationOfLine robotLine, struct EquationOfLine obstacles[]) {
   //For each line, check for valid interception point, get interception point
-  point nearestWall;
+  point nearestWall = moveLine.x2y2;
   point validInterceptPoints[4];
-  int counterVIP = 0;
+  int indexVIP = 0;
   for(int i = 0; i < 4; i++) {
     if(hasInterception(obstacles[i], robotLine)) {
       //Serial.println("Has intercept point");
-      validInterceptPoints[counterVIP] = getInterceptPoint(robotLine, obstacles[i]);
-      counterVIP++;
+      validInterceptPoints[indexVIP] = getInterceptPoint(robotLine, obstacles[i]);
+      indexVIP++;
     }
   }
   //Determine sign of each translation in x and y, relative to robot
   float diffInXValuesDest = moveLine.x2y2.x - moveLine.x1y1.x;
   float diffInYValuesDest = moveLine.x2y2.y - moveLine.x1y1.y;
-  //Do the same for the first point
+  
+  float diffInXValuesWall, diffInYValuesWall, distBetweenRobotAndDest, distBetweenRobotAndWall;
+  //Get distance between robot and destination
+  distBetweenRobotAndDest = getDistBetweenTwoPoints(robotLine.xy, nearestWall);
+  
+  for(int i = 0; i <= indexVIP; i++) {
+	//Determine sign of each translation for given interception point
+	diffInXValuesWall = validInterceptPoints[i].x - robotLine.xy.x;
+	diffInYValuesWall = validInterceptPoints[i].y - robotLine.xy.y;
+	//If the signs match, we're facing the right direction
+	if(( (diffInXValuesDest > 0.0 && diffInXValuesWall > 0.0) || (diffInXValuesDest == 0.0 && diffInXValuesWall == 0.0) || (diffInXValuesDest < 0.0 && diffInXValuesWall < 0.0) )
+  &&( (diffInYValuesDest > 0.0 && diffInYValuesWall > 0.0) || (diffInYValuesDest == 0.0 && diffInYValuesWall == 0.0) || (diffInYValuesDest < 0.0 && diffInYValuesWall < 0.0) )) {
+	  //Get distance between robot and interception point
+	  distBetweenRobotAndWall = getDistBetweenTwoPoints(robotLine.xy, validInterceptPoints[i]);
+	  //If distance between robot and interception point is shorter than between robot and destination
+	  if(distBetweenRobotAndWall < distBetweenRobotAndDest) {
+		  nearestWall = validInterceptPoints[i];
+		  distBetweenRobotAndDest = distBetweenRobotAndWall;
+		}
+	}
+  }
+    
+  /*//Do the same for the first point
   float diffInXValuesWallOne = validInterceptPoints[0].x - robotLine.xy.x;
   float diffInYValuesWallOne = validInterceptPoints[0].y - robotLine.xy.y;
   //If the signs match, that's the point in consideration, else it's the other one
@@ -61,7 +83,7 @@ struct point calc::getDestination(struct MapLine moveLine, struct EquationOfLine
   //If distance between robot and destination is shorter than between robot and wall, return destination, else return interception point
   if(distBetweenRobotAndDest < distBetweenRobotAndNearWall) {
     return moveLine.x2y2;
-  }
+  }*/
   return nearestWall;
 }
 

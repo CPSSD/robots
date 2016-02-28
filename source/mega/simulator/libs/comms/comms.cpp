@@ -80,11 +80,13 @@ void comms::serialReply(struct RotateResponse rotResp) {
 
 void comms::serialReply(struct ScanResponse scanResp) {
     Serial.print("RESULT:\t");
-    Serial.print(scanResp.id);
+    Serial.print(scanResp.uniqueID);
     Serial.print(",\t");
-    Serial.print(scanResp.angle);
+    Serial.print((scanResp.angle) / 10);
     Serial.print(",\t");
     Serial.print(scanResp.distance);
     Serial.print(",\t");
-    Serial.println(scanResp.last);
+    Serial.print(scanResp.last);
+    Serial.print(",\t");
+    Serial.println(scanResp.status);
 }

@@ -41,9 +41,9 @@ struct RotateResponse {
 };
 
 struct ScanResponse {
-  int id;
-  float angle, distance; //Note angle a value between 0 & 42, as per laser gearing limitations
-  bool last;
+  //byte commandNumber;
+  unsigned int uniqueID, angle, distance;
+  bool last, status;
 };
 
 #endif
