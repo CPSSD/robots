@@ -67,7 +67,7 @@ Status          - 1 byte  (Unisgned 8 bit int ) 0 for failure, non-zero for succ
 
 Parameter Name 	Size in bytes	Parameter Type  Notes
 ---------------------------------------------------
-- detect (Command #1)
+- detect (Command #5)
 Length          - 1 byte  (Unsigned  8 bit int)
 Command Number  - 1 byte  (Unsigned  8 bit int)
 Unique ID       - 2 bytes (Unsigned 16 bit int)
@@ -76,7 +76,7 @@ Second Angle    - 2 bytes (Unsigned 16 bit int)
 Distance        - 4 bytes (Unsigned 32 bit int) Max allowed distance between objects, measured in cm.
 
 
-- scan (Command #2)
+- scan (Command #4)
 Length          - 1 byte  (Unsigned  8 bit int)
 Command Number  - 1 byte  (Unsigned  8 bit int)   
 Unique ID       - 2 bytes (Unsigned 16 bit int)
@@ -89,14 +89,14 @@ Unique ID       - 2 bytes (Unsigned 16 bit int)
 
 Parameter Name 	Size in bytes	Parameter Type  Notes
 ---------------------------------------------------
-- detect (Response #1)
+- detect (Response #5)
 Length          - 1 byte  (Unsigned  8 bit int)
 Command Number  - 1 byte  (Unsigned  8 bit int)
 Unique ID       - 2 bytes (Unsigned 16 bit int)
 Angle           - 2 bytes (Unsigned 16 bit int) Angle where object was detected.
 Distance        - 4 bytes (Unsigned 32 bit int) Distance to found object, measured in cm.
 
-- scan (Response #2)
+- scan (Response #4)
 Length          - 1 byte  (Unsigned  8 bit int)
 Command Number  - 1 byte  (Unsigned  8 bit int)
 Unique ID       - 2 bytes (Unsigned 16 bit int)
