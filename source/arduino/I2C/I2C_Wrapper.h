@@ -31,6 +31,12 @@ typedef struct scanCommand : command {
 	// No extra information for scan command
 } scanCommand;
 
+typedef struct detectCommand : command {
+	uint16_t rangeBegin;
+	uint16_t rangeEnd;
+	uint32_t maxDistance;
+} detectCommand;
+
 typedef struct {
 	uint8_t commandNumber;
 	uint16_t uniqueID;
@@ -57,6 +63,10 @@ typedef struct scanResponse : response {
 	bool last;
 } scanResponse;
 
+typedef struct detectResponse : response {
+	uint16_t angle;
+	uint32_t distance;
+}
 
 typedef enum {
 	Master = 0,
@@ -75,11 +85,13 @@ typedef void (*I2C_Move_Command_Handler)(moveCommand);
 typedef void (*I2C_Stop_Command_Handler)(stopCommand);
 typedef void (*I2C_Rotate_Command_Handler)(rotateCommand);
 typedef void (*I2C_Scan_Command_Handler)(scanCommand);
+typedef void (*I2C_Detect_Command_Handler)(detectCommand);
 
 typedef void (*I2C_Move_Response_Handler)(moveResponse);
 typedef void (*I2C_Stop_Response_Handler)(stopResponse);
 typedef void (*I2C_Rotate_Response_Handler)(rotateResponse);
 typedef void (*I2C_Scan_Response_Handler)(scanResponse);
+typedef void (*I2C_Detect_Response_Handler)(detectResponse);
 
 class I2C_Wrapper {
     public:
@@ -91,24 +103,28 @@ class I2C_Wrapper {
 		static uint16_t sendStopCommand(uint8_t slaveId);
 		static uint16_t sendRotateCommand(uint8_t slaveId, uint16_t angle);
 		static uint16_t sendScanCommand(uint8_t slaveId);
+		static uint16_t sendDetectCommand(uint8_t slaveId, uint16_t rangeBegin, uint16_t rangeEnd, uint32_t maxDistance);
 		
 		// Handling receiving of commands
 		static void registerMoveCommandHandler(I2C_Move_Command_Handler newCommandHandler);
 		static void registerStopCommandHandler(I2C_Stop_Command_Handler newCommandHandler);
 		static void registerRotateCommandHandler(I2C_Rotate_Command_Handler newCommandHandler);
 		static void registerScanCommandHandler(I2C_Scan_Command_Handler newCommandHandler);
+		static void registerDetectCommandHandler(I2C_Detect_Command_Handler newCommandHandler);
 		
 		// Response functions
 		static void sendMoveResponse(uint16_t uniqueID, uint32_t magnitude, uint16_t angle, bool status);		
 		static void sendStopResponse(uint16_t uniqueID, uint32_t magnitude, uint16_t angle, bool status);
 		static void sendRotateResponse(uint16_t uniqueID, uint16_t angle, bool status);
 		static void sendScanResponse(uint16_t uniqueID, uint16_t angle, uint16_t magnitude, bool last, bool status);
+		static void sendDetectResponse(uint16_t uniqueID, uint16_t angle, uint32_t distane, bool status);
 		
 		// Handling receiving of responses
 		static void registerMoveResponseHandler(I2C_Move_Response_Handler newResponseHandler);
 		static void registerStopResponseHandler(I2C_Stop_Response_Handler newResponseHandler);
 		static void registerRotateResponseHandler(I2C_Rotate_Response_Handler newResponseHandler);
 		static void registerScanResponseHandler(I2C_Scan_Response_Handler newResponseHandler);
+		static void registerDetectResponseHandler(I2C_Detect_Response_Handler newResponseHandler);
 		
 		static void i2cOnReceive(int numBytes); // called when data is received over I2C
 		static void i2cOnRequest(); // called when data is requested by the master
@@ -124,11 +140,13 @@ class I2C_Wrapper {
 		static I2C_Stop_Command_Handler stopCommandHandler;
 		static I2C_Rotate_Command_Handler rotateCommandHandler;
 		static I2C_Scan_Command_Handler scanCommandHandler;
+		static I2C_Detect_Command_Handler detectCommandHandler;
 		
 		static I2C_Move_Response_Handler moveResponseHandler;
 		static I2C_Stop_Response_Handler stopResponseHandler;
 		static I2C_Rotate_Response_Handler rotateResponseHandler;
 		static I2C_Scan_Response_Handler scanResponseHandler;
+		static I2C_Detect_Response_Handler detectResponseHandler;
 	
 		// Each command should be stored in the buffer preceeded by a byte telling us the length of the command
 		static uint8_t dataOutBuffer[MAX_BUFFER_SIZE]; // Circular buffer contatining each byte to send
