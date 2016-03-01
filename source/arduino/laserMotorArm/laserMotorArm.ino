@@ -3,7 +3,7 @@
 #include <Motor.h>
 #include <LaserScanner.h>
 #include <Wire.h>
-#include <I2C_Wrapper.h>
+//#include <I2C_Wrapper.h>
 
 String STATE = "WAITING";
 int detectionAngle = 0;
@@ -16,9 +16,10 @@ int totalScans = 0;
 
 void faceWall(int scanFreq, int distance, int finishOffset, bool isPartialMove) {
   motor.setSpeed(150);
-  LaserScanner::setScanFreq(scanFreq, distance);
+  LaserScanner::setScanFreq(scanFreq, distance, "DEFAULT");
   totalScans = LaserScanner::scansToDo;
   motor.registerRotationFunction(&LaserScanner::getContinuousReading);
+  motor.registerRotationFinishedFunction(&LaserScanner::onMotorFinish);
   LaserReading goal = LaserReading{ -1, -1};
   LaserScanner::reset();
 
@@ -77,6 +78,7 @@ void detectObjects(int angle, int rotations) {
 
   motor.setSpeed(200);
   motor.registerRotationFunction(&LaserScanner::detectObjects);
+  motor.registerRotationFinishedFunction(&LaserScanner::onMotorFinish);
   LaserScanner::setDetectionAngle(angle);
   LaserScanner::setDetectionRange(25);
 
@@ -84,27 +86,53 @@ void detectObjects(int angle, int rotations) {
   Serial.println("Finished Rotating Continuously");
 }
 
-void scanArea(int scanFreq, int distance){
+void scanArea(int scanFreq, int distance, String scanType){
   motor.setSpeed(150);
   Serial.println("Scanning Area...");
   
-  LaserScanner::setScanFreq(scanFreq, distance);
+  LaserScanner::setScanFreq(scanFreq, distance, scanType);
   totalScans = LaserScanner::scansToDo;
   LaserScanner::reset();
   
   motor.registerRotationFunction(&LaserScanner::getContinuousReading);
-  LaserScanner::pushScanData = true;
-  motor.rotateWithCorrection(distance);
+  motor.registerRotationFinishedFunction(&LaserScanner::onMotorFinish);
+   if (scanType != "DEFAULT") {
+    for (int i = 0; i < 3; i++){
+      LaserScanner::reset();
+      LaserScanner::pushScanData = true;
+      motor.rotateWithCorrection(distance);
+    }
+    LaserScanner::totalRotations = 0;
+
+    for (int i = 0; i < LaserScanner::scansToDo; i++){
+      if (LaserScanner::lastRotationData[i].angle/3 != i){
+        Serial.println("\t- Error @ this location");
+      } else {
+        if (LaserScanner::pushScanData) {
+          Serial.println("\t- Sending Scan Data");
+          LaserScanner::sendScanResponse(LaserReading{LaserScanner::lastRotationData[i].angle / LaserScanner::averageRotations, LaserScanner::lastRotationData[i].distance / LaserScanner::averageRotations});
+        }
+      }
+      Serial.print("[");
+      Serial.print("i");
+      Serial.print("]: ");
+      Serial.print(LaserScanner::lastRotationData[i].angle/3);
+      Serial.print(", ");
+      Serial.println(LaserScanner::lastRotationData[i].distance/3);
+    }
+  } else {
+    motor.rotateWithCorrection(distance);
+  }
 
   Serial.println("Finished sending data...");
 }
-
+/**
 // Set the state to SCAN until a scan is complete.
 void scanCommandHandler(scanCommand command) {
   Serial.println("Recieved Scan Command");
   if (STATE == "WAITING") {
     STATE = "SCAN"
-    scanArea(3360/300, motor.singleRotation);
+    scanArea(3360/300, motor.singleRotation, "DEFAULT");
     STATE = "WAITING"
   } else if (STATE == "DETECT") {
     Serial.println("Waiting for detection to stop before scanning.");
@@ -129,16 +157,18 @@ void detectionCommandHandler(detectCommand command){
 void moveCommandHandler(moveCommand command){
   Serial.print("Changing detection angle to ")
   Serial.println(command.angle);
-  detectionAngle = command.angle;
 }
+*/
 
 void setup() {
   Serial.begin(9600);
-  
+
+  /*
   I2C_Wrapper::init(Slave, 27);
   I2C_Wrapper::registerScanCommandHandler(&scanCommandHandler);
   I2C_Wrapper::registerMoveCommandHandler(&moveCommandHandler);
   I2C_Wrapper::registerDetectionCommandHandler(&detectionCommandHandler);
+  */
   
   motor.setup();
   scanner.setup();
@@ -151,7 +181,7 @@ void loop() {
   Serial.println("*Laser now faces wall");
 
   //detectObjects(0, 2);
-  //scanArea(3360/70, motor.singleRotation);
+  scanArea(3360/70, motor.singleRotation, "AVERAGE");
   
   Serial.println("Starting main loop...");
   while(1) {
@@ -159,7 +189,7 @@ void loop() {
       detectObjects(detectionAngle, 1);
     } else if (STATE == "SCAN" && waitingToScan) {
       waitingToScan = false;
-      scanArea(3360/70, motor.singleRotation);
+      scanArea(3360/70, motor.singleRotation, "DEFAULT");
       STATE = "WAITING";
     }
   }
