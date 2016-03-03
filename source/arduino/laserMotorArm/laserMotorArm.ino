@@ -137,17 +137,16 @@ void scanCommandHandler(scanCommand command) {
     Serial.println("Unable to start scan. Invalid STATE or already scanning.");
   }
 }
-/*
+
 // Set the state to DETECT (IFF state is WAITING)
-void detectionCommandHandler(detectCommand command){
+void detectCommandHandler(detectCommand command){
   if (STATE == "WAITING") {
-    STATE = "DETECT"
-    detectObjects(detectionAngle, 1);
+    STATE = "DETECT";
   } else {
     Serial.println("Unable to change state to DETECT. Reason: Scan command in progress");
   }
 }
-*/
+
 // Set the current detection angle to the move angle.
 void moveCommandHandler(moveCommand command){
   Serial.print("Changing detection angle to ");
@@ -157,12 +156,10 @@ void moveCommandHandler(moveCommand command){
 void setup() {
   Serial.begin(9600);
 
-  
   I2C_Wrapper::init(Slave, 27);
   I2C_Wrapper::registerScanCommandHandler(&scanCommandHandler);
   I2C_Wrapper::registerMoveCommandHandler(&moveCommandHandler);
- // I2C_Wrapper::registerDetectionCommandHandler(&detectionCommandHandler);
-  
+  I2C_Wrapper::registerDetectCommandHandler(&detectCommandHandler);
   
   motor.setup();
   scanner.setup();
