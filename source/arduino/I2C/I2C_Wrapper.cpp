@@ -18,7 +18,7 @@ I2C_Move_Response_Handler I2C_Wrapper::moveResponseHandler = NULL;
 I2C_Stop_Response_Handler I2C_Wrapper::stopResponseHandler = NULL;
 I2C_Rotate_Response_Handler I2C_Wrapper::rotateResponseHandler = NULL;
 I2C_Scan_Response_Handler I2C_Wrapper::scanResponseHandler = NULL;
-I2C_Detect_Response_Hanlder I2C_Wrapper::detectResponseHandler = NULL;
+I2C_Detect_Response_Handler I2C_Wrapper::detectResponseHandler = NULL;
 
 uint8_t I2C_Wrapper::deviceNumber = 0;
 uint16_t I2C_Wrapper::currentID = 0;
@@ -120,7 +120,7 @@ void I2C_Wrapper::sendScanResponse(uint16_t uniqueID, uint16_t angle, uint16_t m
 	bufferOutFillEnd = (bufferOutFillEnd + length + 1) % MAX_BUFFER_SIZE;
 }
 
-void I2C_Wrapper::sendDetectResponse(uint16_t uniqueID, uint16_t angle, uint32_t distane, bool status)
+void I2C_Wrapper::sendDetectResponse(uint16_t uniqueID, uint16_t angle, uint32_t distance, bool status)
 {
 	uint8_t length = 10; // 1 byte for the command number, 2 bytes for the ID, 2 for angle, 4 for the distance, 1 for the status
 	dataOutBuffer[bufferOutFillEnd] = length;
