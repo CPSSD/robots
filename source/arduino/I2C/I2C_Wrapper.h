@@ -66,7 +66,7 @@ typedef struct scanResponse : response {
 typedef struct detectResponse : response {
 	uint16_t angle;
 	uint32_t distance;
-}
+} detectResponse;
 
 typedef enum {
 	Master = 0,
