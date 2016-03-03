@@ -130,16 +130,11 @@ void scanArea(int scanFreq, int distance, String scanType){
 // Set the state to SCAN until a scan is complete.
 void scanCommandHandler(scanCommand command) {
   Serial.println("Recieved Scan Command");
-  if (STATE == "WAITING") {
-    STATE = "SCAN";
-    scanArea(3360/300, motor.singleRotation, "DEFAULT");
-    STATE = "WAITING";
-  } else if (STATE == "DETECT") {
-    Serial.println("Waiting for detection to stop before scanning.");
+  if (STATE == "WAITING" || STATE == "DETECT") {
     STATE = "SCAN";
     waitingToScan = true;
   } else {
-    Serial.println("Unable to start scan. Invalid STATE");
+    Serial.println("Unable to start scan. Invalid STATE or already scanning.");
   }
 }
 /*
