@@ -432,6 +432,11 @@ void I2C_Wrapper::registerStopResponseHandler(I2C_Stop_Response_Handler newRespo
 	stopResponseHandler = newResponseHandler;
 }
 
+void I2C_Wrapper::registerScanResponseHandler(I2C_Scan_Response_Handler newResponseHandler)
+{
+	scanResponseHandler = newResponseHandler;
+}
+
 void I2C_Wrapper::registerRotateResponseHandler(I2C_Rotate_Response_Handler newResponseHandler)
 {
 	rotateResponseHandler = newResponseHandler;
