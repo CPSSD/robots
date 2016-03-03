@@ -3,7 +3,7 @@
 
 #include <Arduino.h>
 #include "../LIDARLite/LIDARLite.h"
-#include "../SPI/SPI_Wrapper.h"
+#include "../I2C/I2C_Wrapper.h"
 
 struct LaserReading {
 	int angle;

@@ -3,7 +3,7 @@
 #include <Motor.h>
 #include <LaserScanner.h>
 #include <Wire.h>
-//#include <I2C_Wrapper.h>
+#include <I2C_Wrapper.h>
 
 String STATE = "WAITING";
 int detectionAngle = 0;
@@ -126,23 +126,23 @@ void scanArea(int scanFreq, int distance, String scanType){
 
   Serial.println("Finished sending data...");
 }
-/**
+
 // Set the state to SCAN until a scan is complete.
 void scanCommandHandler(scanCommand command) {
   Serial.println("Recieved Scan Command");
   if (STATE == "WAITING") {
-    STATE = "SCAN"
+    STATE = "SCAN";
     scanArea(3360/300, motor.singleRotation, "DEFAULT");
-    STATE = "WAITING"
+    STATE = "WAITING";
   } else if (STATE == "DETECT") {
     Serial.println("Waiting for detection to stop before scanning.");
-    STATE = "SCAN"
+    STATE = "SCAN";
     waitingToScan = true;
   } else {
     Serial.println("Unable to start scan. Invalid STATE");
   }
 }
-
+/*
 // Set the state to DETECT (IFF state is WAITING)
 void detectionCommandHandler(detectCommand command){
   if (STATE == "WAITING") {
@@ -152,23 +152,22 @@ void detectionCommandHandler(detectCommand command){
     Serial.println("Unable to change state to DETECT. Reason: Scan command in progress");
   }
 }
-
+*/
 // Set the current detection angle to the move angle.
 void moveCommandHandler(moveCommand command){
-  Serial.print("Changing detection angle to ")
+  Serial.print("Changing detection angle to ");
   Serial.println(command.angle);
 }
-*/
 
 void setup() {
   Serial.begin(9600);
 
-  /*
+  
   I2C_Wrapper::init(Slave, 27);
   I2C_Wrapper::registerScanCommandHandler(&scanCommandHandler);
   I2C_Wrapper::registerMoveCommandHandler(&moveCommandHandler);
-  I2C_Wrapper::registerDetectionCommandHandler(&detectionCommandHandler);
-  */
+ // I2C_Wrapper::registerDetectionCommandHandler(&detectionCommandHandler);
+  
   
   motor.setup();
   scanner.setup();
@@ -180,8 +179,8 @@ void loop() {
   //faceWall(10, 420, 0, true);
   Serial.println("*Laser now faces wall");
 
-  //detectObjects(0, 2);
-  scanArea(3360/70, motor.singleRotation, "AVERAGE");
+  STATE = "WAITING";
+  waitingToScan = false;
   
   Serial.println("Starting main loop...");
   while(1) {
@@ -189,7 +188,7 @@ void loop() {
       detectObjects(detectionAngle, 1);
     } else if (STATE == "SCAN" && waitingToScan) {
       waitingToScan = false;
-      scanArea(3360/70, motor.singleRotation, "DEFAULT");
+      scanArea(3360/70, motor.singleRotation, "AVERAGE");
       STATE = "WAITING";
     }
   }

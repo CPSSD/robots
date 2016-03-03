@@ -38,7 +38,7 @@ void LaserScanner::sendScanResponse(LaserReading reading){
 		lastScan = true;
 	}
 	int angle = (360 / scansToDo) * reading.angle;
-	//SPI_Wrapper::sendScanResponse(scanTick, (uint16_t) reading.distance, (uint16_t) angle, lastScan, true);
+	I2C_Wrapper::sendScanResponse(scanTick, (uint16_t) angle, (uint16_t) reading.distance, lastScan, true);
 }
 
 void LaserScanner::setup(){
