@@ -7,10 +7,13 @@ int LaserScanner::scansToDo;
 int LaserScanner::scanFreq;
 int LaserScanner::detectionAngle;
 int LaserScanner::detectionRange;
-int LaserScanner::averageRotations;
+int LaserScanner::queuedRotations;
 int LaserScanner::totalRotations;
+int LaserScanner::scanOffset;
+
 bool LaserScanner::detectedDuringSpin;
 bool LaserScanner::pushScanData;
+
 String LaserScanner::scanType;
 LaserReading* LaserScanner::lastRotationData;
 
@@ -20,7 +23,7 @@ LaserScanner::LaserScanner(){
 	detectedDuringSpin = false;
 	pushScanData = false;
 	scanType = "DEFAULT";
-	scanTick = scanFreq = lastEncoderCount = totalRotations = averageRotations = totalRotations = 0;
+	scanTick = scanFreq = lastEncoderCount = totalRotations = queuedRotations = totalRotations = scanOffset = 0;
 	scansToDo = 1;
 	lastRotationData = new LaserReading[scansToDo];
 }
@@ -31,14 +34,14 @@ LaserScanner::~LaserScanner(){
 
 void LaserScanner::sendScanResponse(LaserReading reading){
 	bool lastScan = false;
-	if (reading.distance >= 1061 || reading.distance < 0){
-		reading.distance = 0;
+	if (reading.angle == -1 || reading.distance == -1 || reading.distance >= 1060){
+		return;
 	}
 	if (scanTick == scansToDo){
 		lastScan = true;
 	}
 	int angle = (360 / scansToDo) * reading.angle;
-	I2C_Wrapper::sendScanResponse(scanTick, (uint16_t) angle, (uint16_t) reading.distance, lastScan, true);
+	I2C_Wrapper::sendScanResponse(15, scanTick, (uint16_t) angle, (uint16_t) reading.distance, lastScan, true);
 }
 
 void LaserScanner::setup(){
@@ -47,8 +50,9 @@ void LaserScanner::setup(){
 }
 
 // Sets ScanFreq in terms of encoder ticks (maximum of 'distance' per rotation) also sets the scan type. (DEFAULT, AVERAGE, INTERVAL)
-void LaserScanner::setScanFreq(int freq, int distance, String type){
+void LaserScanner::setScanFreq(int freq, int distance, String type, int rotations){
 	scanType = type;
+	queuedRotations = rotations;
 	if (freq <= 0){
 		scanFreq = 0;
 		scansToDo = 1;
@@ -61,6 +65,10 @@ void LaserScanner::setScanFreq(int freq, int distance, String type){
 	}
 	delete lastRotationData;
 	lastRotationData = new LaserReading[scansToDo];
+}
+
+void LaserScanner::setScanOffset(int offset){
+	scanOffset = offset;
 }
 
 void LaserScanner::setDetectionAngle(int angle){
@@ -106,8 +114,7 @@ void LaserScanner::onMotorFinish(){
 }
 
 void LaserScanner::getContinuousReading(int encoderCount){	
-	int averageRotations = 3;
-	if (lastEncoderCount != encoderCount && encoderCount > 0 && encoderCount % scanFreq == 0) {
+	if (lastEncoderCount != encoderCount && encoderCount > 0 && encoderCount % (scanFreq + scanOffset) == 0) {
 		scanTick += 1;
 		if (scanTick >= 0 && scanTick <= scansToDo){
 			LaserReading reading = getSingleReading(scanTick-1);
@@ -127,16 +134,29 @@ void LaserScanner::getContinuousReading(int encoderCount){
 					lastRotationData[scanTick-1].distance = lastRotationData[scanTick-1].distance + reading.distance;	
 				}
 			} else if (scanType == "INTERVAL") {
-					// Will be implemented shortly.
+				if ((scanTick - scanOffset) % queuedRotations == 0) {
+					Serial.println(scanTick);
+					lastRotationData[scanTick-1] = reading;
+				} else {
+					lastRotationData[scanTick-1] = LaserReading{-1, -1};
+				}
 			} else {
 				Serial.println("Unknown Scan Type...");
 			}
 			
-			Serial.print("[");
-			Serial.print(scanTick-1);
-			Serial.print(" | ");
-			Serial.print(lastRotationData[scanTick-1].distance);
-			Serial.println("]");
+			if (scanType == "INTERVAL" && (scanTick - scanOffset) % queuedRotations == 0) {
+				Serial.print("[");
+				Serial.print(scanTick-1);
+				Serial.print(" | ");
+				Serial.print(lastRotationData[scanTick-1].distance);
+				Serial.println("]");
+			} else if (scanType != "INTERVAL"){
+				Serial.print("[");
+				Serial.print(scanTick-1);
+				Serial.print(" | ");
+				Serial.print(lastRotationData[scanTick-1].distance);
+				Serial.println("]");
+			}
 			
 			lastEncoderCount = encoderCount;
 		}
@@ -145,6 +165,7 @@ void LaserScanner::getContinuousReading(int encoderCount){
 
 void LaserScanner::reset(){
 	lastEncoderCount = 0;
+	scanOffset = 0;
 	pushScanData = false;
 	scanTick = 0;
 }
