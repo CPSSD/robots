@@ -27,6 +27,7 @@ MapLine ray;
 EquationOfLine PERIMETER[4];
 EquationOfLine equOfRay;
 
+command* com;
 MoveCommand moveCom;
 MoveResponse moveResp = {0, 0, 0, 0};
 
@@ -63,15 +64,14 @@ void loop() {
     delay(10); //Required to allow read buffer to recover
   }
     
-  if(instruct == "moveRobot(") {
-    //moveCom = communications.constructMoveCommand();
-    makeMoveCommand();
-    moveRobot(moveCom);
+  if(com != NULL) {
+    processCommand(com);
     //Reset global variables
-    id = 0;
-    angle = 0;
-    magnitude = 0;
+    //id = 0;
+    //angle = 0;
+    //magnitude = 0;
   }
+  
   if(instruct == "rotate(") {
     //rotCom = communications.constructRotateCommand();
     makeRotateCommand();
@@ -152,28 +152,40 @@ void makeRotateCommand() {
 }
 
 void moveCommandHandler(moveCommand movCom) {
-  Serial.println("Received move command over SPI, echoing back...");
-  respond(movCom);
+  //Serial.println("Received move command over SPI, echoing back...");
+  //respond(movCom);
+  moveCommand* temp = new moveCommand(movCom);
+  com = temp;
 }
 
 void scanCommandHandler(scanCommand scanCom) {
-  Serial.println("Received scan command over SPI.");
-  while(angle <= 10) {
-    ScanResponse scanResp = {scanCom.uniqueID, angle, 65530, false, false};
-    ray = calculations.makeLineFromPolar(((((float)angle) * PI) / 180), (float)scanResp.distance, currentPosition);
-    equOfRay = calculations.getEquationOfLine(ray);
-    nearestWall = calculations.getDestination(ray, equOfRay, PERIMETER);
-    scanResp.distance = (unsigned int)calculations.getDistBetweenTwoPoints(ray.x1y1, nearestWall);
-    scanResp.last = (angle == 3600);
-    respond(scanResp);
-    angle++;
-  }
-  angle = 0;
+  scanCommand* temp = new scanCommand(scanCom);
+  com = temp;
 }
 
-void respond(moveCommand com) {
-  SPI_Wrapper::sendMoveResponse(com.uniqueID, com.magnitude, com.angle, true);
-  Serial.println("Response sending function invoked successfully!");
+void processCommand(command* com) {
+  if(com->commandNumber == 1){
+    moveRobot((moveCommand*)com);
+    respond((moveCommand*)com);
+  }
+  /*else if(com->commandNumber == 2){
+    
+  }
+  else if(com->commandNumber == 3){
+    
+  }*/
+  else if(com->commandNumber == 4){
+    ScanResponse scanResp;
+    while(angle <= 10){
+      scanResp = scan((scanCommand*)com);
+      respond(scanResp);
+      angle++;
+    }
+    angle = 0;
+  }
+}
+void respond(moveCommand* com){
+  SPI_Wrapper::sendMoveResponse(com->uniqueID, com->magnitude, com->angle, true);
 }
 
 void respond(ScanResponse scanResp) {
@@ -182,13 +194,23 @@ void respond(ScanResponse scanResp) {
   communications.serialReply(scanResp);
 }
 
-void moveRobot(struct MoveCommand com) {
-  ray = calculations.makeLineFromPolar(com.angle, com.magnitude, currentPosition);
+void moveRobot(moveCommand* com) {
+  ray = calculations.makeLineFromPolar(com->angle, com->magnitude, currentPosition);
   equOfRay = calculations.getEquationOfLine(ray);
   destination = calculations.getDestination(ray, equOfRay, PERIMETER);
-  com.magnitude = (int)calculations.getDistBetweenTwoPoints(equOfRay.xy, destination);
-  amMoving = true;
-  moveTimer = millis();
+  com->magnitude = (int)calculations.getDistBetweenTwoPoints(equOfRay.xy, destination);
+  //amMoving = true;
+  //moveTimer = millis();
+}
+
+ScanResponse scan(scanCommand* com){
+  ScanResponse scanResp = {com->uniqueID, angle, 65530, false, false};
+  ray = calculations.makeLineFromPolar(((((float)angle) * PI) / 180), (float)scanResp.distance, currentPosition);
+  equOfRay = calculations.getEquationOfLine(ray);
+  nearestWall = calculations.getDestination(ray, equOfRay, PERIMETER);
+  scanResp.distance = (unsigned int)calculations.getDistBetweenTwoPoints(ray.x1y1, nearestWall);
+  scanResp.last = (angle == 3600);
+  return scanResp;
 }
 
 struct MoveResponse giveHeartbeatMove(struct MoveCommand com, unsigned long time) {
