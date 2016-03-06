@@ -5,14 +5,20 @@
 #define moveCode 1
 #define stopCode 2
 #define rotateCode 3
+#define scanCode 4
+#define detectCode 5
 
 I2C_Move_Command_Handler I2C_Wrapper::moveCommandHandler = NULL;
 I2C_Stop_Command_Handler I2C_Wrapper::stopCommandHandler = NULL;
 I2C_Rotate_Command_Handler I2C_Wrapper::rotateCommandHandler = NULL;
+I2C_Scan_Command_Handler I2C_Wrapper::scanCommandHandler = NULL;
+I2C_Detect_Command_Handler I2C_Wrapper::detectCommandHandler = NULL;
 
 I2C_Move_Response_Handler I2C_Wrapper::moveResponseHandler = NULL;
 I2C_Stop_Response_Handler I2C_Wrapper::stopResponseHandler = NULL;
 I2C_Rotate_Response_Handler I2C_Wrapper::rotateResponseHandler = NULL;
+I2C_Scan_Response_Handler I2C_Wrapper::scanResponseHandler = NULL;
+I2C_Detect_Response_Handler I2C_Wrapper::detectResponseHandler = NULL;
 
 uint8_t I2C_Wrapper::deviceNumber = 0;
 uint16_t I2C_Wrapper::currentID = 0;
@@ -98,6 +104,39 @@ void I2C_Wrapper::sendRotateResponse(uint16_t uniqueID, uint16_t angle, bool sta
 	bufferOutFillEnd = (bufferOutFillEnd + length + 1) % MAX_BUFFER_SIZE;
 }
 
+void I2C_Wrapper::sendScanResponse(uint16_t uniqueID, uint16_t angle, uint16_t magnitude, bool last, bool status)
+{
+	uint8_t length = 9; // 1 byte for the command number, 2 bytes for the ID, 2 for angle, 2 for the magnitude, 1 for last bool, 1 for the status
+	dataOutBuffer[bufferOutFillEnd] = length;
+	dataOutBuffer[(bufferOutFillEnd + 1) % MAX_BUFFER_SIZE] = scanCode;
+	dataOutBuffer[(bufferOutFillEnd + 2) % MAX_BUFFER_SIZE] = (uint8_t)(uniqueID >> 8); 
+	dataOutBuffer[(bufferOutFillEnd + 3) % MAX_BUFFER_SIZE] = (uint8_t)uniqueID;
+	dataOutBuffer[(bufferOutFillEnd + 4) % MAX_BUFFER_SIZE] = (uint8_t)(angle >> 8);
+	dataOutBuffer[(bufferOutFillEnd + 5) % MAX_BUFFER_SIZE] = (uint8_t)(angle);
+	dataOutBuffer[(bufferOutFillEnd + 6) % MAX_BUFFER_SIZE] = (uint8_t)(magnitude >> 8);
+	dataOutBuffer[(bufferOutFillEnd + 7) % MAX_BUFFER_SIZE] = (uint8_t)(magnitude);
+	dataOutBuffer[(bufferOutFillEnd + 8) % MAX_BUFFER_SIZE] = (uint8_t)(last);
+	dataOutBuffer[(bufferOutFillEnd + 9) % MAX_BUFFER_SIZE] = (uint8_t)(status);
+	bufferOutFillEnd = (bufferOutFillEnd + length + 1) % MAX_BUFFER_SIZE;
+}
+
+void I2C_Wrapper::sendDetectResponse(uint16_t uniqueID, uint16_t angle, uint32_t distance, bool status)
+{
+	uint8_t length = 10; // 1 byte for the command number, 2 bytes for the ID, 2 for angle, 4 for the distance, 1 for the status
+	dataOutBuffer[bufferOutFillEnd] = length;
+	dataOutBuffer[(bufferOutFillEnd + 1) % MAX_BUFFER_SIZE] = detectCode;
+	dataOutBuffer[(bufferOutFillEnd + 2) % MAX_BUFFER_SIZE] = (uint8_t)(uniqueID >> 8); 
+	dataOutBuffer[(bufferOutFillEnd + 3) % MAX_BUFFER_SIZE] = (uint8_t)uniqueID;
+	dataOutBuffer[(bufferOutFillEnd + 4) % MAX_BUFFER_SIZE] = (uint8_t)(angle >> 8);
+	dataOutBuffer[(bufferOutFillEnd + 5) % MAX_BUFFER_SIZE] = (uint8_t)(angle);
+	dataOutBuffer[(bufferOutFillEnd + 6) % MAX_BUFFER_SIZE] = (uint8_t)(distance >> 24);
+	dataOutBuffer[(bufferOutFillEnd + 7) % MAX_BUFFER_SIZE] = (uint8_t)(distance >> 16);
+	dataOutBuffer[(bufferOutFillEnd + 8) % MAX_BUFFER_SIZE] = (uint8_t)(distance >> 8);
+	dataOutBuffer[(bufferOutFillEnd + 9) % MAX_BUFFER_SIZE] = (uint8_t)(distance);
+	dataOutBuffer[(bufferOutFillEnd + 10) % MAX_BUFFER_SIZE] = (uint8_t)(status);
+	bufferOutFillEnd = (bufferOutFillEnd + length + 1) % MAX_BUFFER_SIZE;
+}
+
 // Sending commands when operating as Master
 uint16_t I2C_Wrapper::sendMoveCommand(uint8_t slaveId, uint16_t angle, uint32_t magnitude)
 {
@@ -129,7 +168,7 @@ uint16_t I2C_Wrapper::sendStopCommand(uint8_t slaveId)
 	dataOutBuffer[0] = length;
 	dataOutBuffer[1] = (uint8_t)((currentID >> 8));
 	dataOutBuffer[2] = (uint8_t)currentID;
-	dataOutBuffer[3] = moveCode;
+	dataOutBuffer[3] = stopCode;
 	
 	Wire.beginTransmission(slaveId);
 	Wire.write(dataOutBuffer, length);
@@ -145,10 +184,49 @@ uint16_t I2C_Wrapper::sendRotateCommand(uint8_t slaveId, uint16_t angle)
 	dataOutBuffer[0] = length;
 	dataOutBuffer[1] = (uint8_t)((currentID >> 8));
 	dataOutBuffer[2] = (uint8_t)currentID;
-	dataOutBuffer[3] = moveCode;
+	dataOutBuffer[3] = rotateCode;
 	dataOutBuffer[4] = (uint8_t)(angle >> 8);
 	dataOutBuffer[5] = (uint8_t)angle;
 
+	Wire.beginTransmission(slaveId);
+	Wire.write(dataOutBuffer, length);
+	Wire.endTransmission();
+	return currentID;
+}
+
+uint16_t I2C_Wrapper::sendScanCommand(uint8_t slaveId)
+{
+	// Send scan command when operating as master
+	currentID++;
+	uint8_t length = 4; // 1 byte for the length of the request, 2 bytes for the id, 1 byte for the code
+	dataOutBuffer[0] = length;
+	dataOutBuffer[1] = (uint8_t)((currentID >> 8));
+	dataOutBuffer[2] = (uint8_t)currentID;
+	dataOutBuffer[3] = scanCode;
+	
+	Wire.beginTransmission(slaveId);
+	Wire.write(dataOutBuffer, length);
+	Wire.endTransmission();
+	return currentID;
+}
+
+uint16_t I2C_Wrapper::sendDetectCommand(uint8_t slaveId, uint16_t rangeBegin, uint16_t rangeEnd, uint32_t maxDistance)
+{
+	currentID++;
+	uint8_t length = 12; // 1 byte for length, 1 byte for command number, 2 bytes for ID, 2 bytes for rangeBegin, 2 bytes for rangeEnd, 4 bytes for distance
+	dataOutBuffer[0] = length;
+	dataOutBuffer[1] = (uint8_t)((currentID >> 8));
+	dataOutBuffer[2] = (uint8_t)currentID;
+	dataOutBuffer[3] = detectCode;
+	dataOutBuffer[4] = (uint8_t)(rangeBegin >> 8);
+	dataOutBuffer[5] = (uint8_t)rangeBegin;
+	dataOutBuffer[6] = (uint8_t)(rangeEnd >> 8);
+	dataOutBuffer[7] = (uint8_t)rangeEnd;
+	dataOutBuffer[8] = (uint8_t)(maxDistance >> 24);
+	dataOutBuffer[9] = (uint8_t)(maxDistance >> 16);
+	dataOutBuffer[10] = (uint8_t)(maxDistance >> 8);
+	dataOutBuffer[11] = (uint8_t)maxDistance;
+	
 	Wire.beginTransmission(slaveId);
 	Wire.write(dataOutBuffer, length);
 	Wire.endTransmission();
@@ -172,6 +250,7 @@ void I2C_Wrapper::processReceivedCommand(int length)
 									   ((uint32_t)(commandBuffer[7]) << 16) +
 									   ((uint32_t)(commandBuffer[8]) << 8) +
 									   (uint32_t)(commandBuffer[9]));
+									   
 			if (moveCommandHandler) {
 				(*moveCommandHandler)(commandStruct);
 			}
@@ -182,6 +261,7 @@ void I2C_Wrapper::processReceivedCommand(int length)
 			stopCommand commandStruct;
 			commandStruct.commandNumber = stopCode;
 			commandStruct.uniqueID = ((uint16_t)(commandBuffer[1]) << 8) + (uint16_t)(commandBuffer[2]);
+			
 			if (stopCommandHandler) {
 				(*stopCommandHandler)(commandStruct);
 			}
@@ -193,8 +273,37 @@ void I2C_Wrapper::processReceivedCommand(int length)
 			commandStruct.commandNumber = rotateCode;
 			commandStruct.uniqueID = ((uint16_t)(commandBuffer[1]) << 8) + (uint16_t)(commandBuffer[2]);
 			commandStruct.angle = ((uint16_t)(commandBuffer[4]) << 8) + (uint16_t)(commandBuffer[5]);
+			
 			if (rotateCommandHandler) {
 				(*rotateCommandHandler)(commandStruct);
+			}
+			break;
+		}
+		case scanCode:
+		{
+			scanCommand commandStruct;
+			commandStruct.commandNumber = scanCode;
+			commandStruct.uniqueID = ((uint16_t)(commandBuffer[1]) << 8) + (uint16_t)(commandBuffer[2]);
+			
+			if (scanCommandHandler) {
+				(*scanCommandHandler)(commandStruct);
+			}
+			break;
+		}
+		case detectCode:
+		{
+			detectCommand commandStruct;
+			commandStruct.commandNumber = detectCode;
+			commandStruct.uniqueID = ((uint16_t)(commandBuffer[1]) << 8) + (uint16_t)(commandBuffer[2]);
+			commandStruct.rangeBegin = ((uint16_t)(commandBuffer[4]) << 8) + (uint16_t)(commandBuffer[5]);
+			commandStruct.rangeEnd = ((uint16_t)(commandBuffer[6]) << 8) + (uint16_t)(commandBuffer[7]);
+			commandStruct.maxDistance = (((uint32_t)(commandBuffer[8]) << 24) +
+						                ((uint32_t)(commandBuffer[9]) << 16) +
+						                ((uint32_t)(commandBuffer[10]) << 8) +
+						                (uint32_t)(commandBuffer[11]));
+			
+			if (detectCommandHandler) {
+				(*detectCommandHandler)(commandStruct);
 			}
 			break;
 		}
@@ -253,6 +362,38 @@ void I2C_Wrapper::processReceivedResponse(int length)
 			}
 			break;
 		}
+		case scanCode:
+		{
+			scanResponse responseStruct;
+			responseStruct.commandNumber = scanCode;
+			responseStruct.uniqueID = ((uint16_t)(commandBuffer[2]) << 8) + (uint16_t)(commandBuffer[3]);
+			responseStruct.angle = ((uint16_t)(commandBuffer[4]) << 8) + (uint16_t)(commandBuffer[5]);
+			responseStruct.magnitude = ((uint16_t)(commandBuffer[6]) << 8) + (uint16_t)(commandBuffer[7]);
+			responseStruct.last = commandBuffer[8] > 0;
+			responseStruct.success = commandBuffer[9] > 0;
+			
+			if (scanResponseHandler) {
+				(*scanResponseHandler)(responseStruct);
+			}
+			break;
+		}
+		case detectCode:
+		{
+			detectResponse responseStruct;
+			responseStruct.commandNumber = detectCode;
+			responseStruct.uniqueID = ((uint16_t)(commandBuffer[2]) << 8) + (uint16_t)(commandBuffer[3]);
+			responseStruct.angle = ((uint16_t)(commandBuffer[4]) << 8) + (uint16_t)(commandBuffer[5]);
+			responseStruct.distance = (((uint32_t)(commandBuffer[6]) << 24) +
+									  ((uint32_t)(commandBuffer[7]) << 16) +
+						              ((uint32_t)(commandBuffer[8]) << 8) +
+						              (uint32_t)(commandBuffer[9]));
+			responseStruct.success = commandBuffer[10] > 0;
+			
+			if (detectResponseHandler) {
+				(*detectResponseHandler)(responseStruct);
+			}
+			break;
+		}
 	}
 }
 
@@ -271,6 +412,16 @@ void I2C_Wrapper::registerRotateCommandHandler(I2C_Rotate_Command_Handler newCom
 	rotateCommandHandler = newCommandHandler;
 }
 
+void I2C_Wrapper::registerScanCommandHandler(I2C_Scan_Command_Handler newCommandHandler)
+{
+	scanCommandHandler = newCommandHandler;
+}
+
+void I2C_Wrapper::registerDetectCommandHandler(I2C_Detect_Command_Handler newCommandHandler)
+{
+	detectCommandHandler = newCommandHandler;
+}
+
 void I2C_Wrapper::registerMoveResponseHandler(I2C_Move_Response_Handler newResponseHandler)
 {
 	moveResponseHandler = newResponseHandler;
@@ -281,9 +432,19 @@ void I2C_Wrapper::registerStopResponseHandler(I2C_Stop_Response_Handler newRespo
 	stopResponseHandler = newResponseHandler;
 }
 
+void I2C_Wrapper::registerScanResponseHandler(I2C_Scan_Response_Handler newResponseHandler)
+{
+	scanResponseHandler = newResponseHandler;
+}
+
 void I2C_Wrapper::registerRotateResponseHandler(I2C_Rotate_Response_Handler newResponseHandler)
 {
 	rotateResponseHandler = newResponseHandler;
+}
+
+void I2C_Wrapper::registerDetectResponseHandler(I2C_Detect_Response_Handler newResponseHandler)
+{
+	detectResponseHandler = newResponseHandler;
 }
 
 uint8_t I2C_Wrapper::getNextCommandByte()
