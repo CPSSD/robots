@@ -10,13 +10,10 @@ calc calculations;
 comms communications;
 
 const float SPEED = 0.1; //in mm per millisecond
-const int STARTING_X = 20;
-const int STARTING_Y = 20;
- //Use to access interrupt pins - may be needed to implement asynchronous stop
-const byte INTERR_1 = 2;
-const byte INTERR_2 = 3;
+const int STARTING_X = 2000; //This and all distances measured in cm
+const int STARTING_Y = 2000;
 
-const MapLine MAP_BOUNDS[4] = {0, 0, 41, 0, 41, 0, 41, 41, 41, 41, 0, 41, 0, 41, 0, 0};
+const MapLine MAP_BOUNDS[4] = {0, 0, 4100, 0, 4100, 0, 4100, 4100, 4100, 4100, 0, 4100, 0, 4100, 0, 0};
 unsigned long moveTimer, rotateTimer, distTravelled;
 int incomingByte, id, magnitude, angleInDegrees;
 unsigned int angle; //Measured in 1/10ths of a degree
@@ -71,6 +68,12 @@ void loop() {
     //angle = 0;
     //magnitude = 0;
   }
+
+  if(amMoving && millis() >= moveTimer) {
+    respond((moveCommand*)com);
+    currentPosition = destination;
+    amMoving = false;
+  }
   
   if(instruct == "rotate(") {
     //rotCom = communications.constructRotateCommand();
@@ -99,14 +102,7 @@ void loop() {
     wrapUp(1);
     brakes = false;
   }
-  if(amMoving && millis() - moveTimer >= 100UL) {
-    moveResp = giveHeartbeatMove(moveCom, (millis() - moveTimer));
-    //serialReply(moveResp);
-    if(moveResp.reason > 0) {
-      communications.serialReply(moveResp);
-      currentPosition = destination;
-    }
-  }
+
   if(amRotating && millis() - rotateTimer >= 1000UL) {
     rotResp = giveHeartbeatRotate(rotCom);
   }
@@ -166,7 +162,6 @@ void scanCommandHandler(scanCommand scanCom) {
 void processCommand(command* com) {
   if(com->commandNumber == 1){
     moveRobot((moveCommand*)com);
-    respond((moveCommand*)com);
   }
   /*else if(com->commandNumber == 2){
     
@@ -198,9 +193,9 @@ void moveRobot(moveCommand* com) {
   ray = calculations.makeLineFromPolar(com->angle, com->magnitude, currentPosition);
   equOfRay = calculations.getEquationOfLine(ray);
   destination = calculations.getDestination(ray, equOfRay, PERIMETER);
-  com->magnitude = (int)calculations.getDistBetweenTwoPoints(equOfRay.xy, destination);
-  //amMoving = true;
-  //moveTimer = millis();
+  com->magnitude = (unsigned long)calculations.getDistBetweenTwoPoints(equOfRay.xy, destination);
+  amMoving = true;
+  moveTimer = millis() + calculations.getTravelTime(((com->magnitude) * 10), SPEED);
 }
 
 ScanResponse scan(scanCommand* com){

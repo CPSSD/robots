@@ -7,6 +7,14 @@ float calc::getDistBetweenTwoPoints(point p1, point p2) {
   return sqrt((pow(p2.x - p1.x, 2)) + (pow(p2.y - p1.y, 2)));
 }
 
+float calc::getTravelTime(unsigned long distance, float speed) {
+	return distance / speed;
+}
+
+float calc::getDistanceTravelled(float speed, unsigned long time) {
+	return speed * time;
+}
+
 struct MapLine calc::makeLineFromPolar(float angle, float distance, point currentPosition) {
   MapLine temp;
   temp.x1y1 = {currentPosition.x, currentPosition.y};
@@ -100,7 +108,7 @@ boolean calc::hasInterception(EquationOfLine border, EquationOfLine robotMoveLin
       //Convert to slope-intercept form: y = (line.m * x) + (line.m * line.x) + line.y
       //y = line.m * x + ((line.m * line.x) + line.y)
       float intercept = ((robotMoveLine.m * border.xy.x) + ((robotMoveLine.m * robotMoveLine.xy.x) + robotMoveLine.xy.y));
-      if(intercept >= 0.0 && intercept <= 41.0) {
+      if(intercept >= 0.0 && intercept <= 4100.0) {
         return true;
       }
       else {
