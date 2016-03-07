@@ -14,7 +14,7 @@ Parameter Name 	Size in bytes	Parameter Type			Notes
 Length          - 1 byte      (Unsigned 8 bit int)
 Command Number	- 1 byte  		(Unsigned 8  bit int)	
 Unique ID 		- 2 bytes		(Unsigned 16 bit int)
-Angle 			- 2 bytes		(Unsigned 16 bit int) 	Number from 0 - 3,600 in 10ths of a degree
+Angle 			- 2 bytes		(Unsigned 16 bit int) 	Number from 0 - 360 in degrees
 Magnitude 		- 4 bytes		(Unsigned 32 bit int)	Measured in cm
 
 - stop 		(Command #2)
@@ -26,7 +26,7 @@ Unique ID 		- 2 bytes		(Unsigned 16 bit int)
 Length          - 1 byte      (Unsigned 8 bit int)
 Command Number	- 1 byte  		(Unsigned 8  bit int)	
 Unique ID 		- 2 bytes		(Unsigned 16 bit int)
-Angle 			- 2 bytes		(Unsigned 16 bit int) 	Number from 0 - 3,600 in 10ths of a degree
+Angle 			- 2 bytes		(Unsigned 16 bit int) 	Number from 0 - 360 in degrees
 
 ```
 
