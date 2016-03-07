@@ -9,8 +9,8 @@ String STATE = "WAITING";
 int detectionAngle = 0;
 boolean waitingToScan = false;
 
-const int totalRotations = 5;
-const int motorSpeed = 200;
+const int totalRotations = 2;
+const int motorSpeed = 150;
 
 Motor motor = Motor();
 LaserScanner scanner = LaserScanner();
@@ -125,6 +125,7 @@ void scanArea(int scanFreq, int distance, String scanType) {
       Serial.println(LaserScanner::lastRotationData[i].distance / totalRotations);
     }
   } else if (scanType == "DEFAULT") {
+    LaserScanner::pushScanData = true;
     motor.rotateWithCorrection(distance);
   } else if (scanType == "INTERVAL") {
     for (int i = 0; i < totalRotations; i++) {
@@ -196,7 +197,7 @@ void loop() {
       detectObjects(detectionAngle, 1);
     } else if (STATE == "SCAN" && waitingToScan) {
       waitingToScan = false;
-      scanArea(3360 / 5, motor.singleRotation, "AVERAGE");
+      scanArea(3360 / 300, motor.singleRotation, "AVERAGE");
       STATE = "WAITING";
     }
   }
