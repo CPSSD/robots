@@ -200,8 +200,8 @@ void setup() {
 
 void loop() {
   Serial.println("Starting LaserMotorArm");
-  //faceWall(3360/180, motor.singleRotation, 210, false);
-  //faceWall(10, 420, 0, true);
+  faceWall(3360/360, motor.singleRotation, 210, false);
+  faceWall(1, 420, 0, true);
   Serial.println("*Laser now faces wall");
 
   STATE = "WAITING";
