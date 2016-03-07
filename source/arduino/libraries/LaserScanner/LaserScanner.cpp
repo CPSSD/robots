@@ -5,7 +5,8 @@ int LaserScanner::scanTick;
 int LaserScanner::scanCount;
 int LaserScanner::scansToDo;
 int LaserScanner::scanFreq;
-int LaserScanner::detectionAngle;
+int LaserScanner::detectAngleStart;
+int LaserScanner::detectAngleEnd;
 int LaserScanner::detectionRange;
 int LaserScanner::queuedRotations;
 int LaserScanner::totalRotations;
@@ -40,7 +41,7 @@ void LaserScanner::sendScanResponse(LaserReading reading){
 	if (scanTick == scansToDo){
 		lastScan = true;
 	}
-	int angle = (360.0 / (float) scansToDo) * (float) reading.angle;
+	int angle = tickToDegrees(reading.angle);
 	Serial.print("Angle: ");
 	Serial.println(angle);
 	// uint8_t masterId, uint16_t uniqueID, uint16_t angle, uint16_t magnitude, bool last, bool status
@@ -74,13 +75,21 @@ void LaserScanner::setScanOffset(int offset){
 	scanOffset = offset;
 }
 
-void LaserScanner::setDetectionAngle(int angle){
-	if (angle < 0){
-		detectionAngle = 0;
-	} else if (angle >= 3360){
-		detectionAngle = 3360;
+void LaserScanner::setDetectionAngle(int startAngle, int endAngle){
+	if (startAngle < 0){
+		detectAngleStart = 0;
+	} else if (startAngle >= 3360){
+		detectAngleStart = 3360;
 	} else {
-		detectionAngle = angle;
+		detectAngleStart = startAngle;
+	}
+	
+	if (endAngle < 0){
+		detectAngleEnd = 0;
+	} else if (endAngle >= 3360){
+		detectAngleEnd = 3360;
+	} else {
+		detectAngleEnd = endAngle;
 	}
 }
 
@@ -88,25 +97,32 @@ void LaserScanner::setDetectionRange(int range){
 	detectionRange = range;
 }
 
-void LaserScanner::detectObjects(int encoderCount){
-	if (encoderCount < detectionAngle) {
-		detectedDuringSpin = false;
-	}
-	
-	if (encoderCount != lastEncoderCount && (encoderCount >= detectionAngle - 10 && encoderCount <= detectionAngle + 10) && !detectedDuringSpin){
-		Serial.println("At correct angle....");
+int LaserScanner::tickToDegrees(int angle) {
+	return (360.0 / (float) scansToDo) * (float) angle;
+}
+
+void LaserScanner::sendDetectResponse(int angle, int distance) {
+	I2C_Wrapper::sendDetectResponse(15, 0, (uint16_t) angle, (uint32_t) distance, true);
+}
+
+void LaserScanner::detectObjects(int encoderCount){	
+	if (encoderCount != lastEncoderCount && (encoderCount >= detectAngleStart && encoderCount <= detectAngleEnd)){
 		LaserReading reading = getSingleReading(encoderCount);
-		Serial.print("Distance away: ");
+		Serial.print(reading.angle);
+		Serial.print(": Distance away: ");
 		Serial.println(reading.distance);
+		
+		if (reading.distance <= -1 || reading.distance >= 1000){
+			lastEncoderCount = encoderCount;
+			return;
+		}
+		
 		if (reading.distance <= detectionRange){
 			Serial.println("-> Found object! Be careful!");
+			int degree = ((float)reading.angle / 3360.0) * 360.0;
+			Serial.println(degree);
+			sendDetectResponse(degree, reading.distance);
 		}
-			
-		Serial.print("[");
-		Serial.print(encoderCount);
-		Serial.print(" | ");
-		Serial.print(reading.distance);
-		Serial.println("]");
 		
 		lastEncoderCount = encoderCount;
 	}
@@ -114,6 +130,11 @@ void LaserScanner::detectObjects(int encoderCount){
 
 void LaserScanner::onMotorFinish(){
 	totalRotations += 1;
+}
+
+void LaserScanner::setDetectionParameters(int startAngle, int endAngle, int distance){
+	setDetectionRange(distance);
+	setDetectionAngle(startAngle, endAngle);
 }
 
 void LaserScanner::getContinuousReading(int encoderCount){	

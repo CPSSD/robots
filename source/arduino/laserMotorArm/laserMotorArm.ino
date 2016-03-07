@@ -9,6 +9,7 @@ String STATE = "WAITING";
 int detectionAngle = 0;
 boolean waitingToScan = false;
 
+int detectEnd, detectBegin, detectDistance;
 const int totalRotations = 2;
 const int motorSpeed = 150;
 
@@ -75,18 +76,22 @@ void faceWall(int scanFreq, int distance, int finishOffset, bool isPartialMove) 
 
 }
 
-void detectObjects(int angle, int rotations) {
+int degreesToEncoderCount(int angle){
+ return ((float) angle / 360.0) * 3360.0;
+}
+
+void detectObjects(int startAngle, int endAngle, int distance) {
   boolean detectingObjects = true;
-  int rotationTick = 0;
 
   motor.setSpeed(200);
   motor.registerRotationFunction(&LaserScanner::detectObjects);
   motor.registerRotationFinishedFunction(&LaserScanner::onMotorFinish);
-  LaserScanner::setDetectionAngle(angle);
-  LaserScanner::setDetectionRange(25);
+  LaserScanner::setDetectionParameters(startAngle, endAngle, distance);
 
-  motor.rotateContinuous(rotations);
+  motor.rotateWithCorrection(3360);
   Serial.println("Finished Rotating Continuously");
+  LaserScanner::reset();
+  delay(1000);
 }
 
 void scanArea(int scanFreq, int distance, String scanType) {
@@ -100,6 +105,7 @@ void scanArea(int scanFreq, int distance, String scanType) {
 
   motor.registerRotationFunction(&LaserScanner::getContinuousReading);
   motor.registerRotationFinishedFunction(&LaserScanner::onMotorFinish);
+  LaserScanner::totalRotations = 0;
   if (scanType == "AVERAGE") {
     for (int i = 0; i < totalRotations; i++) {
       LaserScanner::reset();
@@ -158,6 +164,16 @@ void scanCommandHandler(scanCommand command) {
 // Set the state to DETECT (IFF state is WAITING)
 void detectCommandHandler(detectCommand command) {
   if (STATE == "WAITING") {
+    detectBegin = degreesToEncoderCount(command.rangeBegin);
+    detectEnd = degreesToEncoderCount(command.rangeEnd);
+    detectDistance = command.maxDistance;
+    Serial.println("[Detection Command Recieved]");
+    Serial.print("Start: ");
+    Serial.println(detectBegin);
+    Serial.print("End: ");
+    Serial.println(detectEnd);
+    Serial.print("Distance: ");
+    Serial.println(detectDistance);
     STATE = "DETECT";
   } else {
     Serial.println("Unable to change state to DETECT. Reason: Scan command in progress");
@@ -188,13 +204,17 @@ void loop() {
   //faceWall(10, 420, 0, true);
   Serial.println("*Laser now faces wall");
 
-  STATE = "SCAN";
-  waitingToScan = true;
+  STATE = "WAITING";
+//  waitingToScan = true;
+//  detectBegin = 0;
+//  detectEnd = degreesToEncoderCount(45);
+//  detectDistance = 10;
 
   Serial.println("Starting main loop...");
   while (1) {
     if (STATE == "DETECT") {
-      detectObjects(detectionAngle, 1);
+      LaserScanner::totalRotations = 0;
+      detectObjects(detectBegin, detectEnd, detectDistance);
     } else if (STATE == "SCAN" && waitingToScan) {
       waitingToScan = false;
       scanArea(3360 / 300, motor.singleRotation, "AVERAGE");

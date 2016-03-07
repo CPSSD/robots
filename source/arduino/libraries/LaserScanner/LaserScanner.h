@@ -16,10 +16,14 @@ class LaserScanner {
 		~LaserScanner();
 		
 		static void setScanFreq(int freq, int distance, String type, int queuedRotations);
-		static void setDetectionAngle(int encoderCount);
+		static void setDetectionAngle(int startAngle, int endAngle);
 		static void setDetectionRange(int range);
 		static void sendScanResponse(LaserReading reading);
 		static void onMotorFinish();
+		
+		static void setDetectionParameters(int startAngle, int endAngle, int distance);
+		static void sendDetectResponse(int angle, int distance);
+		static int tickToDegrees(int angle);
 		
 		static void reset();
 		static void setup();
@@ -40,7 +44,8 @@ class LaserScanner {
 		static int scanOffset;
 		static int scanTick;
 		static int scanFreq;
-		static int detectionAngle;
+		static int detectAngleStart;
+		static int detectAngleEnd;
 		static int detectionRange;
 		static int queuedRotations;
 		static int totalRotations;
