@@ -15,38 +15,38 @@ const int STARTING_Y = 2000;
 
 const MapLine MAP_BOUNDS[4] = {0, 0, 4100, 0, 4100, 0, 4100, 4100, 4100, 4100, 0, 4100, 0, 4100, 0, 0};
 unsigned long moveTimer, rotateTimer, distTravelled;
-int incomingByte, id, magnitude, angleInDegrees;
-unsigned int angle; //Measured in 1/10ths of a degree
+int /*incomingByte,*/ id, magnitude, angleInDegrees;
+unsigned int angle;
 point currentPosition, destination, nearestWall;
-String instruct;
-bool brakes, amMoving, amRotating;
+//String instruct;
+bool /*brakes,*/ amMoving, amRotating;
 MapLine ray;
 EquationOfLine PERIMETER[4];
 EquationOfLine equOfRay;
 
 command* com;
-MoveCommand moveCom;
-MoveResponse moveResp = {0, 0, 0, 0};
+//MoveCommand moveCom;
+//MoveResponse moveResp = {0, 0, 0, 0};
 
-RotateCommand rotCom = {0, 0};
-RotateResponse rotResp = {0, 0, 0};
+//RotateCommand rotCom = {0, 0};
+//RotateResponse rotResp = {0, 0, 0};
 
-ScanResponse scanResp = {0, 0, 0, false};
+ScanResponse scanResp = {0, 0, 0, false, false};
 
 void setup() {
   SPI_Wrapper::init();
   SPI_Wrapper::registerMoveCommandHandler(&moveCommandHandler);
   SPI_Wrapper::registerScanCommandHandler(&scanCommandHandler);
   Serial.begin(9600);
-  instruct = "";
-  incomingByte = 0;
+  //instruct = "";
+  //incomingByte = 0;
   id = 0;
   angle = 0;
   angleInDegrees = 0;
   magnitude = 0;
   currentPosition.x = STARTING_X;
   currentPosition.y = STARTING_Y;
-  brakes = false;
+  //brakes = false;
   amMoving = false;
   amRotating = false;
   for(int i = 0; i < 4; i++) {
@@ -56,10 +56,10 @@ void setup() {
 
 void loop() {
   
-  if(Serial.available() > 0) {
+  /*if(Serial.available() > 0) {
     instruct += communications.parseCommand();
     delay(10); //Required to allow read buffer to recover
-  }
+  }*/
     
   if(com != NULL) {
     processCommand(com);
@@ -73,16 +73,29 @@ void loop() {
     respond((moveCommand*)com);
     currentPosition = destination;
     amMoving = false;
+    delete(com);
+  }
+
+  if(amRotating && angle <= 30) {
+    scanResp = scan((scanCommand*)com);
+    respond(scanResp);
+    angle++;
   }
   
-  if(instruct == "rotate(") {
+  if(amRotating && angle > 30) {
+    amRotating = false;
+    angle = 0;
+    delete(com);
+  }
+  
+  /*if(instruct == "rotate(") {
     //rotCom = communications.constructRotateCommand();
     makeRotateCommand();
     rotate(rotCom);
     id = 0;
     angle = 0;
   }
-  /*if(instruct == "scan(") {
+  if(instruct == "scan(") {
     makeScanCommand();
     do{
       scanResp = scan(id, (angleInDegrees * PI) / 180);
@@ -94,21 +107,17 @@ void loop() {
     id = 0;
     angleInDegrees = 0;
     instruct = "";
-  }*/
+  }
   if(instruct == "stopRobot();") {
     stopRobot(); //Currently non-functional
   }
   if(brakes) {
     wrapUp(1);
     brakes = false;
-  }
-
-  if(amRotating && millis() - rotateTimer >= 1000UL) {
-    rotResp = giveHeartbeatRotate(rotCom);
-  }
+  }*/
 }
 
-void makeMoveCommand() {
+/*void makeMoveCommand() {
     while(Serial.peek() != 44) { //Next char is not " , "
       //As Serial.read() returns single chars as ASCII values, an id of 127 would be read as 49 then 50 then 55.
       //To correct, we shift current id one place to right, read next number, subtract 48 to extract actual value from ASCII representation, then add to id
@@ -145,7 +154,7 @@ void makeRotateCommand() {
     Serial.read();
     Serial.read();
     instruct = "";
-}
+}*/
 
 void moveCommandHandler(moveCommand movCom) {
   //Serial.println("Received move command over SPI, echoing back...");
@@ -170,13 +179,7 @@ void processCommand(command* com) {
     
   }*/
   else if(com->commandNumber == 4){
-    ScanResponse scanResp;
-    while(angle <= 10){
-      scanResp = scan((scanCommand*)com);
-      respond(scanResp);
-      angle++;
-    }
-    angle = 0;
+    amRotating = true;
   }
 }
 void respond(moveCommand* com){
@@ -204,11 +207,11 @@ ScanResponse scan(scanCommand* com){
   equOfRay = calculations.getEquationOfLine(ray);
   nearestWall = calculations.getDestination(ray, equOfRay, PERIMETER);
   scanResp.distance = (unsigned int)calculations.getDistBetweenTwoPoints(ray.x1y1, nearestWall);
-  scanResp.last = (angle == 3600);
+  scanResp.last = (angle == 360);
   return scanResp;
 }
 
-struct MoveResponse giveHeartbeatMove(struct MoveCommand com, unsigned long time) {
+/*struct MoveResponse giveHeartbeatMove(struct MoveCommand com, unsigned long time) {
   distTravelled = distTravelled + ((SPEED * time) * 10);
   if(distTravelled >= com.magnitude) {
     amMoving = false;
@@ -257,7 +260,7 @@ void rotate(struct RotateCommand com) {
   rotateTimer = millis();
 }
 
-/*struct ScanResponse scan(int id, float angle) {
+struct ScanResponse scan(int id, float angle) {
   ScanResponse reply = {id, angle, 66.0, false};
   ray = calculations.makeLineFromPolar(reply.angle, reply.distance, currentPosition);
   equOfRay = calculations.getEquationOfLine(ray);
