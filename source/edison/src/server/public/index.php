@@ -38,15 +38,41 @@
 			return "[" + hours + ":" + minutes + ":" + seconds + "]";
 		}
 		
-		function addResponse(angle, magnitude){
-			angle = this.angle;
-			magnitude = this.magnitude;
+		function updateResponses(){
+			console.log("Trying to get JSON from /drive/response/");
+			var request = new XMLHttpRequest();
+			request.onreadystatechange = function() {
+				// If Request Finished and Status is "OK"
+				if (request.readyState == 4 && request.status == 200) {
+					clearResponseTable();
+					jsonResponse = JSON.parse(request.responseText);
+					console.log(jsonResponse['Responses']);
+					for (var element in jsonResponse['Responses']) {
+						parseResponses(jsonResponse['Responses'][element]);
+					}
+				}
+			};
+			request.open("GET", "response/", true)
+			request.send();
+		}
 		
+		function parseResponses(response){
+			addResponse(response['Time'], response['Angle'], response['Magnitude'])
+		}
+		
+		function clearResponseTable(){
+			var table = document.getElementById("response-table")
+			while (table.lastChild) {
+				table.removeChild(table.lastChild);
+			}
+		}
+		
+		function addResponse(time, angle, magnitude){		
 			// Create and add new row to the table
 			var table = document.getElementById("response-table");
 			var row = table.insertRow(-1);
 			var cell1 = row.insertCell(0);
-			cell1.innerHTML = getTime();
+			cell1.innerHTML = time;
 			var cell2 = row.insertCell(1);
 			cell2.innerHTML = "Move Response"
 			var cell3 = row.insertCell(2);
@@ -58,9 +84,16 @@
 			document.getElementById('response-div').scrollTop = document.getElementById('response-div').scrollHeight;
 		}
 		
+		function init(){
+			console.log("Starting...");
+			update();
+			updateResponses();
+			window.setInterval(updateResponses, 5000)
+		}
+		
 	</script>
 	
-	<body>
+	<body onload="init()">
 		<div class="header"></div>
 		
 		<div class="title">
@@ -87,9 +120,5 @@
 			</div>
 		</div>
 	</body>
-	
-	<script>
-		update();
-	</script>
 	
 </html>
