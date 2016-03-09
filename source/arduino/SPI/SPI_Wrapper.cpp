@@ -19,7 +19,7 @@ int SPI_Wrapper::bufferOutFillBegin = 0;
 int SPI_Wrapper::bufferOutFillEnd = 0;
 uint8_t SPI_Wrapper::sendingCommandLength = 0;
 		
-SPI_state SPI_Wrapper::currentState = WaitingToBegin;
+State SPI_Wrapper::currentState = WaitingToBegin;
 		
 uint8_t SPI_Wrapper::commandBuffer[MAX_COMMAND_LENGTH] = {};
 uint8_t SPI_Wrapper::receivingCommandLength = 0;
