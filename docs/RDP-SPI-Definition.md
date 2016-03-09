@@ -2,7 +2,7 @@
 
 #### SPI communication
 
-- Edison sends the byte 0xFF.
+- Edison sends the byte 147.
 - Edison and Arduino transfer the length of the command they have to send (or 0 for no command).
 - Transfer command (followed by null bytes if length of other command exceeds length of command).
 - One byte indicating if the device has more commands to send. 0 for "Finished", 1 for "Not Finished". If not finished repeat the process.
