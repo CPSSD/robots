@@ -61,7 +61,7 @@ void loop() {
     delay(10); //Required to allow read buffer to recover
   }*/
     
-  if(com != NULL) {
+  if(com != NULL && (!amMoving && !amRotating)) {
     processCommand(com);
     //Reset global variables
     //id = 0;
@@ -73,7 +73,8 @@ void loop() {
     respond((moveCommand*)com);
     currentPosition = destination;
     amMoving = false;
-    delete(com);
+    delete com;
+    com = NULL;
   }
 
   if(amRotating && angle <= 30) {
@@ -85,7 +86,8 @@ void loop() {
   if(amRotating && angle > 30) {
     amRotating = false;
     angle = 0;
-    delete(com);
+    delete com;
+    com = NULL;
   }
   
   /*if(instruct == "rotate(") {
@@ -157,7 +159,7 @@ void makeRotateCommand() {
 }*/
 
 void moveCommandHandler(moveCommand movCom) {
-  //Serial.println("Received move command over SPI, echoing back...");
+  //Serial.println("Received move command over SPI");
   //respond(movCom);
   moveCommand* temp = new moveCommand(movCom);
   com = temp;
