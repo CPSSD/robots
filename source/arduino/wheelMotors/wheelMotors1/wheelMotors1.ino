@@ -25,7 +25,7 @@ void setup()
     //attachInterrupt(M2_Interrupt,M2_EncoderISR,FALLING);
 
     I2C_Wrapper::init(Slave, slaveAddress);
-    I2C_Wrapper::registerMoveCommandHandler(&moveCommandHandler);
+    //I2C_Wrapper::registerMoveCommandHandler(&moveCommandHandler);
     currentMove.magnitude = 0;
     
     motor.setup();
@@ -60,7 +60,7 @@ void loop(){
     //stop when desired number of ticks have been reached
     WheelMotors::diffTicks();
     
-    WheelMotors::checkEndpointReached(distanceInTicks(currentMove.magnitude));
+    WheelMotors::checkEndpointReached(WheelMotors::distanceInTicks(currentMove.magnitude));
     
     //reset Motor encoders after setpoint ticks has been reached
     WheelMotors::checkSetpointReached();

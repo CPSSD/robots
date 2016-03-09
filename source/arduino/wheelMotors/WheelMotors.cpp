@@ -13,31 +13,39 @@ volatile unsigned long WheelMotors::M2_EncoderCount = 0;
 int WheelMotors::M1_Total = 0;
 int WheelMotors::M2_Total = 0;
 
-int D1 = 4;   // direction
-int M1 = 5;   // PWM
-int D2 = 7;
-int M2 = 6;
+int WheelMotors::D1 = 4;   // direction
+int WheelMotors::M1 = 5;   // PWM
+int WheelMotors::D2 = 7;
+int WheelMotors::M2 = 6;
 
-/*Setpoint = 800;
-M1_Input = 0;
-M2_Input = 0;
-M1_Output = 0;
-M2_Output = 0;*/
+bool WheelMotors::finished = true;
 
-moveCommand I2C_Wrapper::currentMove;
-
-//PID myPID1(&M1_Input, &M1_Output, &Setpoint, .5, 0, 0, DIRECT);
-//PID myPID2(&M2_Input, &M2_Output, &Setpoint, .5, 0, 0, DIRECT);
+double WheelMotors::Setpoint = 800;
+double WheelMotors::M1_Input = 0;
+double WheelMotors::M2_Input = 0;
+double WheelMotors::M1_Output = 0;
+double WheelMotors::M2_Output = 0;
+moveCommand WheelMotors::currentMove;
+PID WheelMotors::myPID1 = PID(&M1_Input, &M1_Output, &Setpoint, .5, 0, 0, DIRECT);
+PID WheelMotors::myPID2 = PID(&M2_Input, &M2_Output, &Setpoint, .5, 0, 0, DIRECT);
 
 
 WheelMotors::WheelMotors(){
-		myPID1 = PID(&M1_Input, &M1_Output, &Setpoint, .5, 0.0, 0.0, 0);
-		myPID2 = PID(&M2_Input, &M2_Output, &Setpoint, .5, 0.0, 0.0, 0);
+		//myPID1 = PID(&M1_Input, &M1_Output, &Setpoint, .5, 0.0, 0.0, 0);
+		//myPID2 = PID(&M2_Input, &M2_Output, &Setpoint, .5, 0.0, 0.0, 0);
+
 		M1_Input = 0;
 		M1_Output = 0;
 		M2_Input = 0;
 		M2_Output = 0;
 	//	setup();
+}
+
+bool WheelMotors::isFinished(){
+		if(finished){
+				return true;
+		}
+		return false;
 }
 
 void WheelMotors::setup(){
@@ -55,6 +63,10 @@ void WheelMotors::setup(){
 		pinMode(D2, OUTPUT);
 		digitalWrite(D1,HIGH);
 		digitalWrite(D2,HIGH);
+}
+
+uint16_t WheelMotors::getMagnitude(){
+		return currentMove.magnitude;
 }
 
 void WheelMotors::forward(){
@@ -91,6 +103,11 @@ void WheelMotors::resetAll(){
 	reset();
 	M1_Total = 0;
 	M2_Total = 0;
+}
+
+void WheelMotors::start(){
+	analogWrite(M1,255);
+	analogWrite(M2,255);
 }
 
 //stops wheels
@@ -134,17 +151,19 @@ void WheelMotors::runPID(){
 void WheelMotors::diffTicks(){
     if ((M1_Total + M1_EncoderCount) > (M2_Total + M2_EncoderCount) && (M1_Total + M1_EncoderCount) - (M2_Total + M2_EncoderCount) > 50){
         // if M1 gets bigger than M2, lower M1 max speed and increase M2's min speed
-        myPID1.SetOutputLimits(100,200);
-        myPID2.SetOutputLimits(150,250);
+        myPID1.SetOutputLimits(100,150);
+        myPID2.SetOutputLimits(200,250);
     }else if((M1_Total + M1_EncoderCount) < (M2_Total + M2_EncoderCount) && (M2_Total + M2_EncoderCount) - (M1_Total + M1_EncoderCount) > 50){
         // if M2 gets bigger than M1, lower M2 max speed and increase M1's min speed
-        myPID2.SetOutputLimits(100,200);
-        myPID1.SetOutputLimits(150,250);
-
+        myPID2.SetOutputLimits(100,150);
+        myPID1.SetOutputLimits(200,250);
+				Serial.println("Hello");
     }else{
         myPID1.SetOutputLimits(100,250);
         myPID2.SetOutputLimits(100,250);
-        //Serial.println("Here");
+				Serial.println(M1_Total + M1_EncoderCount);
+				Serial.println(M2_Total + M2_EncoderCount);
+        Serial.println("Here");
     }
 }
 
@@ -158,7 +177,8 @@ void WheelMotors::moveCommandHandler(moveCommand command){
 	}
 }
 
-/*void printInfo(){
+
+void WheelMotors::printInfo(){
     Serial.print("Motor 1 Output: ");
     Serial.println(M1_Output);
     Serial.print("Motor 2 Output: ");
@@ -173,4 +193,4 @@ void WheelMotors::moveCommandHandler(moveCommand command){
     Serial.println(M2_Total + M2_EncoderCount);
 
     Serial.println();
-}*/
+}
