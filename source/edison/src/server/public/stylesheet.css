@@ -1,0 +1,36 @@
+body {
+	background-color: gray;	
+	margin: 0;
+}
+
+div.centered{
+	width: 500px;
+	height: 500px;
+	margin: 0 auto;
+	margin-top: 50px;
+}
+
+div.sphere{
+	margin-top:150px;
+	width: 500px;
+	height: 500px;
+	border-radius: 50%;
+	background-color: white;
+	border-style: solid;
+	border-color: black;
+	border-width: 1px;
+	position: absolute;
+}
+
+p {
+	text-align:center;
+}
+
+input {
+	width: 100px;
+	margin: 0 auto;
+	text-align: center;
+	position:absolute;
+	margin-left:200px;
+	align:right;
+}
