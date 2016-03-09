@@ -1,36 +1,107 @@
+@import url(https://fonts.googleapis.com/css?family=Arvo);
+
 body {
-	background-color: gray;	
+	background-color: #E8EAF6;
 	margin: 0;
+	padding: 0;
+	font-family: 'Arvo', sans-serif;
 }
 
-div.centered{
-	width: 500px;
-	height: 500px;
+table {
+	border-collapse: collapse;
+	width:100%;
+}
+
+td {
+	padding: 8px;
+	text-align: left;
+	border-bottom: 1px solid #grey;
+}
+
+div.content {
+	width: 700px;
+	height: 100%;
 	margin: 0 auto;
-	margin-top: 50px;
 }
 
-div.sphere{
-	margin-top:150px;
-	width: 500px;
-	height: 500px;
-	border-radius: 50%;
-	background-color: white;
-	border-style: solid;
-	border-color: black;
-	border-width: 1px;
+div.header {
+	background-color: #3F51B5;
+	width:100%;
+	height:180px;
+	top: 0px;
 	position: absolute;
+	z-index:-1;
+	margin: 0px;
+	box-shadow: 0px 1px 5px rgba(0, 0, 0, 0.5);
+}
+
+div.section{
+	border-radius:5px;
+	background-color:white;
+	width: 700px;
+	padding-top:10px;
+	padding-bottom: 10px;
+	margin: 30px auto;
+	box-shadow: 0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.24);
+}
+
+div.title {
+	width:700px;
+	margin: 0 auto;
+	margin-top: 20px;
+}
+
+div.response {
+	margin-left:5%;
+	margin-right:5%;
+	height:250px;
+	margin-top:3%;
+	overflow: scroll;
+}
+
+li {
+	list-style-type: circle;
+	margin-bottom:3px;
 }
 
 p {
 	text-align:center;
 }
 
-input {
-	width: 100px;
+p.response {
+	color: black;
+	border-color: white;
+	border-style: none none dotted none;
+}
+
+h1.header {
+	text-align:left;
+	color:white;
+}
+
+h2.title {
 	margin: 0 auto;
 	text-align: center;
-	position:absolute;
-	margin-left:200px;
-	align:right;
+}
+
+input {
+	margin: 0 auto;
+	width:60%;
+	margin-left: 20%;
+	margin-right:20%;
+}
+
+input.button {
+	width:22%;
+	margin-left:39%;
+}
+
+::-webkit-scrollbar {
+	width:0.5em;
+}
+
+::-webkit-scrollbar-thumb {
+	background-color: darkgrey;
+	outline: 1px solid slategrey;
+	border-radius:10px;
 }
