@@ -68,11 +68,57 @@ func getSpiMessageCode(n uint32) uint32 {
 	return (spiIOCMessage0 + (n * spiIOCIncrementor))
 }
 
+func writeFile(path string, data []byte) {
+	file, err := os.OpenFile(path, os.O_WRONLY, 0644)
+	defer file.Close()
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	file.Write(data)
+}
+
 // InitializeSPI opens the SPI file and sets the default values for SPI communication
 func InitializeSPI() {
 	if initialized {
 		return
 	}
+
+	// Export the GPIO pins necessary for SPI
+	for _, pin := range []string{"111", "115", "114", "109", "263", "240", "262", "241", "242", "243", "258", "259", "260", "261", "226", "227", "228", "229", "214"} {
+		writeFile("/sys/class/gpio/export", []byte(pin))
+	}
+
+	var directionMap = map[string]string{
+		"214": "low",
+		"263": "high",
+		"240": "high",
+		"262": "high",
+		"241": "high",
+		"242": "high",
+		"243": "high",
+		"258": "high",
+		"259": "high",
+		"260": "low",
+		"261": "high",
+		"226": "in",
+		"227": "in",
+		"228": "in",
+		"229": "in",
+	}
+
+	// Configure pin directions
+	for pinName, direction := range directionMap {
+		writeFile("/sys/class/gpio/gpio"+pinName+"/direction", []byte(direction))
+	}
+
+	// Configure MOSI, MISO, SCK and SS pins.
+	writeFile("/sys/kernel/debug/gpio_debug/gpio111/current_pinmux", []byte("mode1"))
+	writeFile("/sys/kernel/debug/gpio_debug/gpio115/current_pinmux", []byte("mode1"))
+	writeFile("/sys/kernel/debug/gpio_debug/gpio114/current_pinmux", []byte("mode1"))
+	writeFile("/sys/kernel/debug/gpio_debug/gpio109/current_pinmux", []byte("mode1"))
+
+	writeFile("/sys/class/gpio/gpio214/direction", []byte("high"))
 
 	var err error
 	if spiFile, err = os.OpenFile(fmt.Sprintf("/dev/spidev%v.%v", SpiMajorVersion, SpiMinorVersion), os.O_RDWR, os.ModeExclusive); err != nil {
