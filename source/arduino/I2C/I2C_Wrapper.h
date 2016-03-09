@@ -4,81 +4,10 @@
 #include "Arduino.h"
 #include "Wire.h"
 #include "stdint.h"
+#include "Shared_Structs.h"
 
 #define MAX_COMMAND_LENGTH 32
 #define MAX_SLAVES 4
-
-typedef struct {
-	uint8_t commandNumber;
-	uint16_t uniqueID;
-} command;
-
-typedef struct moveCommand : command {
-	uint16_t angle;
-	uint32_t magnitude;
-} moveCommand;
-
-typedef struct stopCommand : command {
-	// No extra information for stop command
-} stopCommand;
-
-typedef struct rotateCommand : command {
-	uint16_t angle;
-} rotateCommand;
-
-typedef struct scanCommand : command {
-	// No extra information for scan command
-} scanCommand;
-
-typedef struct detectCommand : command {
-	uint16_t rangeBegin;
-	uint16_t rangeEnd;
-	uint32_t maxDistance;
-} detectCommand;
-
-typedef struct {
-	uint8_t commandNumber;
-	uint16_t uniqueID;
-	bool success;
-} response;
-
-typedef struct moveResponse : response {
-	uint16_t angle;
-	uint32_t magnitude;
-} moveResponse;
-
-typedef struct stopResponse : response {
-	uint16_t angle;
-	uint32_t magnitude;
-} stopResponse;
-
-typedef struct rotateResponse : response {
-	uint16_t angle;
-} rotateResponse;
-
-typedef struct scanResponse : response {
-	uint16_t angle;
-	uint16_t magnitude;
-	bool last;
-} scanResponse;
-
-typedef struct detectResponse : response {
-	uint16_t angle;
-	uint32_t distance;
-} detectResponse;
-
-typedef enum {
-	Master = 0,
-	Slave = 1
-} I2C_Mode;
-
-typedef enum {
-	WaitingToBegin = 0,
-	SendingLength = 1,
-	SendingCommand = 2,
-	CheckingIfFinished = 3
-} I2C_state;
-
 
 typedef void (*I2C_Move_Command_Handler)(moveCommand);
 typedef void (*I2C_Stop_Command_Handler)(stopCommand);
@@ -147,7 +76,7 @@ class I2C_Wrapper {
 		static I2C_Mode currentMode;
 		static uint16_t currentID;
 		static uint8_t deviceNumber;
-        static I2C_state currentState;
+        static State currentState;
 		
 		static uint8_t commandBuffer[MAX_COMMAND_LENGTH];
 		static uint8_t commandOutBuffer[MAX_COMMAND_LENGTH];

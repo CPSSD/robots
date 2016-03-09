@@ -26,7 +26,7 @@ uint16_t I2C_Wrapper::currentID = 0;
 uint8_t I2C_Wrapper::dataOutBuffer[MAX_COMMAND_LENGTH] = {};
 		
 I2C_Mode I2C_Wrapper::currentMode = Master;
-I2C_state I2C_Wrapper::currentState = WaitingToBegin;
+State I2C_Wrapper::currentState = WaitingToBegin;
 		
 uint8_t I2C_Wrapper::commandBuffer[MAX_COMMAND_LENGTH] = {};
 uint8_t I2C_Wrapper::commandOutBuffer[MAX_COMMAND_LENGTH] = {};
