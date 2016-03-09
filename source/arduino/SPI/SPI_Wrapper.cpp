@@ -189,9 +189,12 @@ void SPI_Wrapper::spiIntteruptFunction()
 	switch (currentState) {
 		case WaitingToBegin:
 		{
-			// If we receive 255 move to SendingLength state 
+			// If we receive 147 move to SendingLength state 
 			// and put length of command to send in SPDR
-			if (byteReceived == 255) {
+			if (byteReceived == 147) {
+				commandBytesReceived = 0;
+				sendingCommandLength = 0;
+				
 				sendingCommandLength = getNextCommandByte();
 				SPDR = (byte)sendingCommandLength;
 				currentState = SendingLength;
