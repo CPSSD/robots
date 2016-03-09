@@ -11,7 +11,7 @@ const (
 	stopCode         = byte(2)
 	rotateCode       = byte(3)
 	scanCode         = byte(4)
-	initiateTransfer = byte(255)
+	initiateTransfer = byte(147)
 )
 
 // Response is a generic type which is used in the different Response types
@@ -181,10 +181,12 @@ func spiLoop() {
 		data := make([]uint8, 1)
 		data[0] = initiateTransfer
 		SPI.TransferAndReceiveData(data)
-		for {
-			moreCommandsToSend := sendNextCommand()
-			if !moreCommandsToSend {
-				break
+		if data[0] == 100 {
+			for {
+				moreCommandsToSend := sendNextCommand()
+				if !moreCommandsToSend {
+					break
+				}
 			}
 		}
 	}
