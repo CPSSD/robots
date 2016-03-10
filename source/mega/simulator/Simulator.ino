@@ -1,30 +1,26 @@
 #include <SPI.h>
 #include <SPI_Wrapper.h>
 
-#include <comms.h>
 #include <structs.h>
 #include <calc.h>
 #include "math.h"
+#include <Shared_Structs.h>
 
 calc calculations;
-comms communications;
 
 const float SPEED = 0.1; //in mm per millisecond
-const int STARTING_X = 2000; //This and all distances measured in cm
-const int STARTING_Y = 2000;
+const int STARTING_X = 150; //This and all distances measured in cm
+const int STARTING_Y = 150;
+const MapLine MAP_BOUNDS[4] = {0, 0, 300, 0, 300, 0, 300, 300, 300, 300, 0, 300, 0, 300, 0, 0};
 
-const MapLine MAP_BOUNDS[4] = {0, 0, 4100, 0, 4100, 0, 4100, 4100, 4100, 4100, 0, 4100, 0, 4100, 0, 0};
 unsigned long startedMoving, moveTimer, rotateTimer, distTravelled;
 int id, magnitude, movingAngle, laserAngle;
-point currentPosition, destination, nearestWall;
 bool amScanning, amMoving, amRotating;
-MapLine ray;
+
+point currentPosition, destination, nearestWall;
 EquationOfLine PERIMETER[4];
-EquationOfLine equOfRay;
-
 command* com;
-
-ScanResponse scanResp = {0, 0, 0, false, false};
+scanResponse scanResp;
 
 void setup() {
   SPI_Wrapper::init();
@@ -64,13 +60,13 @@ void loop() {
     com = NULL;
   }
 
-  if(amScanning && laserAngle <= 30) {
-    scanResp = scan((scanCommand*)com);
+  if(amScanning && laserAngle <= 360) {
+    scanResp = scan();
     respond(scanResp);
     laserAngle++;
   }
   
-  if(amScanning && laserAngle > 30) {
+  if(amScanning && laserAngle > 360) {
     amScanning = false;
     laserAngle = 0;
     delete com;
@@ -79,10 +75,7 @@ void loop() {
 }
 
 void moveCommandHandler(moveCommand movCom) {
-  //Serial.println("Received move command over SPI");
-  //respond(movCom);
-  moveCommand* temp = new moveCommand(movCom);
-  com = temp;
+  com = new moveCommand(movCom);
 }
 
 void stopCommandHandler(stopCommand stopCom) {
@@ -90,8 +83,7 @@ void stopCommandHandler(stopCommand stopCom) {
 }
 
 void scanCommandHandler(scanCommand scanCom) {
-  scanCommand* temp = new scanCommand(scanCom);
-  com = temp;
+  com =  new scanCommand(scanCom);
 }
 
 void processCommand(command* com) {
@@ -104,8 +96,8 @@ void processCommand(command* com) {
     float distanceMoved = (((float)(millis() - startedMoving))/(float)(moveTimer - startedMoving))*(float)(totalDistance);
     
     // Change currentPosition to represent the distance moved
-    ray = calculations.makeLineFromPolar(movingAngle, (uint16_t)distanceMoved, currentPosition);
-    equOfRay = calculations.getEquationOfLine(ray);
+    MapLine ray = calculations.makeLineFromPolar(movingAngle, (uint16_t)distanceMoved, currentPosition);
+    EquationOfLine equOfRay = calculations.getEquationOfLine(ray);
     currentPosition = calculations.getDestination(ray, equOfRay, PERIMETER);
     
     SPI_Wrapper::sendStopResponse(com->uniqueID, (uint16_t)distanceMoved, (uint16_t)movingAngle, true);
@@ -122,29 +114,28 @@ void respond(moveCommand* com){
   SPI_Wrapper::sendMoveResponse(com->uniqueID, com->magnitude, com->angle, true);
 }
 
-void respond(ScanResponse scanResp) {
-  SPI_Wrapper::sendScanResponse(scanResp.uniqueID, scanResp.angle, scanResp.distance, scanResp.last, scanResp.status);
-  Serial.println("Response sending function invoked successfully!");
-  communications.serialReply(scanResp);
+void respond(scanResponse scanResp) {
+  SPI_Wrapper::sendScanResponse(com->uniqueID, scanResp.angle, scanResp.magnitude, scanResp.last, true);
 }
 
 void moveRobot(moveCommand* com) {
-  ray = calculations.makeLineFromPolar(com->angle, com->magnitude, currentPosition);
-  equOfRay = calculations.getEquationOfLine(ray);
+  MapLine ray = calculations.makeLineFromPolar(com->angle, com->magnitude, currentPosition);
+  EquationOfLine equOfRay = calculations.getEquationOfLine(ray);
   destination = calculations.getDestination(ray, equOfRay, PERIMETER);
-  com->magnitude = (unsigned long)calculations.getDistBetweenTwoPoints(equOfRay.xy, destination);
+  com->magnitude = (unsigned long)round(calculations.getDistBetweenTwoPoints(equOfRay.xy, destination));
   amMoving = true;
   movingAngle = com->angle;
   startedMoving = millis();
   moveTimer = millis() + calculations.getTravelTime(((com->magnitude) * 10), SPEED);
 }
 
-ScanResponse scan(scanCommand* com){
-  ScanResponse scanResp = {com->uniqueID, laserAngle, 65530, false, false};
-  ray = calculations.makeLineFromPolar(((((float)laserAngle) * PI) / 180), (float)scanResp.distance, currentPosition);
-  equOfRay = calculations.getEquationOfLine(ray);
+scanResponse scan(){
+  scanResponse scanResp;
+  scanResp.angle = laserAngle;
+  MapLine ray = calculations.makeLineFromPolar(((((float)laserAngle) * PI) / 180), 65530.0, currentPosition);
+  EquationOfLine equOfRay = calculations.getEquationOfLine(ray);
   nearestWall = calculations.getDestination(ray, equOfRay, PERIMETER);
-  scanResp.distance = (unsigned int)calculations.getDistBetweenTwoPoints(ray.x1y1, nearestWall);
+  scanResp.magnitude = (unsigned int)round(calculations.getDistBetweenTwoPoints(ray.x1y1, nearestWall));
   scanResp.last = (laserAngle == 360);
   return scanResp;
 }

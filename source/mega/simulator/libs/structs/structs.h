@@ -17,33 +17,4 @@ struct EquationOfLine {
   boolean isVertical;
 };
 
-typedef struct {
-	byte commandNumber;
-	word uniqueID;
-} Command;
-
-typedef struct MoveCommand : Command {
-	word angle;
-	uint32_t magnitude;
-};
-
-struct MoveResponse {
-  int id;
-  float angle, magnitude, reason;
-};
-
-struct RotateCommand {
-  int id, angle;
-};
-
-struct RotateResponse {
-  int id, angle, reason;
-};
-
-struct ScanResponse {
-  //byte commandNumber;
-  unsigned int uniqueID, angle, distance;
-  bool last, status;
-};
-
 #endif

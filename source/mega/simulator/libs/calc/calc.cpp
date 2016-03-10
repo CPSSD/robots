@@ -108,7 +108,7 @@ boolean calc::hasInterception(EquationOfLine border, EquationOfLine robotMoveLin
       //Convert to slope-intercept form: y = (line.m * x) + (line.m * line.x) + line.y
       //y = line.m * x + ((line.m * line.x) + line.y)
       float intercept = ((robotMoveLine.m * border.xy.x) + ((robotMoveLine.m * robotMoveLine.xy.x) + robotMoveLine.xy.y));
-      if(intercept >= 0.0 && intercept <= 4100.0) {
+      if(intercept >= 0.0 && intercept <= 300.0) {
         return true;
       }
       else {
