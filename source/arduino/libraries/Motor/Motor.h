@@ -4,6 +4,7 @@
 #include <Arduino.h>
 
 typedef void (*Rotation_Function)(int);
+typedef void (*Rotation_Finished_Function)();
 
 class Motor {
 	public:
@@ -21,6 +22,7 @@ class Motor {
 		void rotateContinuous(int ticks);
 		
 		void registerRotationFunction(Rotation_Function function);
+		void registerRotationFinishedFunction(Rotation_Finished_Function function);
 		
 		int numTicks(int offset);
 		int correctTicks(int correction);
@@ -43,6 +45,7 @@ class Motor {
 		int correction;
 		
 		Rotation_Function rotationFunction;
+		Rotation_Finished_Function rotationFinishedFunction;
 };
 
 #endif

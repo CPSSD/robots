@@ -3,25 +3,38 @@
 
 #include <Arduino.h>
 #include "../LIDARLite/LIDARLite.h"
-#include "../SPI/SPI_Wrapper.h"
+#include "../I2C/I2C_Wrapper.h"
 
 struct LaserReading {
 	int angle;
 	int distance;
 };
 
+
+typedef enum {
+	Default = 0,
+	Average = 1,
+	Interval = 2
+} ScanType;
+
 class LaserScanner {
 	public:
 		LaserScanner();
 		~LaserScanner();
 		
-		static void setScanFreq(int freq, int distance);
-		static void setDetectionAngle(int encoderCount);
+		static void setScanFreq(int freq, int distance, ScanType type, int queuedRotations);
+		static void setDetectionAngle(int startAngle, int endAngle);
 		static void setDetectionRange(int range);
 		static void sendScanResponse(LaserReading reading);
+		static void onMotorFinish();
+		
+		static void setDetectionParameters(int startAngle, int endAngle, int distance);
+		static void sendDetectResponse(int angle, int distance);
+		static int tickToDegrees(int angle);
 		
 		static void reset();
 		static void setup();
+		static void setScanOffset(int offset);
 		
 		static int getReading();
 		
@@ -31,16 +44,23 @@ class LaserScanner {
 		
 		static LaserReading* lastRotationData;
 		static LIDARLite myLidarLite;
-			
-		static int lastEncoderCount;
+		
+		static bool pushScanData;
 		static int scansToDo;
+		static int totalRotations;
+		static int queuedRotations;
+	
+	private:
+		static int lastEncoderCount;
 		static int scanCount;
+		static int scanOffset;
 		static int scanTick;
 		static int scanFreq;
-		static int detectionAngle;
+		static int detectAngleStart;
+		static int detectAngleEnd;
 		static int detectionRange;
 		static bool detectedDuringSpin;
-		static bool pushScanData;
+		static ScanType scanType;
 };
 
 #endif
