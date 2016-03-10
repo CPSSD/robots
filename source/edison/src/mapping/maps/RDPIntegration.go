@@ -8,7 +8,7 @@ import (
 var lastAction string
 var currentID int
 
-// Initialises the RDP stuff.
+// RDPInit Initialises the RDP stuff.
 func RDPInit() {
 	fmt.Println("* Registering Response Handler")
 	RobotDriverProtocol.RegisterResponseHandler(RDPConnector)
@@ -27,6 +27,7 @@ func demo(){
 	RDPConnector(RobotDriverProtocol.ScanResponse{RobotDriverProtocol.Response{0, 0, true}, 360, distance, true})
 }
 
+// RDPConnector handles the incoming data.
 func RDPConnector(data interface{}) {
 	fmt.Println()
 	fmt.Println("\tData Recieved =>", data)

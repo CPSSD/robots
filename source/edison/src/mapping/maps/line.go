@@ -55,7 +55,7 @@ func (this Line) joinTo(line Line) (new_line Line) {
 	return
 }
 
-// Prints out the array of lines in a nice way.
+// PrintLineArray Prints out the array of lines in a nice way.
 func PrintLineArray(array []Line) {
 	for i := 0; i < len(array); i++ {
 		fmt.Println(array[i].P1, "...", array[i].P2, array[i].Vertical, array[i].Slope)

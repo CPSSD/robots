@@ -25,6 +25,7 @@ type Map struct {
 	seen  [][]int
 }
 
+// MapInit initialises the map and the rdp library, and starts a scan.
 func MapInit() {
 	fmt.Println("[Initialising Map]")
 	RobotMap = CreateMap()
@@ -36,20 +37,22 @@ func MapInit() {
 	RobotDriverProtocol.Scan()
 }
 
+// GetSeenMap returns the seen map.
 func (this *Map) GetSeenMap() [][]int {
 	return this.seen
 }
 
+// GetBitmap returns the current bitmap and a boolean denoting if the map is complete.
 func (this *Map) GetBitmap() ([][]bool, bool) {
 	return this.floor, finishedMapping
 }
 
-// Returns the maps robot.
+// GetRobot returns the maps robot.
 func (this *Map) GetRobot() *Robot {
 	return &this.robot
 }
 
-// Creates an empty 1x1 (this single point will be the robots starting position.)
+// CreateMap creates an empty 1x1 map (this single point will be the robots starting position.)
 func CreateMap() (createdMap Map) {
 	createdMap = Map{width: 1, height: 1, robot: Robot{0.5, 0.5, 0}}
 	createdMap.floor = append(createdMap.floor, []bool{false})
@@ -57,15 +60,15 @@ func CreateMap() (createdMap Map) {
 	return
 }
 
-// Moves the robot along the path.
+// MoveRobotAlongPath moves the robot along the given path.
 // Set "stopBeforePoint" to true if you dont want to stop before entering the point given. 
 // Used when following a path into unseen areas to prevent crashes.
 func (this *Map) MoveRobotAlongPath(path [][]bool, stopBeforePoint bool) {
 	prevX, prevY := -1, -1
-	possibleMove := true
+	movesLeft := true
 	nextX, nextY := 0, 0
-	for possibleMove {
-		nextX, nextY, possibleMove = this.getNextMove(int(this.robot.x), int(this.robot.y), prevX, prevY, path)
+	for movesLeft {
+		nextX, nextY, movesLeft = this.getNextMove(int(this.robot.x), int(this.robot.y), prevX, prevY, path)
 		if stopBeforePoint {
 			_, _, moreMoves := this.getNextMove(nextX, nextY, int(this.robot.x), int(this.robot.y), path)
 			if !moreMoves {
@@ -98,7 +101,6 @@ func (this *Map) MoveRobotAlongPath(path [][]bool, stopBeforePoint bool) {
 	RobotDriverProtocol.Scan()
 }
 
-// Ge
 func getHorizontalLine(x1, y1, x2, y2 int) (degree, magnitude float64) {
 	if x1+1 == x2 {
 		return 90, BITMAP_SIZE
@@ -115,10 +117,12 @@ func getHorizontalLine(x1, y1, x2, y2 int) (degree, magnitude float64) {
 	return 0, 0
 }
 
+// MoveRobotAlongLine moves the robot to the end point of the line.
 func (this *Map) MoveRobotAlongLine(degree, magnitude float64) {
 	this.robot.MoveAlongLine(degree, scale(magnitude))
 }
 
+// MoveRobotToPoint moves the robot to a point.
 func (this *Map) MoveRobotToPoint(x, y int) {
 	this.robot.MoveToPoint(x, y, true)
 }
@@ -148,7 +152,7 @@ func (this *Map) getNextMove(x, y, prevX, prevY int, path [][]bool) (x1 int, y1 
 	return x, y, false
 }
 
-// Adds a wall in position (x, y) of the map. Resized represents if the co-ordinates have been modified due to the BITMAP_SIZE const or not. Expands if neccesary
+// AddWall adds a wall in position (x, y) of the map. Resized represents if the co-ordinates have been modified due to the BITMAP_SIZE const or not. Expands if neccesary
 func (this *Map) AddWall(x, y int, resized bool) {
 	if !resized {
 		x, y = ScaleCoordinate(float64(x), float64(y))
@@ -263,7 +267,7 @@ func (this *Map) createExpandedMap(expandX, expandY int) (tempMap *Map) {
 	return
 }
 
-// Prints out the state of the map in a nice way.
+// Print ouputs the state of the map in a nice way.
 func (this *Map) Print(path [][]bool) {
 	for y := 0; y < this.height; y++ {
 		for x := 0; x < this.width; x++ {
@@ -294,17 +298,18 @@ func scale(x float64) float64 {
 	return 0
 }
 
+// ScaleCoordinate scales the given co-ordinate and returns them as integers.
 func ScaleCoordinate(x, y float64) (x1, y1 int) {
 	return int(scale(x)), int(scale(y))
 }
 
-// Takes the robots location, draws a line out from it at the given degree and returns the bitmap (rounded down) location  of the resulting point.
+// LineToBitmapCoordinate takes the robots location, draws a line out from it at the given degree and returns the bitmap (rounded down) location  of the resulting point.
 func (this *Map) LineToBitmapCoordinate(degree, distance float64) (x1, y1 int) {
 	x, y := getOpposite(degree, distance)+this.robot.x, -getAdjacent(degree, distance)+this.robot.y
 	return int(x), int(y)
 }
 
-// Adds a wall based on a line starting from the robot.
+// AddWallByLine adds a wall based on a line starting from the robot.
 func (this *Map) AddWallByLine(degree, distance float64) {
 	distance = scale(distance)
 	x, y := this.LineToBitmapCoordinate(degree, distance)
@@ -315,7 +320,7 @@ func (this *Map) AddWallByLine(degree, distance float64) {
 	this.MarkLineAsSeen(degree, distance)
 }
 
-// Marks anything the line passes through as "seen".
+// MarkLineAsSeen marks anything the line passes through as "seen".
 func (this *Map) MarkLineAsSeen(degree, distance float64) {
 	if DEBUG {
 		fmt.Println(RobotMap)
@@ -335,23 +340,6 @@ func (this *Map) MarkLineAsSeen(degree, distance float64) {
 				this.seen[y][x] = 1
 			}
 		}
-	}
-}
-
-// Draws a square around the robot. (Used While Testing Pathfinding)
-func (this *Map) DrawSquare(n int) {
-	for i := -n; i <= n; i++ {
-		robotX, robotY := int(this.GetRobot().GetX()), int(this.GetRobot().GetY())
-		this.AddWall(i+robotX, -n+robotY, true)
-
-		robotX, robotY = int(this.GetRobot().GetX()), int(this.GetRobot().GetY())
-		this.AddWall(i+robotX, n+robotY, true)
-
-		robotX, robotY = int(this.GetRobot().GetX()), int(this.GetRobot().GetY())
-		this.AddWall(-n+robotX, i+robotY, true)
-
-		robotX, robotY = int(this.GetRobot().GetX()), int(this.GetRobot().GetY())
-		this.AddWall(n+robotX, i+robotY, true)
 	}
 }
 
@@ -381,7 +369,7 @@ func (this *Map) getAdjacentSeenTilesCount(x, y int) (count int) {
 	return
 }
 
-// Figures out where to scan next and goes there.
+// ContinueToNextArea figures out where to scan next and goes there.
 func (this *Map) ContinueToNextArea() {
 	// Adds all potential tiles to a queue
 	list := make([]Node, 0)

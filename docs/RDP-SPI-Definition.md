@@ -2,7 +2,7 @@
 
 #### SPI communication
 
-- Edison sends the byte 0xFF.
+- Edison sends the byte 147.
 - Edison and Arduino transfer the length of the command they have to send (or 0 for no command).
 - Transfer command (followed by null bytes if length of other command exceeds length of command).
 - One byte indicating if the device has more commands to send. 0 for "Finished", 1 for "Not Finished". If not finished repeat the process.
@@ -15,7 +15,7 @@ Parameter Name 	Size in bytes	Parameter Type			Notes
 - move 		(Command #1)
 Command Number	- 1 byte  		(Unsigned 8  bit int)	
 Unique ID 		- 2 bytes		(Unsigned 16 bit int)
-Angle 			- 2 bytes		(Unsigned 16 bit int) 	Number from 0 - 3,600 in 10ths of a degree
+Angle 			- 2 bytes		(Unsigned 16 bit int) 	Number from 0 - 360 in degrees
 Magnitude 		- 2 bytes		(Unsigned 16 bit int)	Measured in cm
 Checksum		- 1 byte		(Unsigned 8  bit int) 	Sum of all other bytes mod 255
 
@@ -27,7 +27,7 @@ Checksum		- 1 byte		(Unsigned 8  bit int) 	Sum of all other bytes mod 255
 - rotate 	(Command #3)
 Command Number	- 1 byte  		(Unsigned 8  bit int)	
 Unique ID 		- 2 bytes		(Unsigned 16 bit int)
-Angle 			- 2 bytes		(Unsigned 16 bit int) 	Number from 0 - 3,600 in 10ths of a degree
+Angle 			- 2 bytes		(Unsigned 16 bit int) 	Number from 0 - 360 in degrees
 Checksum		- 1 byte		(Unsigned 8  bit int) 	Sum of all other bytes mod 255
 
 - scan 		(Command #4)
@@ -67,7 +67,7 @@ Status          - 1 byte  (Unisgned 8 bit int ) 0 for failure, non-zero for succ
 Command Number  - 1 byte  (Unsigned 8  bit int)	
 Unique ID       - 2 bytes (Unsigned 16 bit int)
 Last            - 1 byte  (8 bit boolean value) 0 for false, anything else for true.
-Angle           - 2 bytes (Unsigned 16 bit int) Angle in 10ths of a degree.
+Angle           - 2 bytes (Unsigned 16 bit int) Angle in degrees
 Distance        - 2 bytes (Unsigned 16 bit int) Distance in cm.
 Status          - 1 byte  (Unisgned 8 bit int ) 0 for failure, non-zero for success.
 
