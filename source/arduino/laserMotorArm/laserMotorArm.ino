@@ -205,10 +205,6 @@ void loop() {
   Serial.println("*Laser now faces wall");
 
   STATE = "WAITING";
-//  waitingToScan = true;
-//  detectBegin = 0;
-//  detectEnd = degreesToEncoderCount(45);
-//  detectDistance = 10;
 
   Serial.println("Starting main loop...");
   while (1) {
