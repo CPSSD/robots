@@ -5,7 +5,15 @@
 #include <Wire.h>
 #include <I2C_Wrapper.h>
 
-String STATE = "WAITING";
+enum LaserState {
+  Waiting,
+  Scanning,
+  Detecting
+};
+
+const int slaveID = 25;
+
+LaserState STATE = Waiting;
 int detectionAngle = 0;
 boolean waitingToScan = false;
 
@@ -150,8 +158,8 @@ void scanArea(int scanFreq, int distance, ScanType scanType) {
 // Set the state to SCAN until a scan is complete.
 void scanCommandHandler(scanCommand command) {
   Serial.println("Recieved Scan Command");
-  if (STATE == "WAITING" || STATE == "DETECT") {
-    STATE = "SCAN";
+  if (STATE == Waiting || STATE == Detecting) {
+    STATE = Scanning;
     waitingToScan = true;
   } else {
     Serial.println("Unable to start scan. Invalid STATE or already scanning.");
@@ -160,7 +168,7 @@ void scanCommandHandler(scanCommand command) {
 
 // Set the state to DETECT (IFF state is WAITING)
 void detectCommandHandler(detectCommand command) {
-  if (STATE == "WAITING") {
+  if (STATE == Waiting) {
     detectBegin = degreesToEncoderCount(command.rangeBegin);
     detectEnd = degreesToEncoderCount(command.rangeEnd);
     detectDistance = command.maxDistance;
@@ -171,7 +179,7 @@ void detectCommandHandler(detectCommand command) {
     Serial.println(detectEnd);
     Serial.print("Distance: ");
     Serial.println(detectDistance);
-    STATE = "DETECT";
+    STATE = Detecting;
   } else {
     Serial.println("Unable to change state to DETECT. Reason: Scan command in progress");
   }
@@ -186,7 +194,7 @@ void moveCommandHandler(moveCommand command) {
 void setup() {
   Serial.begin(9600);
 
-  I2C_Wrapper::init(Slave, 27);
+  I2C_Wrapper::init(Slave, slaveID);
   I2C_Wrapper::registerScanCommandHandler(&scanCommandHandler);
   I2C_Wrapper::registerMoveCommandHandler(&moveCommandHandler);
   I2C_Wrapper::registerDetectCommandHandler(&detectCommandHandler);
@@ -201,17 +209,15 @@ void loop() {
   faceWall(1, 420, 0, true);
   Serial.println("*Laser now faces wall");
 
-  STATE = "WAITING";
-
   Serial.println("Starting main loop...");
   while (1) {
-    if (STATE == "DETECT") {
+    if (STATE == Detecting) {
       LaserScanner::totalRotations = 0;
       detectObjects(detectBegin, detectEnd, detectDistance);
-    } else if (STATE == "SCAN" && waitingToScan) {
+    } else if (STATE == Scanning && waitingToScan) {
       waitingToScan = false;
       scanArea(3360 / 300, motor.singleRotation, Average);
-      STATE = "WAITING";
+      STATE = Waiting;
     }
   }
 }

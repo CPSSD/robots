@@ -104,7 +104,7 @@ int LaserScanner::tickToDegrees(int angle) {
 }
 
 void LaserScanner::sendDetectResponse(int angle, int distance) {
-	I2C_Wrapper::sendDetectResponse(15, 0, (uint16_t) angle, (uint32_t) distance, true);
+	I2C_Wrapper::sendDetectResponse(masterID, 0, (uint16_t) angle, (uint32_t) distance, true);
 }
 
 void LaserScanner::detectObjects(int encoderCount){	
