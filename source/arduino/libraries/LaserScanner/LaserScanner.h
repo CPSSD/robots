@@ -37,9 +37,13 @@ class LaserScanner {
 		
 		static LaserReading* lastRotationData;
 		static LIDARLite myLidarLite;
-			
-		static int lastEncoderCount;
+		
+		static bool pushScanData;
 		static int scansToDo;
+		static int totalRotations;
+	
+	private:
+		static int lastEncoderCount;
 		static int scanCount;
 		static int scanOffset;
 		static int scanTick;
@@ -48,9 +52,7 @@ class LaserScanner {
 		static int detectAngleEnd;
 		static int detectionRange;
 		static int queuedRotations;
-		static int totalRotations;
 		static bool detectedDuringSpin;
-		static bool pushScanData;
 		static String scanType;
 };
 
