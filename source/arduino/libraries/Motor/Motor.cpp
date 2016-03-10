@@ -99,25 +99,37 @@ void Motor::rotateContinuous(int rotations){
 			encoderCount -= singleRotation;
 		}
 			
-		(*rotationFunction)(encoderCount);
-	}
-	stopRotate();
-	(*rotationFinishedFunction)();
-	
-}
-
-void Motor::oneRotation(int fullSpin){
-	encoderCount = 0;
-    startRotate();
-    while(encoderCount < fullSpin){
 		if (rotationFunction != NULL) {
 			(*rotationFunction)(encoderCount);
 		} else {
 			Serial.println("You need to register a rotation function if you want stuff to happen...");
 		}
 	}
-    stopRotate();
-	(*rotationFinishedFunction)();
+	stopRotate();
+	if (rotationFinishedFunction != NULL) {
+		(*rotationFinishedFunction)(encoderCount);
+	} else {
+		Serial.println("You need to register a rotation finished function if you want stuff to happen...");
+	}
+	
+}
+
+void Motor::oneRotation(int fullSpin){
+	encoderCount = 0;
+    	startRotate();
+    	while(encoderCount < fullSpin){
+		if (rotationFunction != NULL) {
+			(*rotationFunction)(encoderCount);
+		} else {
+			Serial.println("You need to register a rotation function if you want stuff to happen...");
+		}
+	}
+    	stopRotate();
+	if (rotationFinishedFunction != NULL) {
+		(*rotationFinishedFunction)(encoderCount);
+	} else {
+		Serial.println("You need to register a rotation finished function if you want stuff to happen...");
+	}
 	delay(500);
 }
 
