@@ -14,7 +14,8 @@ const int STARTING_X = 2000; //This and all distances measured in cm
 const int STARTING_Y = 2000;
 
 const MapLine MAP_BOUNDS[4] = {0, 0, 4100, 0, 4100, 0, 4100, 4100, 4100, 4100, 0, 4100, 0, 4100, 0, 0};
-unsigned long moveTimer, rotateTimer, distTravelled;
+unsigned long startedMoving, moveTimer, rotateTimer, distTravelled;
+int movingAngle;
 int /*incomingByte,*/ id, magnitude, angleInDegrees;
 unsigned int angle;
 point currentPosition, destination, nearestWall;
@@ -37,6 +38,7 @@ void setup() {
   SPI_Wrapper::init();
   SPI_Wrapper::registerMoveCommandHandler(&moveCommandHandler);
   SPI_Wrapper::registerScanCommandHandler(&scanCommandHandler);
+  SPI_Wrapper::registerStopCommandHandler(&stopCommandHandler);
   Serial.begin(9600);
   //instruct = "";
   //incomingByte = 0;
@@ -60,13 +62,17 @@ void loop() {
     instruct += communications.parseCommand();
     delay(10); //Required to allow read buffer to recover
   }*/
-    
-  if(com != NULL && (!amMoving && !amRotating)) {
-    processCommand(com);
-    //Reset global variables
-    //id = 0;
-    //angle = 0;
-    //magnitude = 0;
+
+  if (com != NULL) {
+    if(!amMoving && !amRotating) {
+      processCommand(com);
+      //Reset global variables
+      //id = 0;
+      //angle = 0;
+      //magnitude = 0;
+    } else if (amMoving && com->commandNumber == 2) {
+      processCommand(com);
+    }
   }
 
   if(amMoving && millis() >= moveTimer) {
@@ -165,6 +171,10 @@ void moveCommandHandler(moveCommand movCom) {
   com = temp;
 }
 
+void stopCommandHandler(stopCommand stopCom) {
+  com = new stopCommand(stopCom);
+}
+
 void scanCommandHandler(scanCommand scanCom) {
   scanCommand* temp = new scanCommand(scanCom);
   com = temp;
@@ -174,12 +184,21 @@ void processCommand(command* com) {
   if(com->commandNumber == 1){
     moveRobot((moveCommand*)com);
   }
-  /*else if(com->commandNumber == 2){
+  else if(com->commandNumber == 2){
+    amMoving = false;
+    unsigned long totalDistance = calculations.getDistBetweenTwoPoints(currentPosition, destination);
+    float distanceMoved = (((float)(millis() - startedMoving))/(float)(moveTimer - startedMoving))*(float)(totalDistance);
     
+    // Change currentPosition to represent the distance moved
+    ray = calculations.makeLineFromPolar(movingAngle, (uint16_t)distanceMoved, currentPosition);
+    equOfRay = calculations.getEquationOfLine(ray);
+    currentPosition = calculations.getDestination(ray, equOfRay, PERIMETER);
+    
+    SPI_Wrapper::sendStopResponse(com->uniqueID, (uint16_t)distanceMoved, (uint16_t)movingAngle, true);
   }
   else if(com->commandNumber == 3){
-    
-  }*/
+    // rotate command to be implemented
+  }
   else if(com->commandNumber == 4){
     amRotating = true;
   }
@@ -200,6 +219,8 @@ void moveRobot(moveCommand* com) {
   destination = calculations.getDestination(ray, equOfRay, PERIMETER);
   com->magnitude = (unsigned long)calculations.getDistBetweenTwoPoints(equOfRay.xy, destination);
   amMoving = true;
+  movingAngle = com->angle;
+  startedMoving = millis();
   moveTimer = millis() + calculations.getTravelTime(((com->magnitude) * 10), SPEED);
 }
 
