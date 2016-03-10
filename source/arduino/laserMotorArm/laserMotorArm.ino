@@ -20,7 +20,7 @@ int totalScans = 0;
 
 void faceWall(int scanFreq, int distance, int finishOffset, bool isPartialMove) {
   motor.setSpeed(motorSpeed);
-  LaserScanner::setScanFreq(scanFreq, distance, "DEFAULT", 1);
+  LaserScanner::setScanFreq(scanFreq, distance, Default, 1);
   totalScans = LaserScanner::scansToDo;
   motor.registerRotationFunction(&LaserScanner::getContinuousReading);
   motor.registerRotationFinishedFunction(&LaserScanner::onMotorFinish);
@@ -94,7 +94,7 @@ void detectObjects(int startAngle, int endAngle, int distance) {
   delay(1000);
 }
 
-void scanArea(int scanFreq, int distance, String scanType) {
+void scanArea(int scanFreq, int distance, ScanType scanType) {
   motor.setSpeed(motorSpeed);
   Serial.println("Scanning Area...");
 
@@ -106,7 +106,7 @@ void scanArea(int scanFreq, int distance, String scanType) {
   motor.registerRotationFunction(&LaserScanner::getContinuousReading);
   motor.registerRotationFinishedFunction(&LaserScanner::onMotorFinish);
   LaserScanner::totalRotations = 0;
-  if (scanType == "AVERAGE") {
+  if (scanType == Average) {
     for (int i = 0; i < totalRotations; i++) {
       LaserScanner::reset();
       LaserScanner::pushScanData = true;
@@ -130,10 +130,10 @@ void scanArea(int scanFreq, int distance, String scanType) {
       Serial.print(", ");
       Serial.println(LaserScanner::lastRotationData[i].distance / totalRotations);
     }
-  } else if (scanType == "DEFAULT") {
+  } else if (scanType == Default) {
     LaserScanner::pushScanData = true;
     motor.rotateWithCorrection(distance);
-  } else if (scanType == "INTERVAL") {
+  } else if (scanType == Interval) {
     for (int i = 0; i < totalRotations; i++) {
       LaserScanner::reset();
       LaserScanner::pushScanData = true;
@@ -142,9 +142,6 @@ void scanArea(int scanFreq, int distance, String scanType) {
     }
 
     LaserScanner::reset();
-  } else {
-    Serial.print("Unknown scan type: ");
-    Serial.println(scanType);
   }
 
   Serial.println("Finished sending data...");
@@ -213,7 +210,7 @@ void loop() {
       detectObjects(detectBegin, detectEnd, detectDistance);
     } else if (STATE == "SCAN" && waitingToScan) {
       waitingToScan = false;
-      scanArea(3360 / 300, motor.singleRotation, "AVERAGE");
+      scanArea(3360 / 300, motor.singleRotation, Average);
       STATE = "WAITING";
     }
   }

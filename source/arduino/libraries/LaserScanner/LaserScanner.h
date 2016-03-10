@@ -10,12 +10,19 @@ struct LaserReading {
 	int distance;
 };
 
+
+typedef enum {
+	Default = 0,
+	Average = 1,
+	Interval = 2
+} ScanType;
+
 class LaserScanner {
 	public:
 		LaserScanner();
 		~LaserScanner();
 		
-		static void setScanFreq(int freq, int distance, String type, int queuedRotations);
+		static void setScanFreq(int freq, int distance, ScanType type, int queuedRotations);
 		static void setDetectionAngle(int startAngle, int endAngle);
 		static void setDetectionRange(int range);
 		static void sendScanResponse(LaserReading reading);
@@ -41,6 +48,7 @@ class LaserScanner {
 		static bool pushScanData;
 		static int scansToDo;
 		static int totalRotations;
+		static int queuedRotations;
 	
 	private:
 		static int lastEncoderCount;
@@ -51,9 +59,8 @@ class LaserScanner {
 		static int detectAngleStart;
 		static int detectAngleEnd;
 		static int detectionRange;
-		static int queuedRotations;
 		static bool detectedDuringSpin;
-		static String scanType;
+		static ScanType scanType;
 };
 
 #endif
