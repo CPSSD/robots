@@ -171,8 +171,6 @@ void LaserScanner::getContinuousReading(int encoderCount){
 				} else {
 					lastRotationData[scanTick-1] = LaserReading{-1, -1};
 				}
-			} else {
-				Serial.println("Unknown Scan Type...");
 			}
 			
 			if (scanType == Interval && (scanTick - scanOffset) % queuedRotations == 0) {
