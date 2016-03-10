@@ -5,20 +5,28 @@ int LaserScanner::scanTick;
 int LaserScanner::scanCount;
 int LaserScanner::scansToDo;
 int LaserScanner::scanFreq;
-int LaserScanner::detectionAngle;
+int LaserScanner::detectAngleStart;
+int LaserScanner::detectAngleEnd;
 int LaserScanner::detectionRange;
+int LaserScanner::queuedRotations;
+int LaserScanner::totalRotations;
+int LaserScanner::scanOffset;
+
 bool LaserScanner::detectedDuringSpin;
 bool LaserScanner::pushScanData;
+
+ScanType LaserScanner::scanType;
 LaserReading* LaserScanner::lastRotationData;
 
 LIDARLite LaserScanner::myLidarLite;
 
+const uint8_t masterID = 15;
+
 LaserScanner::LaserScanner(){
-	lastEncoderCount = 0;
 	detectedDuringSpin = false;
 	pushScanData = false;
-	scanTick = 0;
-	scanFreq = 0;
+	scanType = Default;
+	scanTick = scanFreq = lastEncoderCount = totalRotations = queuedRotations = totalRotations = scanOffset = 0;
 	scansToDo = 1;
 	lastRotationData = new LaserReading[scansToDo];
 }
@@ -29,14 +37,17 @@ LaserScanner::~LaserScanner(){
 
 void LaserScanner::sendScanResponse(LaserReading reading){
 	bool lastScan = false;
-	if (reading.distance >= 1061 || reading.distance < 0){
-		reading.distance = 0;
+	if (reading.angle == -1 || reading.distance == -1 || reading.distance >= 1060){
+		return;
 	}
 	if (scanTick == scansToDo){
 		lastScan = true;
 	}
-	int angle = (360 / scansToDo) * reading.angle;
-	SPI_Wrapper::sendScanResponse(scanTick, (uint16_t) reading.distance, (uint16_t) angle, lastScan, true);
+	int angle = tickToDegrees(reading.angle);
+	Serial.print("Angle: ");
+	Serial.println(angle);
+	// uint8_t masterId, uint16_t uniqueID, uint16_t angle, uint16_t magnitude, bool last, bool status
+	I2C_Wrapper::sendScanResponse(masterID, 0, (uint16_t) angle, (uint16_t) reading.distance, lastScan, true);
 }
 
 void LaserScanner::setup(){
@@ -44,8 +55,10 @@ void LaserScanner::setup(){
 	myLidarLite.beginContinuous();
 }
 
-// Sets ScanFreq in terms of encoder ticks (maximum of 'distance' per rotation)
-void LaserScanner::setScanFreq(int freq, int distance){
+// Sets ScanFreq in terms of encoder ticks (maximum of 'distance' per rotation) also sets the scan type. (DEFAULT, AVERAGE, INTERVAL)
+void LaserScanner::setScanFreq(int freq, int distance, ScanType type, int rotations){
+	scanType = type;
+	queuedRotations = rotations;
 	if (freq <= 0){
 		scanFreq = 0;
 		scansToDo = 1;
@@ -60,13 +73,25 @@ void LaserScanner::setScanFreq(int freq, int distance){
 	lastRotationData = new LaserReading[scansToDo];
 }
 
-void LaserScanner::setDetectionAngle(int angle){
-	if (angle < 0){
-		detectionAngle = 0;
-	} else if (angle >= 3360){
-		detectionAngle = 3360;
+void LaserScanner::setScanOffset(int offset){
+	scanOffset = offset;
+}
+
+void LaserScanner::setDetectionAngle(int startAngle, int endAngle){
+	if (startAngle < 0){
+		detectAngleStart = 0;
+	} else if (startAngle >= 3360){
+		detectAngleStart = 3360;
 	} else {
-		detectionAngle = angle;
+		detectAngleStart = startAngle;
+	}
+	
+	if (endAngle < 0){
+		detectAngleEnd = 0;
+	} else if (endAngle >= 3360){
+		detectAngleEnd = 3360;
+	} else {
+		detectAngleEnd = endAngle;
 	}
 }
 
@@ -74,48 +99,93 @@ void LaserScanner::setDetectionRange(int range){
 	detectionRange = range;
 }
 
+int LaserScanner::tickToDegrees(int angle) {
+	return (360.0 / (float) scansToDo) * (float) angle;
+}
 
-void LaserScanner::detectObjects(int encoderCount){
-	if (encoderCount < detectionAngle) {
-		detectedDuringSpin = false;
-	}
-	
-	if (encoderCount != lastEncoderCount && (encoderCount >= detectionAngle - 10 && encoderCount <= detectionAngle + 10) && !detectedDuringSpin){
-		Serial.println("At correct angle....");
+void LaserScanner::sendDetectResponse(int angle, int distance) {
+	I2C_Wrapper::sendDetectResponse(masterID, 0, (uint16_t) angle, (uint32_t) distance, true);
+}
+
+void LaserScanner::detectObjects(int encoderCount){	
+	if (encoderCount != lastEncoderCount && (encoderCount >= detectAngleStart && encoderCount <= detectAngleEnd)){
 		LaserReading reading = getSingleReading(encoderCount);
-		Serial.print("Distance away: ");
+		Serial.print(reading.angle);
+		Serial.print(": Distance away: ");
 		Serial.println(reading.distance);
+		
+		if (reading.distance <= -1 || reading.distance >= 1000){
+			lastEncoderCount = encoderCount;
+			return;
+		}
+		
 		if (reading.distance <= detectionRange){
 			Serial.println("-> Found object! Be careful!");
+			int degree = ((float)reading.angle / 3360.0) * 360.0;
+			Serial.println(degree);
+			sendDetectResponse(degree, reading.distance);
 		}
-			
-		Serial.print("[");
-		Serial.print(encoderCount);
-		Serial.print(" | ");
-		Serial.print(reading.distance);
-		Serial.println("]");
 		
 		lastEncoderCount = encoderCount;
 	}
 }
 
+void LaserScanner::onMotorFinish(){
+	totalRotations += 1;
+}
+
+void LaserScanner::setDetectionParameters(int startAngle, int endAngle, int distance){
+	setDetectionRange(distance);
+	setDetectionAngle(startAngle, endAngle);
+}
+
 void LaserScanner::getContinuousReading(int encoderCount){	
-	if (lastEncoderCount != encoderCount && encoderCount > 0 && encoderCount % scanFreq == 0) {
+	if (lastEncoderCount != encoderCount && encoderCount > 0 && encoderCount % (scanFreq + scanOffset) == 0) {
 		scanTick += 1;
 		if (scanTick >= 0 && scanTick <= scansToDo){
 			LaserReading reading = getSingleReading(scanTick-1);
-			lastRotationData[scanTick-1] = reading;
 			
-			if (pushScanData){
-				Serial.println("Sending Scan Data...");
-				sendScanResponse(reading);
+			if (reading.distance >= 1000){
+				reading.distance = -1;
+				reading.angle = -1;
 			}
 			
-			Serial.print("[");
-			Serial.print(scanTick-1);
-			Serial.print(" | ");
-			Serial.print(lastRotationData[scanTick-1].distance);
-			Serial.println("]");
+			if (scanType == Default) { 
+				lastRotationData[scanTick-1] = reading;
+				if (pushScanData){
+					Serial.println("Sending Scan Data...");
+					sendScanResponse(reading);
+				}
+			} else if (scanType == Average) {
+				if (totalRotations == 0){
+					lastRotationData[scanTick-1] = LaserReading{0, 0};
+				}
+				if (reading.angle != -1 && reading.distance != -1){
+					lastRotationData[scanTick-1].angle = lastRotationData[scanTick-1].angle + reading.angle;	
+					lastRotationData[scanTick-1].distance = lastRotationData[scanTick-1].distance + reading.distance;	
+				}
+			} else if (scanType == Interval) {
+				if ((scanTick - scanOffset) % queuedRotations == 0) {
+					Serial.println(scanTick);
+					lastRotationData[scanTick-1] = reading;
+				} else {
+					lastRotationData[scanTick-1] = LaserReading{-1, -1};
+				}
+			}
+			
+			if (scanType == Interval && (scanTick - scanOffset) % queuedRotations == 0) {
+				Serial.print("[");
+				Serial.print(scanTick-1);
+				Serial.print(" | ");
+				Serial.print(lastRotationData[scanTick-1].distance);
+				Serial.println("]");
+			} else if (scanType != Interval){
+				Serial.print("[");
+				Serial.print(scanTick-1);
+				Serial.print(" | ");
+				Serial.print(lastRotationData[scanTick-1].distance);
+				Serial.println("]");
+			}
 			
 			lastEncoderCount = encoderCount;
 		}
@@ -124,6 +194,7 @@ void LaserScanner::getContinuousReading(int encoderCount){
 
 void LaserScanner::reset(){
 	lastEncoderCount = 0;
+	scanOffset = 0;
 	pushScanData = false;
 	scanTick = 0;
 }

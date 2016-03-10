@@ -87,6 +87,10 @@ void Motor::registerRotationFunction(Rotation_Function function){
 	rotationFunction = function;
 }
 
+void Motor::registerRotationFinishedFunction(Rotation_Finished_Function function){
+	rotationFinishedFunction = function;
+}
+
 void Motor::rotateContinuous(int rotations){
 	startRotate();
 	while(rotations >= 0){
@@ -95,24 +99,38 @@ void Motor::rotateContinuous(int rotations){
 			encoderCount -= singleRotation;
 		}
 			
-		(*rotationFunction)(encoderCount);
-	}
-	stopRotate();
-	
-}
-
-void Motor::oneRotation(int fullSpin){
-	encoderCount = 0;
-    startRotate();
-    while(encoderCount < fullSpin){
 		if (rotationFunction != NULL) {
 			(*rotationFunction)(encoderCount);
 		} else {
 			Serial.println("You need to register a rotation function if you want stuff to happen...");
 		}
 	}
-    stopRotate();
-    delay(500);
+	stopRotate();
+	if (rotationFinishedFunction != NULL) {
+		(*rotationFinishedFunction)(encoderCount);
+	} else {
+		Serial.println("You need to register a rotation finished function if you want stuff to happen...");
+	}
+	
+}
+
+void Motor::oneRotation(int fullSpin){
+	encoderCount = 0;
+    	startRotate();
+    	while(encoderCount < fullSpin){
+		if (rotationFunction != NULL) {
+			(*rotationFunction)(encoderCount);
+		} else {
+			Serial.println("You need to register a rotation function if you want stuff to happen...");
+		}
+	}
+    	stopRotate();
+	if (rotationFinishedFunction != NULL) {
+		(*rotationFinishedFunction)(encoderCount);
+	} else {
+		Serial.println("You need to register a rotation finished function if you want stuff to happen...");
+	}
+	delay(500);
 }
 
 // Rotates and then corrects its overspin. Returns the ammount of ticks the laser is from its target
