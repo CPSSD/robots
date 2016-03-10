@@ -13,7 +13,7 @@ type Node struct {
 	solid          bool
 }
 
-// Calls various functions below and returns the end result of the pathfinding algorithm.
+// GetRoute Calls various functions below and returns the end result of the pathfinding algorithm.
 func GetRoute(robotMap Map, x, y int) ([][]bool, bool) {
 	if DEBUG {
 		fmt.Println("GetRouteTo(", x, ",", y, ")")
