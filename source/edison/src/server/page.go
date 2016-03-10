@@ -13,6 +13,7 @@ import (
 
 
 type MoveResponse struct {
+	Type string
 	UniqueID int
 	Angle int
 	Distance int
@@ -39,7 +40,7 @@ func load(filename string) *Page {
 func driveHandler(w http.ResponseWriter, r *http.Request) {
 	var page *Page
 	if r.URL.Path == "/drive/"{
-		page = load("public/index.php")
+		page = load("public/index.html")
 	} else {
 		page = load(("public/" + r.URL.Path[len("/drive/"):]))
 	}
@@ -62,7 +63,7 @@ func moveResponseDisplay(w http.ResponseWriter, r *http.Request) {
 		if i != 0 {
 			fmt.Fprintf(w, ",")
 		}
-		fmt.Fprintf(w, "{ \"Time\": \"%s\", \"UniqueID\": %d, \"Angle\": %d, \"Magnitude\": %d }", response.Time, i, response.Angle, response.Distance)
+		fmt.Fprintf(w, "{ \"Type\": \"%s\", \"Time\": \"%s\", \"UniqueID\": %d, \"Angle\": %d, \"Magnitude\": %d }", response.Type, response.Time, i, response.Angle, response.Distance)
 		
 	}
 	fmt.Fprintf(w, "]}")
@@ -93,8 +94,8 @@ func getTime() (timeResp string) {
 	return
 }
 
-func moveResponse(angle int, magnitude int) {
-	response := MoveResponse {0, int(angle), int(magnitude), getTime()}
+func moveResponse(commandType string, angle int, magnitude int) {
+	response := MoveResponse {commandType, 0, int(angle), int(magnitude), getTime()}
 	moveResponseHistory = append(moveResponseHistory, response)
 }
 
@@ -102,15 +103,25 @@ func killHandler(w http.ResponseWriter, r*http.Request) {
 	os.Exit(0)
 }
 
+func responseHandler(data interface{}) {
+	fmt.Println("Data Recieved: ", data)
+
+	switch response := data.(type) {
+	case RobotDriverProtocol.MoveResponse:
+		moveResponse("Move Response", int(response.Angle), int(response.Magnitude))
+	}
+}
+
 func sendMoveCommand(command MoveCommand) {
-	moveResponse(command.Angle, command.Distance)
-	RobotDriverProtocol.Move(command.Angle, command.Distance)
+	moveResponse("Move Command", command.Angle, command.Distance)
+	RobotDriverProtocol.Move(uint16(command.Angle), uint32(command.Distance))
 }
 
 func main() {
 	fmt.Println("Starting...")
 
-	// TODO: register moveResponseHandler with RDPConnector
+	RobotDriverProtocol.RegisterResponseHandler(responseHandler)
+	RobotDriverProtocol.Init()
 	
 	http.HandleFunc("/kill/", killHandler)
 	http.HandleFunc("/drive/", driveHandler)
