@@ -1,76 +1,84 @@
 #include <PID_v1.h>
 #include <Wire.h>
 #include <I2C_Wrapper.h>
+#include <VectorMath.h>
+#include <Time.h>
+#include <Shared_Structs.h>
 #include <WheelMotors.h>
 
 const byte slaveAddress = 27;
 
-/////////////////////////////////////////////////////////////////
-
 WheelMotors motor = WheelMotors();
+VectorMath motorSpeed = VectorMath();
 
-//////////////////////////////////////////////////////////////////
+unsigned long t1,t2;
 
-//int M1_Speed = 200; // Keep speed of M1 constant and adkust M2 as appropriate
-//int M2_Speed = 200;
-
-// wheels
-
-
-//moveCommand currentMove;   /////////////////////////////////////////////// not included
+boolean first;
 
 void setup()
 {
-    //attachInterrupt(M1_Interrupt,M1_EncoderISR,FALLING);
-    //attachInterrupt(M2_Interrupt,M2_EncoderISR,FALLING);
-
     I2C_Wrapper::init(Slave, slaveAddress);
-    //I2C_Wrapper::registerMoveCommandHandler(&moveCommandHandler);
+    I2C_Wrapper::registerMoveCommandHandler(&motor.moveCommandHandler);
    // currentMove.magnitude = 0;
     
     motor.setup();
-    /*myPID1.SetOutputLimits(100, 250);
-    myPID1.SetSampleTime(10);
-    myPID2.SetOutputLimits(100, 250);
-    myPID2.SetSampleTime(10);    
-    myPID1.SetMode(AUTOMATIC);
-    myPID2.SetMode(AUTOMATIC);
     
-    pinMode(D1, OUTPUT);
-    pinMode(D2, OUTPUT);
-    
-    WheelMotors motor = new WheelMotors();
-    motor.M1_Input = motor.M1_EncoderCount; 
-    motor.M2_Input = motor.M2_EncoderCount;
-    motor.Setpoint = 800;
-    
-    digitalWrite(D1,HIGH);
-    digitalWrite(D2,HIGH);
-    PID myPID1(&motor.M1_Input, &motor.M1_Output, &motor.Setpoint, .5, 0, 0, DIRECT);
-    PID myPID2(&motor.M2_Input, &motor.M2_Output, &motor.Setpoint, .5, 0, 0, DIRECT);*/
-    
-    motor.finished = false;
-    motor.start();
+    motor.finished = true;
+    first = true;
+    //motor.start();
     Serial.begin(9600);  
 }
 
 
 void loop(){
-    delay(5000);
-    motor.stop();
-   //stop when desired number of ticks have been reached
-       //motor.diffTicks();
-       //motor.printInfo();
+   
+     if(first){
+       t1 = millis();
+       first = false;
+     }
+     double newSpeed;
+     
+     if (motor.commandHandled){
+         newSpeed = motorSpeed.computeSpeed(/*motorSpeed.getSign(),*/motor.getAngle());
+          
+         motor.myPID1.SetOutputLimits(0,newSpeed); 
+     }
+     
+
+     if(newSpeed < 0){
+         motor.backwards();
+         //digitalWrite(motor.D1,LOW);
+         //digitalWrite(motor.D2,LOW);
+     }else if (newSpeed > 0){
+         motor.forward();
+         //digitalWrite(motor.D1,HIGH);
+         //digitalWrite(motor.D2,HIGH);
+     }else{
+         analogWrite(motor.M1,0);
+         analogWrite(motor.M2,0);
+         //Serial.println(newSpeed);
+     }
+     
+     motor.diffTicks();
+     //motor.printInfo();
         
-    //   motor.checkEndpointReached(motor.distanceInTicks(100/*motor.getMagnitude()*/));
+     motor.checkEndpointReached(motor.distanceInTicks(motor.getMagnitude()));
     
     //reset Motor encoders after setpoint ticks has been reached
-    //   motor.checkSetpointReached();
-    
+     motor.checkSetpointReached();
+    //Serial.println(speed1.computeSpeed(true,60));
+    //delay(10000);
     //runs PID - needs to run ever loop()
-    //if(!motor.isFinished()){
-      //  motor.runPID();
-    //}
+    if(!motor.isFinished() && motor.getAngle() != 135 && motor.getAngle() != 270){
+        motor.runPID();
+    }else{
+        
+        t2 = millis() - t1;
+       /* Serial.println();
+	Serial.print("TotalTime: ");
+        Serial.println(t2);
+	Serial.println();*/
+    }
+    
 }
-
 

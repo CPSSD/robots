@@ -1,33 +1,55 @@
 #include "VectorMath.h"
 #include "WheelMotors.h"
+#include "Arduino.h"
 #include "I2C_Wrapper.h"
 #include "math.h"
 
 #define PI 3.14159265359
 
-moveCommand I2C_Wrapper::currentMove = NULL;
-bool positive = true;
+moveCommand VectorMath::currentMove;
+bool VectorMath::FLBR_Wheels = true;
+bool VectorMath::positive;
 
-// code so the wheels know which ones are which
 
-void setSign(){
-    if(currentMove.angle > 0 && currentMove.angle < 181){
-        postive = true;
+//sets sign to add or subtract theta
+bool VectorMath::setSign(int angle){
+    //wheels Front Left - Back Right
+    if(FLBR_Wheels){
+        // Movement is to 1st/4th Quadrant
+        if(angle > 0 && angle < 180){
+            positive = true;
+        //Movement to 2nd/3rd Quadrant"
+        }else{
+            positive = false;
+        }
+    //wheels Front Right - Back Left
     }else{
-        postive = false;
+        //Movement is to 2nd/3rd Quadrant
+        if(angle > 179 && angle < 360){
+            positive = true;
+        //Movement to 1st/4th Quadrant
+        }else{
+            positive = false;
+        }
     }
+    return positive;
 }
 
-double degreesToRadians(int angle){
-    return 180/angle * PI;
+bool VectorMath::getSign(){
+  return positive;
 }
 
-double radiansToDegrees(double angle){
-    return 180 * angle/PI;
+double VectorMath::degreesToRadians(double angle){
+    return (PI/180)* angle;
 }
 
-double computeSpeed(bool sign,int angle){
-    if(postive){
+double VectorMath::radiansToDegrees(double angle){
+    return (180/PI) * angle;
+}
+
+double VectorMath::computeSpeed(int angle){
+    if(FLBR_Wheels){
+        //return degreesToRadians(angle);
         return 255 * cos((PI/4) - degreesToRadians(angle));
     }else{
         return 255 * cos((PI/4) + degreesToRadians(angle));

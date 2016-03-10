@@ -2,6 +2,7 @@
 #include "WheelMotors.h"
 #include "Arduino.h"
 #include "PID_v1.h"
+#include "Time.h"
 
 #define M1_Interrupt 0
 #define M2_Interrupt 1
@@ -18,28 +19,23 @@ int WheelMotors::M1 = 5;   // PWM
 int WheelMotors::D2 = 7;
 int WheelMotors::M2 = 6;
 
-bool WheelMotors::finished = true;
+const uint8_t masterId = 15;
 
-double WheelMotors::Setpoint = 800;
+time_t WheelMotors::t = now();
+
+bool WheelMotors::finished = true;
+bool WheelMotors::commandHandled = false;
+
+double WheelMotors::Setpoint = 400;
 double WheelMotors::M1_Input = 0;
 double WheelMotors::M2_Input = 0;
 double WheelMotors::M1_Output = 0;
 double WheelMotors::M2_Output = 0;
 moveCommand WheelMotors::currentMove;
-PID WheelMotors::myPID1 = PID(&M1_Input, &M1_Output, &Setpoint, .5, 0, 0, DIRECT);
-PID WheelMotors::myPID2 = PID(&M2_Input, &M2_Output, &Setpoint, .5, 0, 0, DIRECT);
+PID WheelMotors::myPID1 = PID(&M1_Input, &M1_Output, &Setpoint, 1, 10, 0, DIRECT);
+PID WheelMotors::myPID2 = PID(&M2_Input, &M2_Output, &Setpoint, 1, 10, 0, DIRECT);
 
-
-WheelMotors::WheelMotors(){
-		//myPID1 = PID(&M1_Input, &M1_Output, &Setpoint, .5, 0.0, 0.0, 0);
-		//myPID2 = PID(&M2_Input, &M2_Output, &Setpoint, .5, 0.0, 0.0, 0);
-
-		M1_Input = 0;
-		M1_Output = 0;
-		M2_Input = 0;
-		M2_Output = 0;
-	//	setup();
-}
+double WheelMotors::speed;
 
 bool WheelMotors::isFinished(){
 		if(finished){
@@ -52,10 +48,10 @@ void WheelMotors::setup(){
 		attachInterrupt(M1_Interrupt,M1_EncoderISR,FALLING);
 		attachInterrupt(M2_Interrupt,M2_EncoderISR,FALLING);
 
-		myPID1.SetOutputLimits(100,250);
+		myPID1.SetOutputLimits(100,255);
 		myPID1.SetSampleTime(10);
 		myPID1.SetMode(AUTOMATIC);
-		myPID2.SetOutputLimits(100,250);
+		myPID2.SetOutputLimits(100,255);
 		myPID2.SetSampleTime(10);
 		myPID2.SetMode(AUTOMATIC);
 
@@ -65,18 +61,26 @@ void WheelMotors::setup(){
 		digitalWrite(D2,HIGH);
 }
 
+moveCommand WheelMotors::getMove(){
+		return currentMove;
+}
+
 uint16_t WheelMotors::getMagnitude(){
 		return currentMove.magnitude;
 }
 
+int WheelMotors::getAngle(){
+		return currentMove.angle;
+}
+
 void WheelMotors::forward(){
-		D1 = 4;
-		D2 = 7;
+		digitalWrite(D1,HIGH);
+		digitalWrite(D2,HIGH);
 }
 
 void WheelMotors::backwards(){
-		D1 = 5;
-		D2 = 6;
+		digitalWrite(D1,LOW);
+		digitalWrite(D2,LOW);
 }
 
 void WheelMotors::M1_EncoderISR(){
@@ -105,9 +109,15 @@ void WheelMotors::resetAll(){
 	M2_Total = 0;
 }
 
+//used for testing
 void WheelMotors::start(){
 	analogWrite(M1,255);
 	analogWrite(M2,255);
+}
+
+
+double WheelMotors::timePast(time_t time){
+	return time - t;
 }
 
 //stops wheels
@@ -115,8 +125,8 @@ void WheelMotors::stop(){
 	analogWrite(M1,0);
 	analogWrite(M2,0);
 
-	I2C_Wrapper::sendMoveResponse(currentMove.uniqueID, currentMove.magnitude, currentMove.angle, true);
-
+	I2C_Wrapper::sendMoveResponse(masterId,currentMove.uniqueID, currentMove.magnitude, currentMove.angle, true);
+	commandHandled = false;
 	resetAll();
 }
 
@@ -151,29 +161,33 @@ void WheelMotors::runPID(){
 void WheelMotors::diffTicks(){
     if ((M1_Total + M1_EncoderCount) > (M2_Total + M2_EncoderCount) && (M1_Total + M1_EncoderCount) - (M2_Total + M2_EncoderCount) > 50){
         // if M1 gets bigger than M2, lower M1 max speed and increase M2's min speed
-        myPID1.SetOutputLimits(100,150);
-        myPID2.SetOutputLimits(200,250);
+				myPID1.SetOutputLimits(100,speed);
+        myPID2.SetOutputLimits(150,speed);
+				//Serial.println("M1 Bigger");
     }else if((M1_Total + M1_EncoderCount) < (M2_Total + M2_EncoderCount) && (M2_Total + M2_EncoderCount) - (M1_Total + M1_EncoderCount) > 50){
         // if M2 gets bigger than M1, lower M2 max speed and increase M1's min speed
-        myPID2.SetOutputLimits(100,150);
-        myPID1.SetOutputLimits(200,250);
-				Serial.println("Hello");
+        myPID2.SetOutputLimits(100,speed);
+        myPID1.SetOutputLimits(150,speed);
+				//Serial.println("M2 Bigger");
     }else{
-        myPID1.SetOutputLimits(100,250);
-        myPID2.SetOutputLimits(100,250);
-				Serial.println(M1_Total + M1_EncoderCount);
-				Serial.println(M2_Total + M2_EncoderCount);
-        Serial.println("Here");
+        myPID1.SetOutputLimits(0,speed);
+        myPID2.SetOutputLimits(0,speed);
+				//Serial.println(M1_Total + M1_EncoderCount);
+				//Serial.println(M2_Total + M2_EncoderCount);
+        //Serial.println("M1 = M2");
     }
 }
 
 void WheelMotors::moveCommandHandler(moveCommand command){
 	Serial.println("Recieved");
 	Serial.println(command.magnitude);
+	Serial.println(command.angle);
+
 
 	if(finished == true){
 		currentMove = command;
 		finished = false;
+		commandHandled = true;
 	}
 }
 
