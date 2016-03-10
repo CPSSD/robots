@@ -8,7 +8,7 @@ import (
 	"strings"
 	"strconv"
 	"time"
-//	"RobotDriverProtocol"
+	"RobotDriverProtocol"
 )
 
 
@@ -104,7 +104,7 @@ func killHandler(w http.ResponseWriter, r*http.Request) {
 
 func sendMoveCommand(command MoveCommand) {
 	moveResponse(command.Angle, command.Distance)
-//	RobotDriverProtocol.Move(command.angle, command.distance)
+	RobotDriverProtocol.Move(command.Angle, command.Distance)
 }
 
 func main() {
