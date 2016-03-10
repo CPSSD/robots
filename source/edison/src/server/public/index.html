@@ -11,7 +11,7 @@
 			document.getElementById("current-angle").textContent = ("Current Angle: " + angle);
 			
 			magnitude = document.getElementById("distance").value
-			document.getElementById("current-distance").textContent = ("Distance: " + magnitude + " cm/s");
+			document.getElementById("current-distance").textContent = ("Distance: " + magnitude + " cm");
 		}
 		
 		function submit(){
@@ -19,23 +19,6 @@
 			var request = new XMLHttpRequest();
 			request.open("GET", "submit/"+angle+"/"+magnitude, false);
 			request.send(null);
-		}
-		
-		function getTime() {
-			date = new Date();
-			hours = date.getHours();
-			if (hours < 10) {
-				hours = "0" + hours;
-			}
-			minutes = date.getMinutes();
-			if (minutes < 10) {
-				minutes = "0" + minutes;
-			}
-			seconds = date.getSeconds();
-			if (seconds < 10) {
-				seconds = "0" + seconds;
-			}
-			return "[" + hours + ":" + minutes + ":" + seconds + "]";
 		}
 		
 		function updateResponses(){
@@ -106,7 +89,7 @@
 				<p id="current-angle">Current Angle: 0</p>
 				<input type="range" id="angle" min="0" max ="359" step="1" value="180" oninput="update()"/>
 				
-				<p id="current-distance">Distance: 0 cm/s</p>
+				<p id="current-distance">Distance: 0 cm</p>
 				<input type="range" id="distance" min="0" max ="200" step="5" value="100" oninput="update()"/>
 				
 				<br /><br />
