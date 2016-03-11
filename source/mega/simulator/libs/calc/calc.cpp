@@ -26,7 +26,7 @@ struct EquationOfLine calc::getEquationOfLine(MapLine line) {
   EquationOfLine equ;
   equ.xy.x = line.x1y1.x;
   equ.xy.y = line.x1y1.y;
-  if((line.x2y2.x - equ.xy.x) == 0.00) {
+  if((line.x2y2.x - equ.xy.x) >= -0.01f && (line.x2y2.x - equ.xy.x) <= 0.01f) {
     equ.isVertical = true;
   }
   else {
@@ -44,7 +44,6 @@ struct point calc::getDestination(struct MapLine moveLine, struct EquationOfLine
   int indexVIP = 0;
   for(int i = 0; i < 4; i++) {
     if(hasInterception(obstacles[i], robotLine)) {
-      //Serial.println("Has intercept point");
       validInterceptPoints[indexVIP] = getInterceptPoint(robotLine, obstacles[i]);
       indexVIP++;
     }
@@ -73,52 +72,40 @@ struct point calc::getDestination(struct MapLine moveLine, struct EquationOfLine
 		}
 	}
   }
-    
-  /*//Do the same for the first point
-  float diffInXValuesWallOne = validInterceptPoints[0].x - robotLine.xy.x;
-  float diffInYValuesWallOne = validInterceptPoints[0].y - robotLine.xy.y;
-  //If the signs match, that's the point in consideration, else it's the other one
-  if(( (diffInXValuesDest > 0.0 && diffInXValuesWallOne > 0.0) || (diffInXValuesDest == 0.0 && diffInXValuesWallOne == 0.0) || (diffInXValuesDest < 0.0 && diffInXValuesWallOne < 0.0) )
-  &&( (diffInYValuesDest > 0.0 && diffInYValuesWallOne > 0.0) || (diffInYValuesDest == 0.0 && diffInYValuesWallOne == 0.0) || (diffInYValuesDest < 0.0 && diffInYValuesWallOne < 0.0) )) {
-    nearestWall = validInterceptPoints[0];
-  }
-  else {
-    nearestWall = validInterceptPoints[1];
-  }
-  //Get distance between robot and destination, and robot and wall
-  float distBetweenRobotAndDest = getDistBetweenTwoPoints(moveLine.x1y1, moveLine.x2y2);
-  float distBetweenRobotAndNearWall = getDistBetweenTwoPoints(robotLine.xy, nearestWall);
-  //If distance between robot and destination is shorter than between robot and wall, return destination, else return interception point
-  if(distBetweenRobotAndDest < distBetweenRobotAndNearWall) {
-    return moveLine.x2y2;
-  }*/
   return nearestWall;
 }
 
 boolean calc::hasInterception(EquationOfLine border, EquationOfLine robotMoveLine) {
-  if((robotMoveLine.isVertical && border.isVertical) || (robotMoveLine.m == border.m && (!robotMoveLine.isVertical || !border.isVertical))) { //Lines are parallel
-    return false;
-  }
-  else if(robotMoveLine.isVertical || border.isVertical) {
-    if(robotMoveLine.isVertical) {
-      return true;
-    }
-    if(border.isVertical) {
-      //Line is in point-slope form (y = line.m(x - line.x) + line.y
-      //Convert to slope-intercept form: y = (line.m * x) + (line.m * line.x) + line.y
-      //y = line.m * x + ((line.m * line.x) + line.y)
-      float intercept = ((robotMoveLine.m * border.xy.x) + ((robotMoveLine.m * robotMoveLine.xy.x) + robotMoveLine.xy.y));
-      if(intercept >= 0.0 && intercept <= 300.0) {
-        return true;
-      }
-      else {
-        return false;
-      }
-    }
-  }
-  else {
-    return true;
-  }
+	if((robotMoveLine.isVertical && border.isVertical) || (robotMoveLine.m == border.m && (!robotMoveLine.isVertical || !border.isVertical))) { //Lines are parallel
+		return false;
+	}
+	else {
+		//Line is in point-slope form (y = line.m(x - line.x) + line.y
+		//Convert to slope-intercept form: y = (line.m * x) + (line.m * line.x) + line.y
+		//y = line.m * x + ((line.m * line.x) + line.y)
+		float intercept = ((robotMoveLine.m * border.xy.x) + ((robotMoveLine.m * robotMoveLine.xy.x) + robotMoveLine.xy.y));
+		if(robotMoveLine.isVertical || border.isVertical) {
+			if(robotMoveLine.isVertical) {
+				return true;
+			}
+			if(border.isVertical) {
+				if(intercept >= 0.0 && intercept <= 300.0) {
+					return true;
+				}
+				else {
+					return false;
+				}
+			}
+		}
+		else {
+			if(intercept >= 0.0 && intercept <= 300.0) {
+				return true;
+			}
+			else {
+				return false;
+			}
+		}
+	}
 }
 
 struct point calc::getInterceptPoint(EquationOfLine robotLine, EquationOfLine other) {

@@ -1,7 +1,5 @@
-#ifndef structs_h
-#define structs_h
-
-#include "Arduino.h"
+#ifndef STRUCTS_H
+#define STRUCTS_H
 
 struct point {
 	float x, y;
@@ -16,5 +14,12 @@ struct EquationOfLine {
   float m, c;
   boolean isVertical;
 };
+
+typedef enum {
+	moveNum  = 1,
+	stopNum  = 2,
+	rotateNum  = 3,
+	scanNum  = 4
+} comNums;
 
 #endif

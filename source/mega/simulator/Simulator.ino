@@ -11,7 +11,7 @@ calc calculations;
 const float SPEED = 0.1; //in mm per millisecond
 const int STARTING_X = 150; //This and all distances measured in cm
 const int STARTING_Y = 150;
-const MapLine MAP_BOUNDS[4] = {0, 0, 300, 0, 300, 0, 300, 300, 300, 300, 0, 300, 0, 300, 0, 0};
+const MapLine MAP_BOUNDS[4] = { {0, 0, 300, 0}, {300, 0, 300, 300}, {300, 300, 0, 300}, {0, 300, 0, 0} };
 
 unsigned long startedMoving, moveTimer, rotateTimer, distTravelled;
 int id, magnitude, movingAngle, laserAngle;
@@ -28,10 +28,6 @@ void setup() {
   SPI_Wrapper::registerScanCommandHandler(&scanCommandHandler);
   SPI_Wrapper::registerStopCommandHandler(&stopCommandHandler);
   Serial.begin(9600);
-  id = 0;
-  laserAngle = 0;
-  movingAngle = 0;
-  magnitude = 0;
   currentPosition.x = STARTING_X;
   currentPosition.y = STARTING_Y;
   amScanning = false;
@@ -47,7 +43,7 @@ void loop() {
     if(!amMoving && !amScanning) {
       processCommand(com);
     }
-    else if (amMoving && com->commandNumber == 2) {
+    else if (amMoving && com->commandNumber == stopNum) {
       processCommand(com);
     }
   }
@@ -87,10 +83,10 @@ void scanCommandHandler(scanCommand scanCom) {
 }
 
 void processCommand(command* com) {
-  if(com->commandNumber == 1){
+  if(com->commandNumber == moveNum){
     moveRobot((moveCommand*)com);
   }
-  else if(com->commandNumber == 2){
+  else if(com->commandNumber == stopNum){
     amMoving = false;
     unsigned long totalDistance = calculations.getDistBetweenTwoPoints(currentPosition, destination);
     float distanceMoved = (((float)(millis() - startedMoving))/(float)(moveTimer - startedMoving))*(float)(totalDistance);
@@ -102,10 +98,10 @@ void processCommand(command* com) {
     
     SPI_Wrapper::sendStopResponse(com->uniqueID, (uint16_t)distanceMoved, (uint16_t)movingAngle, true);
   }
-  else if(com->commandNumber == 3){
+  else if(com->commandNumber == rotateNum){
     // rotate command to be implemented
   }
-  else if(com->commandNumber == 4){
+  else if(com->commandNumber == scanNum){
     amScanning = true;
   }
 }
