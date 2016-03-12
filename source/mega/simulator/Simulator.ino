@@ -71,15 +71,24 @@ void loop() {
 }
 
 void moveCommandHandler(moveCommand movCom) {
-  com = new moveCommand(movCom);
+  if (com == NULL) {
+    com = new moveCommand(movCom);
+  }
 }
 
 void stopCommandHandler(stopCommand stopCom) {
-  com = new stopCommand(stopCom);
+  if (amMoving) {
+    if (com != NULL) {
+      delete com;
+    }
+    com = new stopCommand(stopCom);
+  }
 }
 
 void scanCommandHandler(scanCommand scanCom) {
-  com =  new scanCommand(scanCom);
+  if (com == NULL) {
+    com =  new scanCommand(scanCom);
+  }
 }
 
 void processCommand(command* com) {
