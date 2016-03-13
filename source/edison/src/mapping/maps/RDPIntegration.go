@@ -3,6 +3,7 @@ package maps
 import (
 	"RobotDriverProtocol"
 	"fmt"
+	"server"
 )
 
 var lastAction string
@@ -15,23 +16,11 @@ func RDPInit() {
 	RobotDriverProtocol.Init()
 }
 
-// Demonstrates the robot handling data from the responses.
-func demo(){
-	RDPConnector(RobotDriverProtocol.MoveResponse{RobotDriverProtocol.Response{0, 0, true}, 0, 40})
-	RDPConnector(RobotDriverProtocol.RotateResponse{RobotDriverProtocol.Response{0, 0, true}, 90})
-	RDPConnector(RobotDriverProtocol.MoveResponse{RobotDriverProtocol.Response{0, 0, true}, 0, 40})
-	var distance uint16 = 50
-	for i := 0; i < 360; i += 1 {
-		RDPConnector(RobotDriverProtocol.ScanResponse{RobotDriverProtocol.Response{0, 0, true}, uint16(i), distance, false})
-	}
-	RDPConnector(RobotDriverProtocol.ScanResponse{RobotDriverProtocol.Response{0, 0, true}, 360, distance, true})
-}
-
 // RDPConnector handles the incoming data.
 func RDPConnector(data interface{}) {
 	fmt.Println()
 	fmt.Println("\tData Recieved =>", data)
-	
+
 	switch response := data.(type) {
 	case RobotDriverProtocol.MoveResponse:
 		moveResponse(response)
@@ -42,6 +31,8 @@ func RDPConnector(data interface{}) {
 	case RobotDriverProtocol.StopResponse:
 		stopResponse(response)
 	}
+
+	server.ResponseHandler(data)
 }
 
 func moveResponse(response RobotDriverProtocol.MoveResponse) {
@@ -68,7 +59,6 @@ func scanResponse(response RobotDriverProtocol.ScanResponse) {
 		RobotMap.ContinueToNextArea()
 		currentID = -1
 	}
-
 }
 
 func rotateResponse(response RobotDriverProtocol.RotateResponse) {
@@ -83,12 +73,11 @@ func rotateResponse(response RobotDriverProtocol.RotateResponse) {
 
 func stopResponse(response RobotDriverProtocol.StopResponse) {
 	fmt.Print("[Stop Response] Angle:", response.Angle)
-	fmt.Println(" [Response] { ID:", response.ID, " // Type:", response.Type,"}")
+	fmt.Println(" [Response] { ID:", response.ID, " // Type:", response.Type, "}")
 
 	// Updates robots location to the response location.
 	// Check reason, do something based on reason.
 	RobotMap.MoveRobotAlongLine(float64(response.Angle), float64(response.Magnitude))
 	lastAction = "Stop"
 	currentID = -1
-
 }
