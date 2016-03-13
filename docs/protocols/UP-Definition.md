@@ -15,7 +15,7 @@ The API will be made using RESTful principles with HTTP and Json.
 | map  | GET         | bit                       |Json object|
 | drive| GET         |                           |index.html |
 | drive| GET         | submit/<angle>/<distance> |Plain Text |
-| drive| GET         | response                  |Plain Text |
+| drive| GET         | response                  |Json object|
 | kill | GET         |                           |None       |
 
 | Status Code | Description    |
