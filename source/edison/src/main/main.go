@@ -1,15 +1,11 @@
 package main
-import(
-	"log"
-	"net/http"
-	"server"
+
+import (
 	"mapping/maps"
+	"server"
 )
 
 func main() {
-	
 	maps.MapInit()
-	router := server.NewRouter()
-
-	log.Fatal(http.ListenAndServe(":8080",router))	
+	server.StartServer()
 }
