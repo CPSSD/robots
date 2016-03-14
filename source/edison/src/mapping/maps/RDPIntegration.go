@@ -3,7 +3,6 @@ package maps
 import (
 	"RobotDriverProtocol"
 	"fmt"
-	"server"
 )
 
 var lastAction string
@@ -31,8 +30,6 @@ func RDPConnector(data interface{}) {
 	case RobotDriverProtocol.StopResponse:
 		stopResponse(response)
 	}
-
-	server.ResponseHandler(data)
 }
 
 func moveResponse(response RobotDriverProtocol.MoveResponse) {
