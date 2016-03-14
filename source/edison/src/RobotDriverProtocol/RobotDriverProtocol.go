@@ -53,7 +53,14 @@ var id uint16
 var buffersToSend [][]uint8
 
 // responseHandler is a function registered by the main program that will be called when a response is returned
-var responseHandler func(interface{})
+var responseHandler []func(interface{})
+
+
+func fireResponseHandler(data interface{}) {
+	for _, handler := range responseHandler {
+		handler(data)
+	}
+}
 
 func processMoveResponse(responseBuffer []uint8) {
 	if len(responseBuffer) < 7 {
@@ -65,7 +72,7 @@ func processMoveResponse(responseBuffer []uint8) {
 	moveResponse.Magnitude = (uint16(responseBuffer[2]) << 8) + uint16(responseBuffer[3])
 	moveResponse.Angle = (uint16(responseBuffer[4]) << 8) + uint16(responseBuffer[5])
 	moveResponse.Success = (responseBuffer[6] > 0)
-	responseHandler(moveResponse)
+	fireResponseHandler(moveResponse)
 }
 
 func processStopResponse(responseBuffer []uint8) {
@@ -78,7 +85,7 @@ func processStopResponse(responseBuffer []uint8) {
 	stopResponse.Magnitude = (uint16(responseBuffer[2]) << 8) + uint16(responseBuffer[3])
 	stopResponse.Angle = (uint16(responseBuffer[4]) << 8) + uint16(responseBuffer[5])
 	stopResponse.Success = (responseBuffer[6] > 0)
-	responseHandler(stopResponse)
+	fireResponseHandler(stopResponse)
 }
 
 func processRotateResponse(responseBuffer []uint8) {
@@ -90,7 +97,7 @@ func processRotateResponse(responseBuffer []uint8) {
 	rotateResponse.ID = (uint16(responseBuffer[0]) << 8) + uint16(responseBuffer[1])
 	rotateResponse.Angle = (uint16(responseBuffer[2]) << 8) + uint16(responseBuffer[3])
 	rotateResponse.Success = (responseBuffer[4] > 0)
-	responseHandler(rotateResponse)
+	fireResponseHandler(rotateResponse)
 }
 
 func processScanResponse(responseBuffer []uint8) {
@@ -105,7 +112,7 @@ func processScanResponse(responseBuffer []uint8) {
 	scanResponse.Degree = (uint16(responseBuffer[5]) << 8) + uint16(responseBuffer[6])
 	scanResponse.Success = (responseBuffer[7] > 0)
 	fmt.Println("Passing scanResponse to responseHandler")
-	responseHandler(scanResponse)
+	fireResponseHandler(scanResponse)
 }
 
 // processResponse will process a response
@@ -199,7 +206,7 @@ func Init() {
 
 // RegisterResponseHandler is used to register a function which will be called when a response is received over SPI
 func RegisterResponseHandler(newResponseHandler func(interface{})) {
-	responseHandler = newResponseHandler
+	responseHandler = append(responseHandler, newResponseHandler)
 }
 
 // Move implements the RDP "Move" command

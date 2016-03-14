@@ -11,6 +11,7 @@ import (
 	"strconv"
 	"strings"
 	"time"
+	"RobotDriverProtocol"
 )
 
 type jsonMap struct {
@@ -19,7 +20,7 @@ type jsonMap struct {
 	Map     [][]bool `json:"map"`
 }
 
-type moveResponse struct {
+type response struct {
 	Type     string
 	UniqueID int
 	Angle    int
@@ -37,7 +38,7 @@ type page struct {
 	Body  []byte
 }
 
-var moveResponseHistory []moveResponse
+var responseHistory []response
 
 func load(filename string) *page {
 	body, _ := ioutil.ReadFile(filename)
@@ -47,9 +48,9 @@ func load(filename string) *page {
 func driveHandler(w http.ResponseWriter, r *http.Request) {
 	var page *page
 	if r.URL.Path == "/drive/" {
-		page = load("public/index.html")
+		page = load("../server/public/index.html")
 	} else {
-		page = load(("public/" + r.URL.Path[len("/drive/"):]))
+		page = load(("../server/public/" + r.URL.Path[len("/drive/"):]))
 	}
 	fmt.Fprintf(w, "%s", page.Body)
 }
@@ -66,7 +67,7 @@ func driveCommand(w http.ResponseWriter, r *http.Request) {
 
 func moveResponseDisplay(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintf(w, "{\"Responses\": [")
-	for i, response := range moveResponseHistory {
+	for i, response := range responseHistory {
 		if i != 0 {
 			fmt.Fprintf(w, ",")
 		}
@@ -114,9 +115,9 @@ func getTime() (timeResp string) {
 	return
 }
 
-func moveResponse(commandType string, angle int, magnitude int) {
-	response := moveResponse{commandType, 0, int(angle), int(magnitude), getTime()}
-	moveResponseHistory = append(moveResponseHistory, response)
+func outputManager(commandType string, angle int, magnitude int) {
+	response := response{commandType, 0, int(angle), int(magnitude), getTime()}
+	responseHistory = append(responseHistory, response)
 }
 
 func killHandler(w http.ResponseWriter, r *http.Request) {
@@ -129,12 +130,14 @@ func ResponseHandler(data interface{}) {
 
 	switch response := data.(type) {
 	case RobotDriverProtocol.MoveResponse:
-		moveResponse("Move Response", int(response.Angle), int(response.Magnitude))
+		outputManager("Move Response", int(response.Angle), int(response.Magnitude))
+	case RobotDriverProtocol.ScanResponse:
+		outputManager("Scan Response", int(response.Degree), int(response.Distance))
 	}
 }
 
 func sendMoveCommand(command moveCommand) {
-	moveResponse("Move Command", command.Angle, command.Distance)
+	outputManager("Move Command", command.Angle, command.Distance)
 	RobotDriverProtocol.Move(uint16(command.Angle), uint32(command.Distance))
 }
 
@@ -142,8 +145,7 @@ func sendMoveCommand(command moveCommand) {
 func StartServer() {
 	fmt.Println("Starting...")
 
-	RobotDriverProtocol.RegisterResponseHandler(responseHandler)
-	RobotDriverProtocol.Init()
+	RobotDriverProtocol.RegisterResponseHandler(ResponseHandler)
 
 	http.HandleFunc("/kill/", killHandler)
 	http.HandleFunc("/drive/", driveHandler)
