@@ -1,6 +1,7 @@
 package server
 
 import (
+	"RobotDriverProtocol"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
@@ -11,7 +12,6 @@ import (
 	"strconv"
 	"strings"
 	"time"
-	"RobotDriverProtocol"
 )
 
 type jsonMap struct {
