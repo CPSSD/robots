@@ -5,7 +5,7 @@ echo "src all http://iotdk.intel.com/repos/2.0/iotdk/all" > /etc/opkg/base-feeds
 echo "src x86 http://iotdk.intel.com/repos/2.0/iotdk/x86" >> /etc/opkg/base-feeds.conf
 echo "src i586 http://iotdk.intel.com/repos/2.0/iotdk/i586" >> /etc/opkg/base-feeds.conf
 
-# Updates the package list and installs Go.
+# Updates the package list and installs Git.
 opkg update
 opkg install git
 
