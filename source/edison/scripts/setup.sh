@@ -21,6 +21,6 @@ cd ..
 rm -r GoInstallation
 
 echo "export PATH=$PATH:/usr/local/go/bin" > $HOME/.profile
-echo "export GOPATH=:$HOME/robots/source/edison" >> $HOME/.profile
-echo "export GOBIN=:$GOPATH/bin" >> $HOME/.profile
+echo "export GOPATH=$HOME/robots/source/edison" >> $HOME/.profile
+echo "export GOBIN=$GOPATH/bin" >> $HOME/.profile
 source .profile
