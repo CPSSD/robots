@@ -1,6 +1,7 @@
 package server
 
 import (
+	"RobotDriverProtocol"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
@@ -11,7 +12,6 @@ import (
 	"strconv"
 	"strings"
 	"time"
-	"RobotDriverProtocol"
 )
 
 type jsonMap struct {
@@ -53,6 +53,11 @@ func driveHandler(w http.ResponseWriter, r *http.Request) {
 		page = load(("../server/public/" + r.URL.Path[len("/drive/"):]))
 	}
 	fmt.Fprintf(w, "%s", page.Body)
+}
+
+func scanCommand(w http.ResponseWriter, r *http.Request) {
+	outputManager("Scan Command", 0, 0)
+	RobotDriverProtocol.Scan()
 }
 
 // Angle first, then distance: ie.. /drive/submit/<angle>/<distance>
@@ -151,6 +156,7 @@ func StartServer() {
 	http.HandleFunc("/drive/", driveHandler)
 	http.HandleFunc("/drive/submit/", driveCommand)
 	http.HandleFunc("/drive/response/", moveResponseDisplay)
+	http.HandleFunc("/scan/", scanCommand)
 	http.HandleFunc("/map/bit", displayBitmap)
 	http.ListenAndServe(":8080", nil)
 }
