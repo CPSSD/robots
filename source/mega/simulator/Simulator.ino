@@ -137,7 +137,7 @@ void moveRobot(moveCommand* com) {
 scanResponse scan(){
   scanResponse scanResp;
   scanResp.angle = laserAngle;
-  MapLine ray = calculations.makeLineFromPolar(((((float)laserAngle) * PI) / 180), 65530.0, currentPosition);
+  MapLine ray = calculations.makeLineFromPolar(((((float)laserAngle) * PI) / 180), 4096.0, currentPosition);
   EquationOfLine equOfRay = calculations.getEquationOfLine(ray);
   nearestWall = calculations.getDestination(ray, equOfRay, PERIMETER);
   scanResp.magnitude = (unsigned int)round(calculations.getDistBetweenTwoPoints(ray.x1y1, nearestWall));
