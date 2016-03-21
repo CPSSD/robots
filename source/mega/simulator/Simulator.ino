@@ -8,7 +8,7 @@
 
 calc calculations;
 
-const float SPEED = 0.1; //in mm per millisecond
+const float SPEED = 1; //in mm per millisecond
 const int STARTING_X = 150; //This and all distances measured in cm
 const int STARTING_Y = 150;
 const MapLine MAP_BOUNDS[4] = { {0, 0, 300, 0}, {300, 0, 300, 300}, {300, 300, 0, 300}, {0, 300, 0, 0} };
@@ -28,6 +28,7 @@ void setup() {
   SPI_Wrapper::registerScanCommandHandler(&scanCommandHandler);
   SPI_Wrapper::registerStopCommandHandler(&stopCommandHandler);
   Serial.begin(9600);
+  Serial.println("Starting...");
   currentPosition.x = STARTING_X;
   currentPosition.y = STARTING_Y;
   amScanning = false;
@@ -59,7 +60,8 @@ void loop() {
   if(amScanning && laserAngle <= 360) {
     scanResp = scan();
     respond(scanResp);
-    laserAngle++;
+    delay(100);
+    laserAngle+=1;
   }
   
   if(amScanning && laserAngle > 360) {
@@ -71,12 +73,14 @@ void loop() {
 }
 
 void moveCommandHandler(moveCommand movCom) {
+  Serial.println("Recieved Move Command...");
   if (com == NULL) {
     com = new moveCommand(movCom);
   }
 }
 
 void stopCommandHandler(stopCommand stopCom) {
+  Serial.println("Recieved Stop Command...");
   if (amMoving) {
     if (com != NULL) {
       delete com;
@@ -86,6 +90,7 @@ void stopCommandHandler(stopCommand stopCom) {
 }
 
 void scanCommandHandler(scanCommand scanCom) {
+  Serial.println("Recieved Scan Command...");
   if (com == NULL) {
     com =  new scanCommand(scanCom);
   }
@@ -120,7 +125,8 @@ void respond(moveCommand* com){
 }
 
 void respond(scanResponse scanResp) {
-  SPI_Wrapper::sendScanResponse(com->uniqueID, scanResp.angle, scanResp.magnitude, scanResp.last, true);
+  Serial.println("Sending Scan Response...");
+  SPI_Wrapper::sendScanResponse(com->uniqueID, scanResp.magnitude, scanResp.angle, scanResp.last, true);
 }
 
 void moveRobot(moveCommand* com) {
@@ -137,7 +143,8 @@ void moveRobot(moveCommand* com) {
 scanResponse scan(){
   scanResponse scanResp;
   scanResp.angle = laserAngle;
-  MapLine ray = calculations.makeLineFromPolar(((((float)laserAngle) * PI) / 180), 65530.0, currentPosition);
+  com->uniqueID = 4;
+  MapLine ray = calculations.makeLineFromPolar(((((float)laserAngle) * PI) / 180), 4096.0, currentPosition);
   EquationOfLine equOfRay = calculations.getEquationOfLine(ray);
   nearestWall = calculations.getDestination(ray, equOfRay, PERIMETER);
   scanResp.magnitude = (unsigned int)round(calculations.getDistBetweenTwoPoints(ray.x1y1, nearestWall));

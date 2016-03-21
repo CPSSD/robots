@@ -18,7 +18,15 @@ float calc::getDistanceTravelled(float speed, unsigned long time) {
 struct MapLine calc::makeLineFromPolar(float angle, float distance, point currentPosition) {
   MapLine temp;
   temp.x1y1 = {currentPosition.x, currentPosition.y};
-  temp.x2y2 = {(currentPosition.x + (distance * cos(angle))), (currentPosition.y + (distance * sin(angle)))};
+  float xValueDelta = distance * cos(angle);
+  if(xValueDelta >= -0.012f && xValueDelta <= 0.012f) {
+	  xValueDelta = 0.00;
+  }
+  float yValueDelta = distance * sin(angle);
+  if(yValueDelta >= -0.012f && yValueDelta <= 0.012f) {
+	  yValueDelta = 0.00;
+  }
+  temp.x2y2 = {(currentPosition.x + xValueDelta), (currentPosition.y + yValueDelta)};
   return temp;
 }
 
@@ -44,29 +52,42 @@ struct point calc::getDestination(struct MapLine moveLine, struct EquationOfLine
   int indexVIP = 0;
   for(int i = 0; i < 4; i++) {
     if(hasInterception(obstacles[i], robotLine)) {
-      validInterceptPoints[indexVIP] = getInterceptPoint(robotLine, obstacles[i]);
-      indexVIP++;
+		//Serial.println(i);
+		validInterceptPoints[indexVIP] = getInterceptPoint(robotLine, obstacles[i]);
+		indexVIP++;
     }
   }
   //Determine sign of each translation in x and y, relative to robot
   float diffInXValuesDest = moveLine.x2y2.x - moveLine.x1y1.x;
+  if(diffInXValuesDest >= -0.01f && diffInXValuesDest <= 0.01f) {
+	  diffInXValuesDest = 0.00;
+  }
   float diffInYValuesDest = moveLine.x2y2.y - moveLine.x1y1.y;
+  if(diffInYValuesDest >= -0.01f && diffInYValuesDest <= 0.01f) {
+	  diffInYValuesDest = 0.00;
+  }
   
   float diffInXValuesWall, diffInYValuesWall, distBetweenRobotAndDest, distBetweenRobotAndWall;
   //Get distance between robot and destination
   distBetweenRobotAndDest = getDistBetweenTwoPoints(robotLine.xy, nearestWall);
   
-  for(int i = 0; i <= indexVIP; i++) {
+  for(int i = 0; i < indexVIP; i++) {
 	//Determine sign of each translation for given interception point
 	diffInXValuesWall = validInterceptPoints[i].x - robotLine.xy.x;
+	if(diffInXValuesWall >= -0.01f && diffInXValuesWall <= 0.01f) {
+		diffInXValuesWall = 0.00;
+	}
 	diffInYValuesWall = validInterceptPoints[i].y - robotLine.xy.y;
+	if(diffInYValuesWall >= -0.01f && diffInYValuesWall <= 0.01f) {
+		diffInYValuesWall = 0.00;
+	}
 	//If the signs match, we're facing the right direction
 	if(( (diffInXValuesDest > 0.0 && diffInXValuesWall > 0.0) || (diffInXValuesDest == 0.0 && diffInXValuesWall == 0.0) || (diffInXValuesDest < 0.0 && diffInXValuesWall < 0.0) )
   &&( (diffInYValuesDest > 0.0 && diffInYValuesWall > 0.0) || (diffInYValuesDest == 0.0 && diffInYValuesWall == 0.0) || (diffInYValuesDest < 0.0 && diffInYValuesWall < 0.0) )) {
 	  //Get distance between robot and interception point
 	  distBetweenRobotAndWall = getDistBetweenTwoPoints(robotLine.xy, validInterceptPoints[i]);
 	  //If distance between robot and interception point is shorter than between robot and destination
-	  if(distBetweenRobotAndWall < distBetweenRobotAndDest) {
+	  if(distBetweenRobotAndWall <= distBetweenRobotAndDest) {
 		  nearestWall = validInterceptPoints[i];
 		  distBetweenRobotAndDest = distBetweenRobotAndWall;
 		}
@@ -83,7 +104,7 @@ boolean calc::hasInterception(EquationOfLine border, EquationOfLine robotMoveLin
 		//Line is in point-slope form (y = line.m(x - line.x) + line.y
 		//Convert to slope-intercept form: y = (line.m * x) + (line.m * line.x) + line.y
 		//y = line.m * x + ((line.m * line.x) + line.y)
-		float intercept = ((robotMoveLine.m * border.xy.x) + ((robotMoveLine.m * robotMoveLine.xy.x) + robotMoveLine.xy.y));
+		float intercept = ((robotMoveLine.m * border.xy.x) + ((-(robotMoveLine.m * robotMoveLine.xy.x)) + robotMoveLine.xy.y));
 		if(robotMoveLine.isVertical || border.isVertical) {
 			if(robotMoveLine.isVertical) {
 				return true;
@@ -98,12 +119,7 @@ boolean calc::hasInterception(EquationOfLine border, EquationOfLine robotMoveLin
 			}
 		}
 		else {
-			if(intercept >= 0.0 && intercept <= 300.0) {
-				return true;
-			}
-			else {
-				return false;
-			}
+			return true;
 		}
 	}
 }
@@ -129,6 +145,9 @@ struct point calc::getInterceptPoint(EquationOfLine robotLine, EquationOfLine ot
     intercept.x = numerator / denominator;
     //Substitute the x-value into either equation of the lines and solve for y
     intercept.y = (robotLine.m * intercept.x) + robotLine.c;
+	if(intercept.y >= -0.01f && intercept.y <= 0.01f) {
+		intercept.y = 0.00;
+	}
   }
   return intercept;
 }
