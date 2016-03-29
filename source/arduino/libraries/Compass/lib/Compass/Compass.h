@@ -2,7 +2,6 @@
 #define Compass_H
 
 #include <Arduino.h>
-#include <Wire.h>
 #include <HMC5883L.h>
 
 class Compass {
@@ -13,9 +12,9 @@ class Compass {
 		~Compass();
 		
         // Returns the robots heading in degrees.
-        static float getHeading();
+        float getHeading();
         // To be called once per loop. Updates the compass position.
-        static void updateHeading();
+        void updateHeading();
 	
 
 	private:
@@ -23,13 +22,13 @@ class Compass {
         HMC5883L compass;
 
         // Define the number of headings to average over to reduce error.
-        static const int MAX_HEADINGS 50
+        static const int MAX_HEADINGS = 50;
 
         // List of the previous headings.
-        static float lastHeadings[MAX_HEADINGS] = {0};
+        float lastHeadings[MAX_HEADINGS];
 
         // Stores our current position in lastHeadings.
-        static int headingsIndex = 0;
+        int headingsIndex;
 };
 
 #endif

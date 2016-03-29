@@ -54,7 +54,6 @@ MagnetometerScaled HMC5883L::readScaledAxis()
 
 int HMC5883L::setScale(float gauss)
 {
-    Serial.println("asdf");
 	uint8_t regValue = 0x00;
 	if(gauss == 0.88)
 	{
