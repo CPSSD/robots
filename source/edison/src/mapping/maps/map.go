@@ -5,7 +5,7 @@ package maps
 import "fmt"
 import "math"
 import "time"
-import "RobotDriverProtocol"
+//import "RobotDriverProtocol"
 
 const BITMAP_SIZE = 2 // Millimeters Per Bitmap Segment
 const DEBUG = false
@@ -34,7 +34,21 @@ func MapInit() {
 	RDPInit()
 	fmt.Println("[RDP Link Ready]")
 	fmt.Println(RobotMap)
-	RobotDriverProtocol.Scan()
+	for i := 0; i < 180; i++ {
+		RobotMap.AddWallByLine(float64(i), 25.0)
+	}
+	for i := 180; i < 360; i++ {
+		RobotMap.AddWallByLine(float64(i), 12.0)
+	}
+	RobotMap.Print(nil)
+//	x := RobotMap.GetRobot().GetX()
+//	y := RobotMap.GetRobot().GetY()
+
+	// Temporary data for testing.
+	scanResults := [][]bool{{false, false, true, true, false}, {false, false, false, true, false}, {false, false, false, true, false}, {false, false, false, true, false}}
+	RobotMap.FindLocation(scanResults, 0, 0)
+	
+	//RobotDriverProtocol.Scan()
 }
 
 // GetSeenMap returns the seen map.
@@ -60,6 +74,51 @@ func CreateMap() (createdMap Map) {
 	return
 }
 
+func (this *Map) FindLocation(scanResults [][]bool, lastX float64, lastY float64) (x int, y int) {
+	fmt.Println("Attempting to find location...")
+	mX, mY, mCount := int(lastX), int(lastY), 0
+	for i := 0; i < len(RobotMap.floor); i++ {
+		for j := 0; j < len(RobotMap.floor[0]); j++ {
+			count, y, x := RobotMap.probabilityAtLocation(scanResults, int(i), int(j))
+			if count != 0 {
+				fmt.Print(count, " ")
+				if mCount < count {
+					mX = x
+					mY = y
+					mCount = count
+				}
+			} else {
+				fmt.Print("  ")
+			}
+		}
+		fmt.Println("")
+	}
+	fmt.Println("Most Likely Position: (", mX, ", ", mY, "): ", mCount)
+	RobotMap.GetRobot().MoveToPoint(mX, mY, true)
+	RobotMap.Print(nil)
+	
+	return
+}
+
+func (this *Map) probabilityAtLocation(scanResults [][]bool, x int, y int) (int, int, int) {
+	count := 0
+	width := len(scanResults)
+	height := len(scanResults[0])
+	for i := 0; i < width; i++ {
+		for j := 0; j < height; j++ {
+			checkX := x + i - width/2
+			checkY := y + j - height/2
+			if (checkX >= 0 && checkY >= 0 && checkX < len(RobotMap.floor) && checkY < len(RobotMap.floor[i])){
+				if (scanResults[i][j] == true && scanResults[i][j] == RobotMap.floor[checkX][checkY]) {
+					count++
+				}
+			} 	
+		}
+	}
+	return count, x, y
+}
+
+
 // MoveRobotAlongPath moves the robot along the given path.
 // Set "stopBeforePoint" to true if you dont want to stop before entering the point given. 
 // Used when following a path into unseen areas to prevent crashes.
@@ -80,7 +139,8 @@ func (this *Map) MoveRobotAlongPath(path [][]bool, stopBeforePoint bool) {
 		//this.robot.MoveToPoint(nextX, nextY, true)
 		degree, magnitude := getHorizontalLine(prevX, prevY, nextX, nextY)
 
-		RobotDriverProtocol.Move(uint16(degree), uint32(magnitude))
+		//RobotDriverProtocol.Move(uint16(degree), uint32(magnitude))
+		RobotMap.MoveRobotAlongLine(float64(degree), float64(magnitude))
 
 		tick := 0
 		waiting := true
@@ -98,7 +158,7 @@ func (this *Map) MoveRobotAlongPath(path [][]bool, stopBeforePoint bool) {
 	}
 	
 	fmt.Println("Finished Moving along path. [Sending Scan Request]")
-	RobotDriverProtocol.Scan()
+	//RobotDriverProtocol.Scan()
 }
 
 func getHorizontalLine(x1, y1, x2, y2 int) (degree, magnitude float64) {
@@ -279,7 +339,7 @@ func (this *Map) Print(path [][]bool) {
 					fmt.Print("X ")
 				} else {
 					if this.seen[y][x] == 0 {
-						fmt.Print(this.seen[y][x], " ")
+						fmt.Print(this.seen[y][x], "\b  ")
 					} else {
 						fmt.Print("  ")
 					}
