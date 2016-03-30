@@ -12,6 +12,7 @@ typedef void (*SPI_Move_Command_Handler)(moveCommand);
 typedef void (*SPI_Stop_Command_Handler)(stopCommand);
 typedef void (*SPI_Rotate_Command_Handler)(rotateCommand);
 typedef void (*SPI_Scan_Command_Handler)(scanCommand);
+typedef void (*SPI_Compass_Command_Handler)(compassCommand);
 
 class SPI_Wrapper {
     public:
@@ -20,12 +21,14 @@ class SPI_Wrapper {
 		static void registerStopCommandHandler(SPI_Stop_Command_Handler newCommandHandler);
 		static void registerRotateCommandHandler(SPI_Rotate_Command_Handler newCommandHandler);
 		static void registerScanCommandHandler(SPI_Scan_Command_Handler newCommandHandler);
+		static void registerCompassCommandHandler(SPI_Compass_Command_Handler newCommandHandler);
 		
 		// Response functions
 		static void sendMoveResponse(uint16_t uniqueID, uint16_t magnitude, uint16_t angle, bool status);		
 		static void sendStopResponse(uint16_t uniqueID, uint16_t magnitude, uint16_t angle, bool status);
 		static void sendRotateResponse(uint16_t uniqueID, uint16_t angle, bool status);
 		static void sendScanResponse(uint16_t uniqueID, uint16_t angle, uint16_t magnitude, bool last, bool status);
+		static void sendCompassResponse(uint16_t uniqueID, uint16_t angle, bool status);
 		
 		static void spiIntteruptFunction(); // called in the SPI interrupt
 		
@@ -37,6 +40,7 @@ class SPI_Wrapper {
 		static SPI_Stop_Command_Handler stopCommandHandler;
 		static SPI_Rotate_Command_Handler rotateCommandHandler;
 		static SPI_Scan_Command_Handler scanCommandHandler;
+		static SPI_Compass_Command_Handler compassCommandHandler;
 	
 		// Each command should be stored in the buffer preceeded by a byte telling us the length of the command
 		static uint8_t dataOutBuffer[MAX_BUFFER_SIZE]; // Circular buffer contatining each byte to send
