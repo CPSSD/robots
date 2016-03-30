@@ -31,10 +31,13 @@ Angle 			- 2 bytes		(Unsigned 16 bit int) 	Number from 0 - 360 in degrees
 Checksum		- 1 byte		(Unsigned 8  bit int) 	Sum of all other bytes mod 255
 
 - scan 		(Command #4)
-Command Number	- 1 byte  	(Unsigned 8  bit int)	
+Command Number	- 1 byte  		(Unsigned 8  bit int)	
 Unique ID 		- 2 bytes		(Unsigned 16 bit int)
 Checksum		- 1 byte		(Unsigned 8  bit int) 	Sum of all other bytes mod 255
 
+- getHeading (Command #5)
+Command Number	- 1 byte  		(Unsigned 8  bit int)	
+Unique ID 		- 2 bytes		(Unsigned 16 bit int)
 ```
 
 
@@ -70,5 +73,10 @@ Last            - 1 byte  (8 bit boolean value) 0 for false, anything else for t
 Angle           - 2 bytes (Unsigned 16 bit int) Angle in degrees
 Distance        - 2 bytes (Unsigned 16 bit int) Distance in cm.
 Status          - 1 byte  (Unisgned 8 bit int ) 0 for failure, non-zero for success.
+
+- compassResponse (Response #5)
+Command Number	- 1 byte  	(Unsigned 8  bit int)	
+Unique ID 		- 2 bytes	(Unsigned 16 bit int)
+Angle			- 2 bytes 	(Uniigned 16 bit int)
 
 ```
