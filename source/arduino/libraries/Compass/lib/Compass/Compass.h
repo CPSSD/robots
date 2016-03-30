@@ -1,16 +1,18 @@
 #ifndef Compass_H
 #define Compass_H
 
-#include <Arduino.h>
 #include <HMC5883L.h>
+#include "Arduino.h"
 
 class Compass {
 	public:
-        // Functions as a setup routine, inits the compass.
+        // Default empty constructor.
 		Compass();
         // Unused, included for completeness.
 		~Compass();
 		
+        // Functions as a setup routine, inits the compass.
+        void init();
         // Returns the robots heading in degrees.
         float getHeading();
         // To be called once per loop. Updates the compass position.

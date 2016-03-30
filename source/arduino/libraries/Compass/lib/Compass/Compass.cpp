@@ -1,24 +1,26 @@
 #include "Compass.h"
 #include <Wire.h>
-#include <Arduino.h>
 
-// Functions as a setup routine. Gets the compass object.
+// Empty constructor.
 Compass::Compass() {
-    //Serial.println("EIAUDFHJ");
-    for(int i=0; i<MAX_HEADINGS; i++)
-        lastHeadings[i] = 0;
-    headingsIndex = 0;
 
-
-    Wire.begin(); // Start the I2C interface.
-    compass = HMC5883L();
-    compass.setScale(((float)0.88)); // Set the scale of the compass.
-    compass.setMeasurementMode(MEASUREMENT_CONTINUOUS); // Set the measurement mode to Continuous
 }
 
 // Destructor. Included for completeness.
 Compass::~Compass() {
 
+}
+
+// Functions as a setup routine. Gets the compass object.
+void Compass::init() {
+    for(int i=0; i<MAX_HEADINGS; i++)
+        lastHeadings[i] = 0;
+    headingsIndex = 0;
+
+    Wire.begin(); // Start the I2C interface.
+    compass = HMC5883L();
+    compass.setScale(((float)0.88)); // Set the scale of the compass.
+    compass.setMeasurementMode(MEASUREMENT_CONTINUOUS); // Set the measurement mode to Continuous
 }
 
 
