@@ -13,7 +13,7 @@ const int STARTING_X = 150; //This and all distances measured in cm
 const int STARTING_Y = 150;
 const MapLine MAP_BOUNDS[4] = { {0, 0, 300, 0}, {300, 0, 300, 300}, {300, 300, 0, 300}, {0, 300, 0, 0} };
 
-unsigned long startedMoving, moveTimer, rotateTimer, distTravelled;
+unsigned long startedMoving, moveTimer, scanTimer, rotateTimer, distTravelled;
 int id, magnitude, movingAngle, laserAngle;
 bool amScanning, amMoving, amRotating;
 
@@ -37,6 +37,7 @@ void setup() {
   for(int i = 0; i < 4; i++) {
     PERIMETER[i] = calculations.getEquationOfLine(MAP_BOUNDS[i]);
   }
+  scanTimer = millis();
 }
 
 void loop() {
@@ -57,13 +58,13 @@ void loop() {
     com = NULL;
   }
 
-  if(amScanning && laserAngle <= 360) {
+  if(amScanning && laserAngle <= 360 && millis() >= scanTimer) {
     scanResp = scan();
     if(scanResp.magnitude != 4096.0) {
       respond(scanResp);
-      delay(100);
     }
     laserAngle+=1;
+    scanTimer = millis() + 100UL;
   }
   
   if(amScanning && laserAngle > 360) {
