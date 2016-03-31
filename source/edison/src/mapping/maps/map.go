@@ -354,7 +354,7 @@ func (this *Map) MarkLineAsSeen(degree, distance float64) {
 
 // Counts the ammount of seen tiles (that are just empty space) surrounding the current tile (horizontaly and vertically)
 func (this *Map) getAdjacentSeenTilesCount(x, y int) (count int) {
-	count++
+	count = 0
 	if y+1 < len(this.floor) {
 		if this.seen[y+1][x] == 1 {
 			count++
