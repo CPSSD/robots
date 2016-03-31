@@ -8,6 +8,7 @@ const int motorID = 27;
 
 boolean sendMoveCommand = false;
 boolean sendScanCommand = false;
+boolean sendStopCommand = false;
 boolean sendMoveResponse = false;
 boolean sendCompassHeading = false;
 
@@ -17,6 +18,7 @@ int scanBufferEnd = 0;
 
 moveCommand queuedMoveCommand;
 scanCommand queuedScanCommand;
+stopCommand queuedStopCommand;
 compassCommand queuedCompassCommand;
 moveResponse queuedMoveResponse;
 scanResponse queuedScanResponse[scanBufferSize];
@@ -34,7 +36,14 @@ void setup() {
   I2C_Wrapper::init(Master, 15);
   I2C_Wrapper::registerMoveResponseHandler(&moveResponseHandler);
   I2C_Wrapper::registerScanResponseHandler(&scanResponseHandler);
+  I2C_Wrapper::registerStopCommandHandler(&stopCommandHandler);
   Serial.println("Ready to recieve.");
+}
+
+void stopCommandHandler(stopCommand cmd) {
+  Serial.print("[Recieved Stop Command]");
+  sendStopCommand = true;
+  queuedStopCommand = cmd;
 }
 
 void moveCommandHandler(moveCommand cmd) {
@@ -95,6 +104,12 @@ void loop() {
       Serial.println("Preparing to send scan command...");
       sendScanCommand = false;
       I2C_Wrapper::sendScanCommand(laserScannerID);
+    }
+
+    if (sendStopCommand) {
+      Serial.println("Preparing to send stop command...");
+      sendStopCommand = false;
+      I2C_Wrapper::sendStopCommand(motorID);
     }
     
     if (sendMoveResponse) {
