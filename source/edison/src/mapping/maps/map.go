@@ -7,7 +7,7 @@ import "math"
 import "time"
 import "RobotDriverProtocol"
 
-const BITMAP_SIZE = 2 // Millimeters Per Bitmap Segment
+const BITMAP_SIZE = 20 // Millimeters Per Bitmap Segment
 const DEBUG = false
 
 var scanBuffer []RobotDriverProtocol.ScanResponse
@@ -93,18 +93,15 @@ func (this *Map) FindLocation(fragment Map) (x int, y int) {
 
 	fmt.Println("Robots Assumed Location: (", mX, ",", mY, ")")
 	
-	// Radius around expected position to search.
-	radius := 10
-	
-	for i := int(this.GetRobot().GetX())-radius; i < int(this.GetRobot().GetX())+radius; i++ {
-		for j := int(this.GetRobot().GetY())-radius; j < int(this.GetRobot().GetY())+radius; j++ {
+	for i := 0; i < this.width; i++ {
+		for j := 0; j < this.height; j++ {
 			if i >= 0 && j >= 0 && i < this.width && j < this.height {
-				count, x, y := this.probabilityAtLocation(fragment, int(i), int(j))
+				count, _, _ := this.probabilityAtLocation(fragment, int(i), int(j))
 				if count != 0 {
 					fmt.Print(count, " ")
 					if mCount < count {
-						mX = x
-						mY = y
+						mX = i - (fragment.width/2) + int(fragment.GetRobot().GetX()) 
+						mY = j - (fragment.height/2) +  int(fragment.GetRobot().GetY())
 						mCount = count
 					}
 				} else {
@@ -117,6 +114,7 @@ func (this *Map) FindLocation(fragment Map) (x int, y int) {
 	
 	fmt.Println("Most Likely Position: (", mX, ", ", mY, "): ", mCount)
 	this.GetRobot().MoveToPoint(mX, mY, true)
+	fmt.Println("Robots New Position: (", this.GetRobot().GetX(), ", ", this.GetRobot().GetY(), ")") 	
 	this.addBufferToMap()
 	this.Print(nil)
 	return
@@ -361,7 +359,7 @@ func (this *Map) Print(path [][]bool) {
 					fmt.Print("X ")
 				} else {
 					if this.seen[y][x] == 0 {
-						fmt.Print("  ")
+						fmt.Print("# ")
 					} else {
 						fmt.Print("  ")
 					}

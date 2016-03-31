@@ -40,6 +40,7 @@ func moveResponse(response RobotDriverProtocol.MoveResponse) {
 	RobotMap.MoveRobotAlongLine(float64(response.Angle), float64(response.Magnitude))
 	lastAction = "Move"
 	currentID = -1
+	RobotDriverProtocol.Scan()
 }
 
 func scanResponse(response RobotDriverProtocol.ScanResponse) {
@@ -53,17 +54,18 @@ func scanResponse(response RobotDriverProtocol.ScanResponse) {
 	if response.Last {
 		if firstScan {
 			firstScan = false
+			RobotMap.addBufferToMap()
+			RobotDriverProtocol.Move(0, 100)
 		} else {
 			x, y := RobotMap.FindLocation(createMapFragment(scanBuffer))
 			RobotMap.GetRobot().MoveToPoint(x, y, true)
+			RobotMap.addBufferToMap()
 		}
 
 		lastAction = "Scan"
 		currentID = -1
-
-		RobotMap.addBufferToMap()
+	
 		RobotMap.Print(nil)
-		RobotMap.ContinueToNextArea()
 	}
 }
 
@@ -86,4 +88,5 @@ func stopResponse(response RobotDriverProtocol.StopResponse) {
 	RobotMap.MoveRobotAlongLine(float64(response.Angle), float64(response.Magnitude))
 	lastAction = "Stop"
 	currentID = -1
+
 }
