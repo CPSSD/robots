@@ -1,5 +1,7 @@
 #include "SPI_Wrapper.h"
+#include "Wire.h"
 #include "I2C_Wrapper.h"
+#include "Compass.h"
 
 const int laserScannerID = 30;
 const int motorID = 27;
@@ -7,12 +9,19 @@ const int motorID = 27;
 boolean sendMoveCommand = false;
 boolean sendScanCommand = false;
 boolean sendMoveResponse = false;
-boolean sendScanResponse = false;
+boolean sendCompassHeading = false;
+
+const int scanBufferSize = 50;
+int scanBufferStart = 0;
+int scanBufferEnd = 0;
 
 moveCommand queuedMoveCommand;
 scanCommand queuedScanCommand;
+compassCommand queuedCompassCommand;
 moveResponse queuedMoveResponse;
-scanResponse queuedScanResponse;
+scanResponse queuedScanResponse[scanBufferSize];
+
+Compass compass;
 
 void setup() {
   Serial.begin(9600);
@@ -20,6 +29,7 @@ void setup() {
   SPI_Wrapper::init();
   SPI_Wrapper::registerMoveCommandHandler(&moveCommandHandler);
   SPI_Wrapper::registerScanCommandHandler(&scanCommandHandler);
+  SPI_Wrapper::registerCompassCommandHandler(&compassCommandHandler);
 
   I2C_Wrapper::init(Master, 15);
   I2C_Wrapper::registerMoveResponseHandler(&moveResponseHandler);
@@ -51,18 +61,29 @@ void scanCommandHandler(scanCommand cmd){
   queuedScanCommand = cmd;
 }
 
+void compassCommandHandler(compassCommand cmd) {
+  Serial.println("[Recieved Compass Command]"); 
+  sendCompassHeading = true;
+  queuedCompassCommand = cmd;
+}
+
 void scanResponseHandler(scanResponse cmd) {
   Serial.print("[Recieved Scan Response]: ");
   Serial.print(cmd.angle);
   Serial.print(" / ");
   Serial.println(cmd.magnitude);
-  sendScanResponse = true;
-  queuedScanResponse = cmd;
+  queuedScanResponse[scanBufferEnd] = cmd;
+  scanBufferEnd += 1;
+  if (scanBufferEnd >= scanBufferSize){
+    scanBufferEnd = scanBufferEnd-scanBufferSize;
+  }
 }
 
   
 void loop() {
   while (1) {
+	compass.updateHeading();
+  
     if (sendMoveCommand) {
       Serial.println("Preparing to send move command...");
       sendMoveCommand = false;
@@ -78,14 +99,23 @@ void loop() {
     
     if (sendMoveResponse) {
       Serial.println("Preparing to send move response...");
-      sendScanResponse = false;
+      sendMoveResponse = false;
       SPI_Wrapper::sendMoveResponse(queuedMoveResponse.uniqueID, queuedMoveResponse.magnitude, queuedMoveResponse.angle, true);
     }
+	
+	if (sendCompassHeading) {
+		Serial.println("Sending compass heading...");
+		sendCompassHeading = false
+		SPI_Wrapper::sendCompassResponse(queuedCompassCommand.uniqueID, compass.getHeading(), true)
+	}
     
-    if (sendScanResponse) {
+    if (scanBufferStart != scanBufferEnd) {
       Serial.println("Preparing to send scan response...");
-      sendScanResponse = false;
-      SPI_Wrapper::sendScanResponse(queuedScanResponse.uniqueID, queuedScanResponse.angle, queuedScanResponse.magnitude, queuedScanResponse.last, true);
+      SPI_Wrapper::sendScanResponse(queuedScanResponse[scanBufferStart].uniqueID, queuedScanResponse[scanBufferStart].angle, queuedScanResponse[scanBufferStart].magnitude, queuedScanResponse[scanBufferStart].last, true);
+      scanBufferStart += 1;
+      if (scanBufferStart >= scanBufferSize) {
+        scanBufferStart = scanBufferStart - scanBufferSize; 
+      }
     }
   }
 }
