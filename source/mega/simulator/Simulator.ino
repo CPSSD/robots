@@ -3,6 +3,7 @@
 
 #include <structs.h>
 #include <calc.h>
+#include <room.h>
 #include "math.h"
 #include <Shared_Structs.h>
 
@@ -11,14 +12,14 @@ calc calculations;
 const float SPEED = 0.1; //in mm per millisecond
 const int STARTING_X = 150; //This and all distances measured in cm
 const int STARTING_Y = 150;
-const MapLine MAP_BOUNDS[4] = { {0, 0, 300, 0}, {300, 0, 300, 300}, {300, 300, 0, 300}, {0, 300, 0, 0} };
+Point MAP_BOUNDS[] = { {Point(0, 0)}, {Point(300, 0)}, {Point(300, 300)}, {Point(0, 300)} };
+Room room = Room(4, MAP_BOUNDS, Point(STARTING_X, STARTING_Y), 0);
 
 unsigned long startedMoving, moveTimer, rotateTimer, distTravelled;
 int id, magnitude, movingAngle, laserAngle;
 bool amScanning, amMoving, amRotating;
 
-point currentPosition, destination, nearestWall;
-EquationOfLine PERIMETER[4];
+Point currentPosition, destination, nearestWall;
 command* com;
 scanResponse scanResp;
 
@@ -33,9 +34,6 @@ void setup() {
   amScanning = false;
   amMoving = false;
   amRotating = false;
-  for(int i = 0; i < 4; i++) {
-    PERIMETER[i] = calculations.getEquationOfLine(MAP_BOUNDS[i]);
-  }
 }
 
 void loop() {
@@ -101,9 +99,7 @@ void processCommand(command* com) {
     float distanceMoved = (((float)(millis() - startedMoving))/(float)(moveTimer - startedMoving))*(float)(totalDistance);
     
     // Change currentPosition to represent the distance moved
-    MapLine ray = calculations.makeLineFromPolar(movingAngle, (uint16_t)distanceMoved, currentPosition);
-    EquationOfLine equOfRay = calculations.getEquationOfLine(ray);
-    currentPosition = calculations.getDestination(ray, equOfRay, PERIMETER);
+    currentPosition = calculations.makeLineFromPolar(movingAngle, (uint16_t)distanceMoved, currentPosition);
     
     SPI_Wrapper::sendStopResponse(com->uniqueID, (uint16_t)distanceMoved, (uint16_t)movingAngle, true);
   }
@@ -124,10 +120,9 @@ void respond(scanResponse scanResp) {
 }
 
 void moveRobot(moveCommand* com) {
-  MapLine ray = calculations.makeLineFromPolar(com->angle, com->magnitude, currentPosition);
-  EquationOfLine equOfRay = calculations.getEquationOfLine(ray);
-  destination = calculations.getDestination(ray, equOfRay, PERIMETER);
-  com->magnitude = (unsigned long)round(calculations.getDistBetweenTwoPoints(equOfRay.xy, destination));
+  Line ray = Line(currentPosition, (calculations.makeLineFromPolar(com->angle, com->magnitude, currentPosition)));
+  destination = calculations.getDestination(ray, room);
+  com->magnitude = (unsigned long)round(calculations.getDistBetweenTwoPoints(ray.start, destination));
   amMoving = true;
   movingAngle = com->angle;
   startedMoving = millis();
@@ -137,10 +132,9 @@ void moveRobot(moveCommand* com) {
 scanResponse scan(){
   scanResponse scanResp;
   scanResp.angle = laserAngle;
-  MapLine ray = calculations.makeLineFromPolar(((((float)laserAngle) * PI) / 180), 65530.0, currentPosition);
-  EquationOfLine equOfRay = calculations.getEquationOfLine(ray);
-  nearestWall = calculations.getDestination(ray, equOfRay, PERIMETER);
-  scanResp.magnitude = (unsigned int)round(calculations.getDistBetweenTwoPoints(ray.x1y1, nearestWall));
+  Line ray = Line(currentPosition, (calculations.makeLineFromPolar(((((float)laserAngle) * PI) / 180), 4096.0, currentPosition)));
+  nearestWall = calculations.getDestination(ray, room);
+  scanResp.magnitude = (unsigned int)round(calculations.getDistBetweenTwoPoints(ray.start, nearestWall));
   scanResp.last = (laserAngle == 360);
   return scanResp;
 }
