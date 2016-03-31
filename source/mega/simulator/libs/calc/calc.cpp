@@ -16,21 +16,6 @@ float calc::getDistanceTravelled(float speed, unsigned long time) {
 	return speed * time;
 }
 
-MapLine calc::makeLineFromPolar(float angle, float distance, point currentPosition) {
-  MapLine temp;
-  temp.x1y1 = {currentPosition.x, currentPosition.y};
-  float xValueDelta = distance * cos(angle);
-  if(xValueDelta >= -0.012f && xValueDelta <= 0.012f) {
-	  xValueDelta = 0.00;
-  }
-  float yValueDelta = distance * sin(angle);
-  if(yValueDelta >= -0.012f && yValueDelta <= 0.012f) {
-	  yValueDelta = 0.00;
-  }
-  temp.x2y2 = {(currentPosition.x + xValueDelta), (currentPosition.y + yValueDelta)};
-  return temp;
-}
-
 Point calc::makeLineFromPolar(float angle, float distance, Point currentPosition) {
   Point temp;
   float xValueDelta = distance * cos(angle);

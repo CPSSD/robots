@@ -35,9 +35,6 @@ void setup() {
   amScanning = false;
   amMoving = false;
   amRotating = false;
-  for(int i = 0; i < 4; i++) {
-    PERIMETER[i] = calculations.getEquationOfLine(MAP_BOUNDS[i]);
-  }
   scanTimer = millis();
 }
 
@@ -64,7 +61,7 @@ void loop() {
     if(scanResp.magnitude != 4096.0) {
       respond(scanResp);
     }
-    laserAngle+=1;
+    laserAngle+=10;
     scanTimer = millis() + 100UL;
   }
   
@@ -145,10 +142,9 @@ scanResponse scan(){
   scanResponse scanResp;
   scanResp.angle = laserAngle;
   com->uniqueID = 4;
-  MapLine ray = calculations.makeLineFromPolar(((((float)laserAngle) * PI) / 180), 4096.0, currentPosition);
-  EquationOfLine equOfRay = calculations.getEquationOfLine(ray);
-  nearestWall = calculations.getDestination(ray, equOfRay, PERIMETER);
-  scanResp.magnitude = (unsigned int)round(calculations.getDistBetweenTwoPoints(ray.x1y1, nearestWall));
+  Line ray = Line(currentPosition, (calculations.makeLineFromPolar(((((float)laserAngle) * PI) / 180), 4096.0, currentPosition)));
+  nearestWall = calculations.getDestination(ray, room);
+  scanResp.magnitude = (unsigned int)round(calculations.getDistBetweenTwoPoints(ray.start, nearestWall));
   scanResp.last = (laserAngle == 360);
   return scanResp;
 }
