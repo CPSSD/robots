@@ -169,7 +169,7 @@ void SPI_Wrapper::processReceivedCommand(int length)
 		{
 			compassCommand commandStruct;
 			commandStruct.commandNumber = compassCode;
-			commandStruct.uniqueID = ((uint16_t)commandBuffer[1]) << 8) + (uint16_t)(commandBuffer[2]);
+			commandStruct.uniqueID = ((uint16_t)(commandBuffer[1]) << 8) + (uint16_t)(commandBuffer[2]);
 			if (compassCommandHandler) {
 				(*compassCommandHandler)(commandStruct);
 			}
