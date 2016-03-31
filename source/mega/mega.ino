@@ -1,5 +1,6 @@
 #include "SPI_Wrapper.h"
 #include "I2C_Wrapper.h"
+#include "TapDetectionLib.h"
 
 const int laserScannerID = 30;
 const int motorID = 27;
@@ -7,6 +8,7 @@ const int motorID = 27;
 boolean sendMoveCommand = false;
 boolean sendScanCommand = false;
 boolean sendMoveResponse = false;
+boolean sendStopCommand = false;
 
 const int scanBufferSize = 50;
 int scanBufferStart = 0;
@@ -14,8 +16,12 @@ int scanBufferEnd = 0;
 
 moveCommand queuedMoveCommand;
 scanCommand queuedScanCommand;
+stopCommand queuedStopCommand;
 moveResponse queuedMoveResponse;
+stopResponse queuedStopResponse;
 scanResponse queuedScanResponse[scanBufferSize];
+
+TapDetectionLib accelerometer;
 
 void setup() {
   Serial.begin(9600);
@@ -23,10 +29,12 @@ void setup() {
   SPI_Wrapper::init();
   SPI_Wrapper::registerMoveCommandHandler(&moveCommandHandler);
   SPI_Wrapper::registerScanCommandHandler(&scanCommandHandler); 
+  SPI_Wrapper::registerStopCommandHandler(&stopCommandHandler);
 
   I2C_Wrapper::init(Master, 15);
   I2C_Wrapper::registerMoveResponseHandler(&moveResponseHandler);
   I2C_Wrapper::registerScanResponseHandler(&scanResponseHandler);
+  I2C_Wrapper::registerStopResponseHandler(&stopResponseHandler);
   Serial.println("Ready to recieve.");
   
 }
@@ -55,6 +63,16 @@ void scanCommandHandler(scanCommand cmd){
   queuedScanCommand = cmd;
 }
 
+void stopCommandHandler(stopCommand cmd) {
+  Serial.println("[Recieved Stop Command]");
+  sendStopCommand = true;
+  queuedStopCommand = cmd;
+}
+
+void stopResponseHandler(stopResponse res) {
+   SPI_Wrapper::sendStopResponse(queuedStopCommand.uniqueID, res.angle, res.magnitude, res.status);
+}
+
 void scanResponseHandler(scanResponse cmd) {
   Serial.print("[Recieved Scan Response]: ");
   Serial.print(cmd.angle);
@@ -76,12 +94,22 @@ void loop() {
       I2C_Wrapper::sendMoveCommand(motorID, queuedMoveCommand.angle, queuedMoveCommand.magnitude);
       Serial.println("Sent move command..");
     }
+	
+	if (accelerometer.checkIfTapped()) {
+	  sendStopCommand = true;
+	}
     
     if (sendScanCommand) {
       Serial.println("Preparing to send scan command...");
       sendScanCommand = false;
       I2C_Wrapper::sendScanCommand(laserScannerID);
     }
+	
+	if (sendStopCommand) {
+      Serial.println("Preparing to send stop command...");
+      sendStopCommand = false;
+      I2C_Wrapper::sendStopCommand(laserScannerID);
+	}
     
     if (sendMoveResponse) {
       Serial.println("Preparing to send move response...");
