@@ -2,7 +2,7 @@
 #define WHEELMOTORS_H
 
 #include "PID_v1.h"
-#include "Time.h"
+
 
 class WheelMotors{
 
@@ -13,7 +13,6 @@ class WheelMotors{
 		static void backwards();
 		static void reset();
 		static void resetAll();
-		static double timePast(time_t time);
 		static void stop();
 		static void checkSetpointReached();
 		static void checkEndpointReached(int distance);
@@ -25,21 +24,24 @@ class WheelMotors{
 		static moveCommand getMove();
 		static uint16_t getMagnitude();
 		static int getAngle();
-		static void M1_EncoderISR();
-		static void M2_EncoderISR();
+		static int setSetpoint(int angle);
+		static void stopMotors();
 		static void moveCommandHandler(moveCommand command);
+		static void stopCommandHandler(moveCommand command);
 		static volatile unsigned long M1_EncoderCount, M2_EncoderCount;
 		static bool finished, commandHandled;
-		static int M1, M2;
 		static PID myPID1,myPID2;
+		static void setSpeed(double speed);
+		static double getSpeed();
 
 	private:
 
 
-		static double Setpoint, M1_Input, M2_Input, M1_Output, M2_Output;
+		static double Setpoint, M1_Input, M2_Input, M1_Output, M2_Output, prev_M1_Speed, prev_M2_Speed, speed;
 		static int M1_Total, M2_Total, D1, D2;
-		static time_t t;
-		static double speed;
+		static unsigned long timeSinceStart, timePassed, commandTimer, prevTimer, last100ms;
+		static void M1_EncoderISR();
+		static void M2_EncoderISR();
 		//static PID myPID1;
 		//static PID myPID2;
 		static moveCommand currentMove;
