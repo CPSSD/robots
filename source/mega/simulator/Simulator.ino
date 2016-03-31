@@ -59,8 +59,10 @@ void loop() {
 
   if(amScanning && laserAngle <= 360) {
     scanResp = scan();
-    respond(scanResp);
-    delay(100);
+    if(scanResp.magnitude != 4096.0) {
+      respond(scanResp);
+      delay(100);
+    }
     laserAngle+=1;
   }
   
