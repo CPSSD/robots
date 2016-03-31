@@ -31,4 +31,3 @@ void loop() {
         // Add code here to do when a tap is sensed.
     }
 }
-
