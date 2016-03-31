@@ -19,9 +19,13 @@ unsigned long startedMoving, moveTimer, scanTimer, rotateTimer, distTravelled;
 int id, magnitude, movingAngle, laserAngle;
 bool amScanning, amMoving, amRotating;
 
-Point currentPosition, destination, nearestWall;
+Point currentPosition, destination, terminus, nearestWall;
 command* com;
 scanResponse scanResp;
+
+float maxDegreeOfError = 100.0;
+float degreeOfError = 0.0;
+int angleSlip = 3;
 
 void setup() {
   SPI_Wrapper::init();
@@ -58,7 +62,7 @@ void loop() {
 
   if(amScanning && laserAngle <= 360 && millis() >= scanTimer) {
     scanResp = scan();
-    if(scanResp.magnitude != 4096.0) {
+    if(scanResp.magnitude != 4096) {
       respond(scanResp);
     }
     laserAngle+=10;
@@ -120,7 +124,7 @@ void processCommand(command* com) {
 }
 
 void respond(moveCommand* com){
-  SPI_Wrapper::sendMoveResponse(com->uniqueID, com->magnitude, com->angle, true);
+  SPI_Wrapper::sendMoveResponse(com->uniqueID, distTravelled, movingAngle, true);
 }
 
 void respond(scanResponse scanResp) {
@@ -129,11 +133,13 @@ void respond(scanResponse scanResp) {
 }
 
 void moveRobot(moveCommand* com) {
-  Line ray = Line(currentPosition, (calculations.makeLineFromPolar(com->angle, com->magnitude, currentPosition)));
-  destination = calculations.getDestination(ray, room);
-  com->magnitude = (unsigned long)round(calculations.getDistBetweenTwoPoints(ray.start, destination));
+  destination = calculations.makeLineFromPolar(com->angle, com->magnitude, currentPosition);
+  movingAngle = com->angle + (int)round((angleSlip * (degreeOfError / maxDegreeOfError)));
+  terminus = calculations.makeLineFromPolar(movingAngle, com->magnitude, currentPosition);
+  Line ray = Line(currentPosition, terminus);
+  terminus = calculations.getDestination(ray, room);
+  distTravelled = (unsigned long)round(calculations.getDistBetweenTwoPoints(ray.start, terminus) * (1.0 - (degreeOfError / maxDegreeOfError)));
   amMoving = true;
-  movingAngle = com->angle;
   startedMoving = millis();
   moveTimer = millis() + calculations.getTravelTime(((com->magnitude) * 10), SPEED);
 }
