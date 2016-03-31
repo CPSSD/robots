@@ -35,12 +35,21 @@ func RDPConnector(data interface{}) {
 func moveResponse(response RobotDriverProtocol.MoveResponse) {
 	fmt.Print("[Move Response] Angle:", response.Angle, " // Magnitude:", response.Magnitude)
 	fmt.Println(" [Response] { ID:", response.ID, " // Type:", response.Type, "}")
-
-	// Updates robots location to the responses location.
-	RobotMap.MoveRobotAlongLine(float64(response.Angle), float64(response.Magnitude))
-	lastAction = "Move"
-	currentID = -1
-	RobotDriverProtocol.Scan()
+	
+	if followingPath {
+		lastX := RobotMap.GetRobot().GetX()
+		lastY := RobotMap.GetRobot().GetY()
+		RobotMap.MoveRobotAlongLine(float64(response.Angle), float64(response.Magnitude))
+		fmt.Println("[RDPProtocol] Taking Next Step...")
+		RobotMap.Print(path)
+		RobotMap.TakeNextStep(int(lastX), int(lastY))
+	} else {
+		// Updates robots location to the responses location.
+		RobotMap.MoveRobotAlongLine(float64(response.Angle), float64(response.Magnitude))
+		lastAction = "Move"
+		currentID = -1
+		RobotDriverProtocol.Scan()
+	}
 }
 
 func scanResponse(response RobotDriverProtocol.ScanResponse) {
@@ -55,7 +64,6 @@ func scanResponse(response RobotDriverProtocol.ScanResponse) {
 		if firstScan {
 			firstScan = false
 			RobotMap.addBufferToMap()
-			RobotDriverProtocol.Move(0, 100)
 		} else {
 			x, y := RobotMap.FindLocation(createMapFragment(scanBuffer))
 			RobotMap.GetRobot().MoveToPoint(x, y, true)
@@ -66,6 +74,7 @@ func scanResponse(response RobotDriverProtocol.ScanResponse) {
 		currentID = -1
 	
 		RobotMap.Print(nil)
+		RobotMap.ContinueToNextArea()
 	}
 }
 

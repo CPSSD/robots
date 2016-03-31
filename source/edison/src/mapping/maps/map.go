@@ -4,7 +4,6 @@ package maps
 
 import "fmt"
 import "math"
-import "time"
 import "RobotDriverProtocol"
 
 const BITMAP_SIZE = 20 // Millimeters Per Bitmap Segment
@@ -13,7 +12,11 @@ const DEBUG = false
 var scanBuffer []RobotDriverProtocol.ScanResponse
 var finishedMapping = false
 var firstScan = true
+var checkLocation = false
+var followingPath = false
 var RobotMap Map
+var path [][]bool
+
 
 type Map struct {
 	width       int
@@ -113,10 +116,8 @@ func (this *Map) FindLocation(fragment Map) (x int, y int) {
 	}
 	
 	fmt.Println("Most Likely Position: (", mX, ", ", mY, "): ", mCount)
-	this.GetRobot().MoveToPoint(mX, mY, true)
-	fmt.Println("Robots New Position: (", this.GetRobot().GetX(), ", ", this.GetRobot().GetY(), ")") 	
-	this.addBufferToMap()
-	this.Print(nil)
+	x = mX
+	y = mY
 	return
 }
 
@@ -138,50 +139,44 @@ func (this *Map) probabilityAtLocation(fragment Map, x int, y int) (int, int, in
 	return count, x, y
 }
 
+func (this *Map) TakeNextStep(lastX int, lastY int) {
+	if len(path) != 0 {
+		x, y, movesLeft := this.getNextMove(int(this.GetRobot().GetX()), int(this.GetRobot().GetY()), lastX, lastY, path)
+		
+		fmt.Println("[TakeNextStep]: (", x, ", ", y, ")")
+	
+		if !movesLeft {
+			fmt.Println("Finished Following path")
+			path = make([][]bool, 0)
+			followingPath = false
+			RobotDriverProtocol.Scan()
+			return
+		} 
+		
+		degree, magnitude := getHorizontalLine(lastX, lastY, x, y)	
+		fmt.Println("[TakeNextStep]: Required Move: ", degree, " -> ", magnitude)
+		RobotDriverProtocol.Move(uint16(degree), uint32(magnitude))
+	} else {
+		fmt.Println("No more steps to take...")
+		path = make([][]bool, 0)
+		followingPath = false
+
+		RobotDriverProtocol.Scan()
+	}
+}
 
 // MoveRobotAlongPath moves the robot along the given path.
 // Set "stopBeforePoint" to true if you dont want to stop before entering the point given. 
 // Used when following a path into unseen areas to prevent crashes.
-func (this *Map) MoveRobotAlongPath(path [][]bool, stopBeforePoint bool) {
-	prevX, prevY := -1, -1
-	movesLeft := true
-	nextX, nextY := 0, 0
-	for movesLeft {
-		nextX, nextY, movesLeft = this.getNextMove(int(this.robot.x), int(this.robot.y), prevX, prevY, path)
-		if stopBeforePoint {
-			_, _, moreMoves := this.getNextMove(nextX, nextY, int(this.robot.x), int(this.robot.y), path)
-			if !moreMoves {
-				fmt.Println("Made it to last point before goal.")
-				return
-			}
-		}
-		prevX, prevY = int(this.robot.x), int(this.robot.y)
-		//this.robot.MoveToPoint(nextX, nextY, true)
-		degree, magnitude := getHorizontalLine(prevX, prevY, nextX, nextY)
-
-		//RobotDriverProtocol.Move(uint16(degree), uint32(magnitude))
-		RobotMap.MoveRobotAlongLine(float64(degree), float64(magnitude))
-
-		tick := 0
-		waiting := true
-		
-		// While the robot hasn't moved...
-		for waiting && int(this.robot.x) == prevX && int(this.robot.y) == prevY {
-			// Wait for 5 seconds, then exit and try again.
-			if tick >= 50 {
-				waiting = false
-			}
-			fmt.Println("Waiting for response from Arduino. [Sleeping for 3 seconds]")
-			time.Sleep(100 * time.Millisecond)
-			tick += 1;
-		}
-	}
-	
-	fmt.Println("Finished Moving along path. [Sending Scan Request]")
-	//RobotDriverProtocol.Scan()
+func (this *Map) MoveRobotAlongPath(newPath [][]bool, stopBeforePoint bool) {
+	path = newPath
+	followingPath = true
+	this.TakeNextStep(int(this.GetRobot().GetX()), int(this.GetRobot().GetY()))
+	fmt.Println("Queued a path for movement...")
 }
 
 func getHorizontalLine(x1, y1, x2, y2 int) (degree, magnitude float64) {
+	fmt.Println("[GetHorizontalLine] (", x1, ",", y1, ") -> (", x2, ",", y2, ")")
 	if x1+1 == x2 {
 		return 90, BITMAP_SIZE
 	}
@@ -354,8 +349,10 @@ func (this *Map) Print(path [][]bool) {
 			robotX, robotY := int(this.robot.x), int(this.robot.y)
 			if x == robotX && y == robotY {
 				fmt.Print("* ")
-			} else {
-				if this.floor[y][x] {
+			} else { 
+				if path != nil && path[y][x] {
+					fmt.Print("~ ")
+				} else if this.floor[y][x] {
 					fmt.Print("X ")
 				} else {
 					if this.seen[y][x] == 0 {
@@ -486,6 +483,7 @@ func (this *Map) ContinueToNextArea() {
 	for i := 0; i < len(list); i++ {
 		path, possible := GetRoute(*this, list[i].x, list[i].y)
 		if possible {
+			this.Print(path)
 			this.MoveRobotAlongPath(path, true)
 			return
 		} else {
