@@ -16,6 +16,20 @@ float calc::getDistanceTravelled(float speed, unsigned long time) {
 	return speed * time;
 }
 
+MapLine calc::makeLineFromPolar(float angle, float distance, point currentPosition) {
+  MapLine temp;
+  temp.x1y1 = {currentPosition.x, currentPosition.y};
+  float xValueDelta = distance * cos(angle);
+  if(xValueDelta >= -0.012f && xValueDelta <= 0.012f) {
+	  xValueDelta = 0.00;
+  }
+  float yValueDelta = distance * sin(angle);
+  if(yValueDelta >= -0.012f && yValueDelta <= 0.012f) {
+	  yValueDelta = 0.00;
+  }
+  temp.x2y2 = {(currentPosition.x + xValueDelta), (currentPosition.y + yValueDelta)};
+  return temp;
+}
 
 Point calc::makeLineFromPolar(float angle, float distance, Point currentPosition) {
   Point temp;
@@ -75,7 +89,7 @@ Point calc::getDestination(Line robotLine, Room room) {
   //Get distance between robot and destination
   distBetweenRobotAndDest = getDistBetweenTwoPoints(robotLine.start, nearestWall);
   
-  for(int i = 0; i <= indexVIP; i++) {
+  for(int i = 0; i < indexVIP; i++) {
 	//Determine sign of each translation for given interception point
 	diffInXValuesWall = validInterceptPoints[i].x - robotLine.start.x;
 	if(diffInXValuesWall >= -0.01f && diffInXValuesWall <= 0.01f) {
@@ -91,7 +105,7 @@ Point calc::getDestination(Line robotLine, Room room) {
 	  //Get distance between robot and interception point
 	  distBetweenRobotAndWall = getDistBetweenTwoPoints(robotLine.start, validInterceptPoints[i]);
 	  //If distance between robot and interception point is shorter than between robot and destination
-	  if(distBetweenRobotAndWall < distBetweenRobotAndDest) {
+	  if(distBetweenRobotAndWall <= distBetweenRobotAndDest) {
 		  nearestWall = validInterceptPoints[i];
 		  distBetweenRobotAndDest = distBetweenRobotAndWall;
 		}
@@ -123,12 +137,7 @@ bool calc::hasInterception(Line border, Line robotLine) {
 			}
 		}
 		else {
-			if(intercept >= 0.0 && intercept <= 300.0) {
-				return true;
-			}
-			else {
-				return false;
-			}
+			return true;
 		}
 	}
 }
@@ -154,6 +163,9 @@ Point calc::getInterceptPoint(Line robotLine, Line other) {
     intercept.x = numerator / denominator;
     //Substitute the x-value into either equation of the lines and solve for y
     intercept.y = (robotLine.m * intercept.x) + robotLine.c;
+	if(intercept.y >= -0.01f && intercept.y <= 0.01f) {
+		intercept.y = 0.00;
+	}
   }
   return intercept;
 }

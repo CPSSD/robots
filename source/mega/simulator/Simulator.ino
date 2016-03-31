@@ -9,13 +9,13 @@
 
 calc calculations;
 
-const float SPEED = 0.1; //in mm per millisecond
+const float SPEED = 1; //in mm per millisecond
 const int STARTING_X = 150; //This and all distances measured in cm
 const int STARTING_Y = 150;
 Point MAP_BOUNDS[] = { {Point(0, 0)}, {Point(300, 0)}, {Point(300, 300)}, {Point(0, 300)} };
 Room room = Room(4, MAP_BOUNDS, Point(STARTING_X, STARTING_Y), 0);
 
-unsigned long startedMoving, moveTimer, rotateTimer, distTravelled;
+unsigned long startedMoving, moveTimer, scanTimer, rotateTimer, distTravelled;
 int id, magnitude, movingAngle, laserAngle;
 bool amScanning, amMoving, amRotating;
 
@@ -29,11 +29,16 @@ void setup() {
   SPI_Wrapper::registerScanCommandHandler(&scanCommandHandler);
   SPI_Wrapper::registerStopCommandHandler(&stopCommandHandler);
   Serial.begin(9600);
+  Serial.println("Starting...");
   currentPosition.x = STARTING_X;
   currentPosition.y = STARTING_Y;
   amScanning = false;
   amMoving = false;
   amRotating = false;
+  for(int i = 0; i < 4; i++) {
+    PERIMETER[i] = calculations.getEquationOfLine(MAP_BOUNDS[i]);
+  }
+  scanTimer = millis();
 }
 
 void loop() {
@@ -54,10 +59,13 @@ void loop() {
     com = NULL;
   }
 
-  if(amScanning && laserAngle <= 360) {
+  if(amScanning && laserAngle <= 360 && millis() >= scanTimer) {
     scanResp = scan();
-    respond(scanResp);
-    laserAngle++;
+    if(scanResp.magnitude != 4096.0) {
+      respond(scanResp);
+    }
+    laserAngle+=1;
+    scanTimer = millis() + 100UL;
   }
   
   if(amScanning && laserAngle > 360) {
@@ -69,12 +77,14 @@ void loop() {
 }
 
 void moveCommandHandler(moveCommand movCom) {
+  Serial.println("Recieved Move Command...");
   if (com == NULL) {
     com = new moveCommand(movCom);
   }
 }
 
 void stopCommandHandler(stopCommand stopCom) {
+  Serial.println("Recieved Stop Command...");
   if (amMoving) {
     if (com != NULL) {
       delete com;
@@ -84,6 +94,7 @@ void stopCommandHandler(stopCommand stopCom) {
 }
 
 void scanCommandHandler(scanCommand scanCom) {
+  Serial.println("Recieved Scan Command...");
   if (com == NULL) {
     com =  new scanCommand(scanCom);
   }
@@ -116,7 +127,8 @@ void respond(moveCommand* com){
 }
 
 void respond(scanResponse scanResp) {
-  SPI_Wrapper::sendScanResponse(com->uniqueID, scanResp.angle, scanResp.magnitude, scanResp.last, true);
+  Serial.println("Sending Scan Response...");
+  SPI_Wrapper::sendScanResponse(com->uniqueID, scanResp.magnitude, scanResp.angle, scanResp.last, true);
 }
 
 void moveRobot(moveCommand* com) {
@@ -132,9 +144,11 @@ void moveRobot(moveCommand* com) {
 scanResponse scan(){
   scanResponse scanResp;
   scanResp.angle = laserAngle;
-  Line ray = Line(currentPosition, (calculations.makeLineFromPolar(((((float)laserAngle) * PI) / 180), 4096.0, currentPosition)));
-  nearestWall = calculations.getDestination(ray, room);
-  scanResp.magnitude = (unsigned int)round(calculations.getDistBetweenTwoPoints(ray.start, nearestWall));
+  com->uniqueID = 4;
+  MapLine ray = calculations.makeLineFromPolar(((((float)laserAngle) * PI) / 180), 4096.0, currentPosition);
+  EquationOfLine equOfRay = calculations.getEquationOfLine(ray);
+  nearestWall = calculations.getDestination(ray, equOfRay, PERIMETER);
+  scanResp.magnitude = (unsigned int)round(calculations.getDistBetweenTwoPoints(ray.x1y1, nearestWall));
   scanResp.last = (laserAngle == 360);
   return scanResp;
 }
