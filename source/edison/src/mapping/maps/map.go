@@ -5,12 +5,14 @@ package maps
 import "fmt"
 import "math"
 import "time"
-//import "RobotDriverProtocol"
+import "RobotDriverProtocol"
 
 const BITMAP_SIZE = 2 // Millimeters Per Bitmap Segment
 const DEBUG = false
 
+var scanBuffer []RobotDriverProtocol.ScanResponse
 var finishedMapping = false
+var firstScan = true
 var RobotMap Map
 
 type Map struct {
@@ -28,27 +30,18 @@ type Map struct {
 // MapInit initialises the map and the rdp library, and starts a scan.
 func MapInit() {
 	fmt.Println("[Initialising Map]")
+
 	RobotMap = CreateMap()
 	fmt.Println("[Map Created]")
 	fmt.Println("[Initialising RDP]")
+
 	RDPInit()
 	fmt.Println("[RDP Link Ready]")
 	fmt.Println(RobotMap)
-	for i := 0; i < 180; i++ {
-		RobotMap.AddWallByLine(float64(i), 25.0)
-	}
-	for i := 180; i < 360; i++ {
-		RobotMap.AddWallByLine(float64(i), 12.0)
-	}
-	RobotMap.Print(nil)
-//	x := RobotMap.GetRobot().GetX()
-//	y := RobotMap.GetRobot().GetY()
 
-	// Temporary data for testing.
-	scanResults := [][]bool{{false, false, true, true, false}, {false, false, false, true, false}, {false, false, false, true, false}, {false, false, false, true, false}}
-	RobotMap.FindLocation(scanResults, 0, 0)
+	scanBuffer = make([]RobotDriverProtocol.ScanResponse, 0)
 	
-	//RobotDriverProtocol.Scan()
+	RobotDriverProtocol.Scan()
 }
 
 // GetSeenMap returns the seen map.
@@ -74,42 +67,71 @@ func CreateMap() (createdMap Map) {
 	return
 }
 
-func (this *Map) FindLocation(scanResults [][]bool, lastX float64, lastY float64) (x int, y int) {
+// Creates a fragment of a map, containing all lines from the buffer.
+func createMapFragment(buffer []RobotDriverProtocol.ScanResponse) Map {
+	fragment := CreateMap()
+	for _, line := range buffer {
+		fragment.AddWallByLine(float64(line.Degree), float64(line.Distance))
+	}
+	fmt.Println("Created Fragment: ")
+	fragment.Print(nil)
+	fmt.Println("Robot Location: (", fragment.GetRobot().GetX(), ", ", fragment.GetRobot().GetY(), ")")
+	return fragment
+}
+
+// Adds the last buffer of scan responses to the map, then clears the buffer.
+func (this *Map) addBufferToMap(){
+	for _, response := range scanBuffer {
+		RobotMap.AddWallByLine(float64(response.Degree), float64(response.Distance))
+	}
+	scanBuffer = make([]RobotDriverProtocol.ScanResponse, 0)
+}
+
+func (this *Map) FindLocation(fragment Map) (x int, y int) {
 	fmt.Println("Attempting to find location...")
-	mX, mY, mCount := int(lastX), int(lastY), 0
-	for i := 0; i < len(RobotMap.floor); i++ {
-		for j := 0; j < len(RobotMap.floor[0]); j++ {
-			count, y, x := RobotMap.probabilityAtLocation(scanResults, int(i), int(j))
-			if count != 0 {
-				fmt.Print(count, " ")
-				if mCount < count {
-					mX = x
-					mY = y
-					mCount = count
+	mX, mY, mCount := int(this.GetRobot().GetX()), int(this.GetRobot().GetY()), 0
+
+	fmt.Println("Robots Assumed Location: (", mX, ",", mY, ")")
+	
+	// Radius around expected position to search.
+	radius := 10
+	
+	for i := int(this.GetRobot().GetX())-radius; i < int(this.GetRobot().GetX())+radius; i++ {
+		for j := int(this.GetRobot().GetY())-radius; j < int(this.GetRobot().GetY())+radius; j++ {
+			if i >= 0 && j >= 0 && i < this.width && j < this.height {
+				count, x, y := this.probabilityAtLocation(fragment, int(i), int(j))
+				if count != 0 {
+					fmt.Print(count, " ")
+					if mCount < count {
+						mX = x
+						mY = y
+						mCount = count
+					}
+				} else {
+					fmt.Print("  ")
 				}
-			} else {
-				fmt.Print("  ")
 			}
 		}
 		fmt.Println("")
 	}
-	fmt.Println("Most Likely Position: (", mX, ", ", mY, "): ", mCount)
-	RobotMap.GetRobot().MoveToPoint(mX, mY, true)
-	RobotMap.Print(nil)
 	
+	fmt.Println("Most Likely Position: (", mX, ", ", mY, "): ", mCount)
+	this.GetRobot().MoveToPoint(mX, mY, true)
+	this.addBufferToMap()
+	this.Print(nil)
 	return
 }
 
-func (this *Map) probabilityAtLocation(scanResults [][]bool, x int, y int) (int, int, int) {
+func (this *Map) probabilityAtLocation(fragment Map, x int, y int) (int, int, int) {
 	count := 0
-	width := len(scanResults)
-	height := len(scanResults[0])
+	width := len(fragment.floor[0])
+	height := len(fragment.floor)
 	for i := 0; i < width; i++ {
 		for j := 0; j < height; j++ {
 			checkX := x + i - width/2
 			checkY := y + j - height/2
-			if (checkX >= 0 && checkY >= 0 && checkX < len(RobotMap.floor) && checkY < len(RobotMap.floor[i])){
-				if (scanResults[i][j] == true && scanResults[i][j] == RobotMap.floor[checkX][checkY]) {
+			if (checkX >= 0 && checkY >= 0 && checkX < this.width && checkY < this.height){
+				if (fragment.floor[i][j] == true && fragment.floor[i][j] == RobotMap.floor[checkX][checkY]) {
 					count++
 				}
 			} 	
@@ -339,7 +361,7 @@ func (this *Map) Print(path [][]bool) {
 					fmt.Print("X ")
 				} else {
 					if this.seen[y][x] == 0 {
-						fmt.Print(this.seen[y][x], "\b  ")
+						fmt.Print("  ")
 					} else {
 						fmt.Print("  ")
 					}

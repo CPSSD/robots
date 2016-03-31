@@ -48,13 +48,22 @@ func scanResponse(response RobotDriverProtocol.ScanResponse) {
 
 	// Add a wall at the specific location.
 	// When last response, find next location to move to in map.go
-	RobotMap.AddWallByLine(float64(response.Degree), float64(response.Distance))
+	scanBuffer = append(scanBuffer, response)
 
 	if response.Last {
-		RobotMap.Print(nil)
+		if firstScan {
+			firstScan = false
+		} else {
+			x, y := RobotMap.FindLocation(createMapFragment(scanBuffer))
+			RobotMap.GetRobot().MoveToPoint(x, y, true)
+		}
+
 		lastAction = "Scan"
-		RobotMap.ContinueToNextArea()
 		currentID = -1
+
+		RobotMap.addBufferToMap()
+		RobotMap.Print(nil)
+		RobotMap.ContinueToNextArea()
 	}
 }
 
