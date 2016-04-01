@@ -143,7 +143,7 @@ func (this *Map) TakeNextStep(lastX int, lastY int) {
 	if len(path) != 0 {
 		x, y, movesLeft := this.getNextMove(int(this.GetRobot().GetX()), int(this.GetRobot().GetY()), lastX, lastY, path)
 		
-		fmt.Println("[TakeNextStep]: (", x, ", ", y, ")")
+		fmt.Println("[TakeNextStep]: (", x, ", ", y, ") | From Location: (", this.GetRobot().GetX(), ", ", this.GetRobot().GetY(), ")")
 	
 		if !movesLeft {
 			fmt.Println("Finished Following path")
@@ -153,7 +153,7 @@ func (this *Map) TakeNextStep(lastX int, lastY int) {
 			return
 		} 
 		
-		degree, magnitude := getHorizontalLine(lastX, lastY, x, y)	
+		degree, magnitude := getHorizontalLine(int(this.GetRobot().GetX()), int(this.GetRobot().GetY()), x, y)	
 		fmt.Println("[TakeNextStep]: Required Move: ", degree, " -> ", magnitude)
 		RobotDriverProtocol.Move(uint16(degree), uint32(magnitude))
 	} else {
@@ -177,16 +177,16 @@ func (this *Map) MoveRobotAlongPath(newPath [][]bool, stopBeforePoint bool) {
 
 func getHorizontalLine(x1, y1, x2, y2 int) (degree, magnitude float64) {
 	fmt.Println("[GetHorizontalLine] (", x1, ",", y1, ") -> (", x2, ",", y2, ")")
-	if x1+1 == x2 {
+	if x1+1 == x2 && y1 == y2 {
 		return 90, BITMAP_SIZE
 	}
-	if x1-1 == x2 {
+	if x1-1 == x2 && y1 == y2 {
 		return 270, BITMAP_SIZE
 	}
-	if y1-1 == y2 {
+	if y1-1 == y2 && x1 == x2 {
 		return 0, BITMAP_SIZE
 	}
-	if y1+1 == y2 {
+	if y1+1 == y2 && x1 == x2 {
 		return 180, BITMAP_SIZE
 	}
 	return 0, 0

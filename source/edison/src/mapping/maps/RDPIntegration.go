@@ -40,7 +40,7 @@ func moveResponse(response RobotDriverProtocol.MoveResponse) {
 		lastX := RobotMap.GetRobot().GetX()
 		lastY := RobotMap.GetRobot().GetY()
 		RobotMap.MoveRobotAlongLine(float64(response.Angle), float64(response.Magnitude))
-		fmt.Println("[RDPProtocol] Taking Next Step...")
+		fmt.Println("[RDPProtocol] Taking Next Step... | Current Location: (", RobotMap.GetRobot().GetX(), ", ", RobotMap.GetRobot().GetY(), ")")
 		RobotMap.Print(path)
 		RobotMap.TakeNextStep(int(lastX), int(lastY))
 	} else {
