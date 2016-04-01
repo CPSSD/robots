@@ -1,7 +1,6 @@
 #ifndef calc_h
 #define calc_h
 
-#include "structs.h"
 #include "room.h"
 
 class Room;

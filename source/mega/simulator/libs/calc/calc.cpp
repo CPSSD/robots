@@ -1,7 +1,6 @@
 #include "Arduino.h"
 #include "calc.h"
 #include "math.h"
-#include "structs.h"
 #include "room.h"
 
 float calc::getDistBetweenTwoPoints(Point p1, Point p2) {
