@@ -1,0 +1,14 @@
+
+
+
+
+
+.build/uno/src/AccelerometerTest.cpp : src/AccelerometerTest.ino
+	@mkdir -p .build/uno/src
+	@echo [93msrc/AccelerometerTest.ino[0m
+	@/usr/bin/ino preproc  -o $@ $^
+
+
+all : .build/uno/src/AccelerometerTest.cpp
+	@true
+
