@@ -24,10 +24,10 @@ class WheelMotors{
 		static moveCommand getMove();
 		static uint16_t getMagnitude();
 		static int getAngle();
-		static int setSetpoint(int angle);
+		static int setSetpoint(int speed);
 		static void stopMotors();
 		static void moveCommandHandler(moveCommand command);
-		static void stopCommandHandler(moveCommand command);
+		static void stopCommandHandler(stopCommand command);
 		static volatile unsigned long M1_EncoderCount, M2_EncoderCount;
 		static bool finished, commandHandled;
 		static PID myPID1,myPID2;

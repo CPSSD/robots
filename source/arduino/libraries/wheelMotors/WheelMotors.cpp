@@ -19,6 +19,7 @@ int WheelMotors::D2 = 7;
 const int M1 = 5;
 const int M2 = 6;
 const uint8_t masterId = 15;
+const uint8_t otherArduinoId = 16;
 
 unsigned long WheelMotors::timeSinceStart = millis();
 unsigned long WheelMotors::commandTimer;
@@ -86,8 +87,8 @@ int WheelMotors::getAngle(){
 		return currentMove.angle;
 }
 
-int WheelMotors::setSetpoint(int angle){
-	Setpoint = angle;
+int WheelMotors::setSetpoint(int wheelSpeed){
+	Setpoint = (double) wheelSpeed;
 	return Setpoint;
 }
 
@@ -141,6 +142,8 @@ void WheelMotors::stop(){
 	Serial.println(timePassed);
 
 	I2C_Wrapper::sendMoveResponse(masterId,currentMove.uniqueID, currentMove.magnitude, currentMove.angle, true);
+	//I2C_Wrapper::sendStopCommand(masterId);
+	Serial.println("Stop command sent");
 	commandHandled = false;
 	resetAll();
 }
@@ -151,11 +154,14 @@ void WheelMotors::stopMotors(){
 }
 
 void WheelMotors::checkEndpointReached(int distance){
-	Serial.print("Checked: ");
-	Serial.println(distance);
+	//Serial.print("Checked: ");
+	//Serial.println(distance);
 	if(M1_Total + M1_EncoderCount > distance && M2_Total + M2_EncoderCount > distance){
 		finished = true;
 		stop();
+		//Serial.println("")
+		//I2C_Wrapper::sendStopCommand(otherArduinoId);
+		commandHandled = true;
 	}
 }
 
@@ -210,20 +216,23 @@ void WheelMotors::runPID(){
 	}
 }
 
-void WheelMotors::stopCommandHandler(moveCommand command){
+void WheelMotors::stopCommandHandler(stopCommand command){
 	Serial.println("Stop command recieved");
 	stopMotors();
-	resetAll();
 }
 
 void WheelMotors::moveCommandHandler(moveCommand command){
+	commandHandled = false;
+	resetAll();
 	Serial.println("Recieved");
 	Serial.println(command.magnitude);
 	Serial.println(command.angle);
+	I2C_Wrapper::sendStopCommand(masterId);
 	commandTimer = millis() - timeSinceStart;
+	currentMove = command;
 
 	if(finished == true){
-		currentMove = command;
+		//currentMove = command;
 		finished = false;
 		commandHandled = true;
 	}

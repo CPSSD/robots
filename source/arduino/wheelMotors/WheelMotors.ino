@@ -5,7 +5,7 @@
 #include <Shared_Structs.h>
 #include <WheelMotors.h>
 
-const byte slaveAddress = 27;
+const byte slaveAddress = 16;
 
 WheelMotors motor = WheelMotors();
 VectorMath motorSpeed = VectorMath();
@@ -17,10 +17,12 @@ boolean first = true;
 void setup(){
     I2C_Wrapper::init(Slave, slaveAddress);
     I2C_Wrapper::registerMoveCommandHandler(&motor.moveCommandHandler);
+    I2C_Wrapper::registerStopCommandHandler(&motor.stopCommandHandler);
+    I2c_Wrapper::sendStopCommand(15);
     
     motor.setup();
     
-    motor.commandHandled = false;
+    motor.commandHandled = true;
     motor.finished = false;
     //first = true;
 
@@ -30,23 +32,18 @@ void setup(){
 
 void loop(){
   
-    if(first){
+  /*  if(first){
         startingTime = millis();
-    }
+    }*/
     
     
     if(!motor.commandHandled){
          int wheelSpeed = motorSpeed.computeSpeed(motor.getAngle());
-         //motor.setSpeed(motorSpeed.computeSpeed(/*motor.getAngle()*/0));
-         Serial.print("Look: "); Serial.println(motor.getAngle());
          motor.setSpeed(wheelSpeed);
-         motor.setSetpoint((wheelSpeed * 180) / 255);
-         Serial.print("Speed: "); 
-         Serial.println(motor.getSpeed());
-         //motor.commandHandled = true;
+         double tempSetpoint = abs(wheelSpeed * 180.0 / 255.0);
+         motor.setSetpoint(tempSetpoint);
     }
          
-    if(first){
         if(motor.getSpeed() < 0){
             motor.backwards();
         }else if (motor.getSpeed() > 0){
@@ -54,8 +51,6 @@ void loop(){
         }else{
             motor.stopMotors();
         }
-        first = false;
-    }
      
     //motor.diffTicks();
         
@@ -63,7 +58,7 @@ void loop(){
 
     //runs PID - needs to run every loop()
     //Serial.println(motor.isFinished());
-    if(!motor.isFinished()){
+    if(!motor.isFinished() && !motor.commandHandled){
         //Serial.println("PID Running");
         motor.runPID();
     }else{
