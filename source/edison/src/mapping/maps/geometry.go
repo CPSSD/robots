@@ -40,7 +40,7 @@ func BitmapToVector(floor [][]bool) []Line {
 	// Joins up any lines that have Points In Common and Equal Slope.
 	for i := 0; i < len(l_array); i++ {
 		for j := i + 1; j < len(l_array); j++ {
-			if Debug {
+			if DEBUG {
 				fmt.Println("== Line Array ==", i, j)
 				PrintLineArray(l_array[0:])
 			}

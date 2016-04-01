@@ -15,7 +15,7 @@ type Node struct {
 
 // GetRoute Calls various functions below and returns the end result of the pathfinding algorithm.
 func GetRoute(robotMap Map, x, y int) ([][]bool, bool) {
-	if Debug {
+	if DEBUG {
 		fmt.Println("GetRouteTo(", x, ",", y, ")")
 	}
 	bitmap, _ := robotMap.GetBitmap()

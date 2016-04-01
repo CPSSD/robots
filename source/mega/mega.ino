@@ -1,7 +1,6 @@
 #include "SPI_Wrapper.h"
-#include "Wire.h"
 #include "I2C_Wrapper.h"
-#include "Compass.h"
+#include "TapDetectionLib.h"
 
 const int laserScannerID = 30;
 const int motorID = 27;
@@ -9,7 +8,7 @@ const int motorID = 27;
 boolean sendMoveCommand = false;
 boolean sendScanCommand = false;
 boolean sendMoveResponse = false;
-boolean sendCompassHeading = false;
+boolean sendStopCommand = false;
 
 const int scanBufferSize = 50;
 int scanBufferStart = 0;
@@ -17,24 +16,27 @@ int scanBufferEnd = 0;
 
 moveCommand queuedMoveCommand;
 scanCommand queuedScanCommand;
-compassCommand queuedCompassCommand;
+stopCommand queuedStopCommand;
 moveResponse queuedMoveResponse;
+stopResponse queuedStopResponse;
 scanResponse queuedScanResponse[scanBufferSize];
 
-Compass compass;
+TapDetectionLib accelerometer;
 
 void setup() {
   Serial.begin(9600);
   Serial.println("Starting...");
   SPI_Wrapper::init();
   SPI_Wrapper::registerMoveCommandHandler(&moveCommandHandler);
-  SPI_Wrapper::registerScanCommandHandler(&scanCommandHandler);
-  SPI_Wrapper::registerCompassCommandHandler(&compassCommandHandler);
+  SPI_Wrapper::registerScanCommandHandler(&scanCommandHandler); 
+  SPI_Wrapper::registerStopCommandHandler(&stopCommandHandler);
 
   I2C_Wrapper::init(Master, 15);
   I2C_Wrapper::registerMoveResponseHandler(&moveResponseHandler);
   I2C_Wrapper::registerScanResponseHandler(&scanResponseHandler);
+  I2C_Wrapper::registerStopResponseHandler(&stopResponseHandler);
   Serial.println("Ready to recieve.");
+  
 }
 
 void moveCommandHandler(moveCommand cmd) {
@@ -61,10 +63,14 @@ void scanCommandHandler(scanCommand cmd){
   queuedScanCommand = cmd;
 }
 
-void compassCommandHandler(compassCommand cmd) {
-  Serial.println("[Recieved Compass Command]"); 
-  sendCompassHeading = true;
-  queuedCompassCommand = cmd;
+void stopCommandHandler(stopCommand cmd) {
+  Serial.println("[Recieved Stop Command]");
+  sendStopCommand = true;
+  queuedStopCommand = cmd;
+}
+
+void stopResponseHandler(stopResponse res) {
+   SPI_Wrapper::sendStopResponse(queuedStopCommand.uniqueID, res.angle, res.magnitude, res.status);
 }
 
 void scanResponseHandler(scanResponse cmd) {
@@ -82,32 +88,34 @@ void scanResponseHandler(scanResponse cmd) {
   
 void loop() {
   while (1) {
-	compass.updateHeading();
-  
     if (sendMoveCommand) {
       Serial.println("Preparing to send move command...");
       sendMoveCommand = false;
       I2C_Wrapper::sendMoveCommand(motorID, queuedMoveCommand.angle, queuedMoveCommand.magnitude);
       Serial.println("Sent move command..");
     }
+	
+	if (accelerometer.checkIfTapped()) {
+	  sendStopCommand = true;
+	}
     
     if (sendScanCommand) {
       Serial.println("Preparing to send scan command...");
       sendScanCommand = false;
       I2C_Wrapper::sendScanCommand(laserScannerID);
     }
+	
+	if (sendStopCommand) {
+      Serial.println("Preparing to send stop command...");
+      sendStopCommand = false;
+      I2C_Wrapper::sendStopCommand(laserScannerID);
+	}
     
     if (sendMoveResponse) {
       Serial.println("Preparing to send move response...");
       sendMoveResponse = false;
       SPI_Wrapper::sendMoveResponse(queuedMoveResponse.uniqueID, queuedMoveResponse.magnitude, queuedMoveResponse.angle, true);
     }
-	
-	if (sendCompassHeading) {
-		Serial.println("Sending compass heading...");
-		sendCompassHeading = false
-		SPI_Wrapper::sendCompassResponse(queuedCompassCommand.uniqueID, compass.getHeading(), true)
-	}
     
     if (scanBufferStart != scanBufferEnd) {
       Serial.println("Preparing to send scan response...");
