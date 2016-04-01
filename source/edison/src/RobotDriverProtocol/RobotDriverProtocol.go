@@ -11,7 +11,6 @@ const (
 	stopCode         = byte(2)
 	rotateCode       = byte(3)
 	scanCode         = byte(4)
-	compassCode      = byte(5)
 	initiateTransfer = byte(147)
 )
 
@@ -50,17 +49,12 @@ type ScanResponse struct {
 	Last     bool
 }
 
-// CompassResponse contains a heading received from the compass
-type CompassResponse struct {
-	Response
-	Angle uint16
-}
-
 var id uint16
 var buffersToSend [][]uint8
 
 // responseHandler is a function registered by the main program that will be called when a response is returned
 var responseHandler []func(interface{})
+
 
 func fireResponseHandler(data interface{}) {
 	for _, handler := range responseHandler {
@@ -121,17 +115,6 @@ func processScanResponse(responseBuffer []uint8) {
 	fireResponseHandler(scanResponse)
 }
 
-func processCompassResponse(responseBuffer []uint8) {
-	if len(responseBuffer < 5) {
-		return
-	}
-	var compassResponse CompassResponse
-	compassResponse.Type = compassCode
-	compassResponse.ID = (uint16(responseBuffer[0]) << 8) + uint16(responseBuffer[1])
-	compassResponse.Angle = (uint16(responseBuffer[2]) << 8) + uint16(responseBuffer[3])
-	compassResponse.Success = (responseBuffer[4] > 0)
-}
-
 // processResponse will process a response
 func processResponse(responseBuffer []uint8) {
 	fmt.Println(responseBuffer)
@@ -144,8 +127,6 @@ func processResponse(responseBuffer []uint8) {
 		processRotateResponse(responseBuffer[1:])
 	case 4: // scan response
 		processScanResponse(responseBuffer[1:])
-	case 5:
-		processCompassResponse(responseBuffer[1:])
 	}
 }
 
@@ -284,19 +265,6 @@ func Scan() uint16 {
 	data[1] = uint8((id >> 8) & 0xFF)
 	data[2] = uint8(id & 0xFF)
 	data[3] = scanCode
-	buffersToSend = append(buffersToSend, data)
-	return id
-}
-
-// GetCompassHeading sends a command to the compass requesting a heading reading
-func GetCompassHeading() uint16 {
-	id++
-	length := byte(4) // 1 byte for the length of the request, 2 bytes for the id, 1 byte for the code
-	data := make([]uint8, length)
-	data[0] = length
-	data[1] = uint8((id >> 8) & 0xFF)
-	data[2] = uint8(id & 0xFF)
-	data[3] = compassCode
 	buffersToSend = append(buffersToSend, data)
 	return id
 }
