@@ -123,13 +123,14 @@ func (this *Map) FindLocation(fragment Map) (x int, y int) {
 
 func (this *Map) probabilityAtLocation(fragment Map, x int, y int) (int, int, int) {
 	count := 0
-	width := len(fragment.floor[0])
 	height := len(fragment.floor)
-	for i := 0; i < width; i++ {
-		for j := 0; j < height; j++ {
+	for i := 0; i < height; i++ {
+		width := len(fragment.floor[i])
+		for j := 0; j < width; j++ {
 			checkX := x + i - width/2
 			checkY := y + j - height/2
 			if (checkX >= 0 && checkY >= 0 && checkX < this.width && checkY < this.height){
+				
 				if (fragment.floor[i][j] == true && fragment.floor[i][j] == RobotMap.floor[checkX][checkY]) {
 					count++
 				}
