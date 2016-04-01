@@ -23,6 +23,10 @@ typedef struct scanCommand : command {
 	// No extra information for scan command
 } scanCommand;
 
+typedef struct compassCommand : command {
+	// No extra information for compass command
+} compassCommand;
+
 typedef struct detectCommand : command {
 	uint16_t rangeBegin;
 	uint16_t rangeEnd;
