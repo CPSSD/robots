@@ -1,13 +1,19 @@
 #include <SPI.h>
 #include <SPI_Wrapper.h>
 
-#include <structs.h>
 #include <calc.h>
 #include <room.h>
 #include "math.h"
 #include <Shared_Structs.h>
 
 calc calculations;
+
+typedef enum {
+  moveNum  = 1,
+  stopNum  = 2,
+  rotateNum  = 3,
+  scanNum  = 4
+} comNums;
 
 const float SPEED = 1; //in mm per millisecond
 const int STARTING_X = 150; //This and all distances measured in cm
