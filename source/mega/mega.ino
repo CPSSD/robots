@@ -4,7 +4,8 @@
 #include "Compass.h"
 
 const int laserScannerID = 30;
-const int motorID = 27;
+const int motorID1 = 17;
+const int motorID2 = 16;
 
 boolean sendMoveCommand = false;
 boolean sendScanCommand = false;
@@ -96,7 +97,8 @@ void loop() {
     if (sendMoveCommand) {
       Serial.println("Preparing to send move command...");
       sendMoveCommand = false;
-      I2C_Wrapper::sendMoveCommand(motorID, queuedMoveCommand.angle, queuedMoveCommand.magnitude);
+      I2C_Wrapper::sendMoveCommand(motorID1, queuedMoveCommand.angle, queuedMoveCommand.magnitude);
+      I2C_Wrapper::sendMoveCommand(motorID2, queuedMoveCommand.angle, queuedMoveCommand.magnitude);
       Serial.println("Sent move command..");
     }
     
@@ -109,7 +111,8 @@ void loop() {
     if (sendStopCommand) {
       Serial.println("Preparing to send stop command...");
       sendStopCommand = false;
-      I2C_Wrapper::sendStopCommand(motorID);
+      I2C_Wrapper::sendStopCommand(motorID1);
+      I2C_Wrapper::sendStopCommand(motorID2);
     }
     
     if (sendMoveResponse) {
@@ -120,8 +123,8 @@ void loop() {
 	
 	if (sendCompassHeading) {
 		Serial.println("Sending compass heading...");
-		sendCompassHeading = false
-		SPI_Wrapper::sendCompassResponse(queuedCompassCommand.uniqueID, compass.getHeading(), true)
+		sendCompassHeading = false;
+		SPI_Wrapper::sendCompassResponse(queuedCompassCommand.uniqueID, compass.getHeading(), true);
 	}
     
     if (scanBufferStart != scanBufferEnd) {
