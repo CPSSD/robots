@@ -5,7 +5,7 @@
 #include <Shared_Structs.h>
 #include <WheelMotors.h>
 
-const byte slaveAddress = 16;
+const byte slaveAddress = 17;
 
 WheelMotors motor = WheelMotors();
 VectorMath motorSpeed = VectorMath();
@@ -18,7 +18,7 @@ void setup(){
     I2C_Wrapper::init(Slave, slaveAddress);
     I2C_Wrapper::registerMoveCommandHandler(&motor.moveCommandHandler);
     I2C_Wrapper::registerStopCommandHandler(&motor.stopCommandHandler);
-    I2c_Wrapper::sendStopCommand(15);
+    //I2C_Wrapper::sendStopCommand(15);
     
     motor.setup();
     
@@ -42,6 +42,9 @@ void loop(){
          motor.setSpeed(wheelSpeed);
          double tempSetpoint = abs(wheelSpeed * 180.0 / 255.0);
          motor.setSetpoint(tempSetpoint);
+         int distance = motor.distanceInTicks(motor.getMagnitude()); 
+         double distanceScalar = motorSpeed.ticksPercentage(motor.getAngle(), distance);
+         motor.checkEndpointReached(distanceScalar);
     }
          
         if(motor.getSpeed() < 0){
@@ -53,8 +56,10 @@ void loop(){
         }
      
     //motor.diffTicks();
-        
-    motor.checkEndpointReached(motor.distanceInTicks(motor.getMagnitude()));
+    
+    //Serial.print("DistanceScaler: ");   
+    //Serial.println(distanceScalar);
+    
 
     //runs PID - needs to run every loop()
     //Serial.println(motor.isFinished());

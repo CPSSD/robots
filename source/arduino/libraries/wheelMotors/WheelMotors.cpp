@@ -144,7 +144,7 @@ void WheelMotors::stop(){
 	I2C_Wrapper::sendMoveResponse(masterId,currentMove.uniqueID, currentMove.magnitude, currentMove.angle, true);
 	//I2C_Wrapper::sendStopCommand(masterId);
 	Serial.println("Stop command sent");
-	commandHandled = false;
+	commandHandled = true;
 	resetAll();
 }
 
@@ -227,14 +227,14 @@ void WheelMotors::moveCommandHandler(moveCommand command){
 	Serial.println("Recieved");
 	Serial.println(command.magnitude);
 	Serial.println(command.angle);
-	I2C_Wrapper::sendStopCommand(masterId);
+	//I2C_Wrapper::sendStopCommand(masterId);
 	commandTimer = millis() - timeSinceStart;
 	currentMove = command;
 
 	if(finished == true){
 		//currentMove = command;
 		finished = false;
-		commandHandled = true;
+		//commandHandled = true;
 	}
 }
 
