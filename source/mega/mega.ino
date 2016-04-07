@@ -30,6 +30,7 @@ moveResponse queuedMoveResponse;
 scanResponse queuedScanResponse[scanBufferSize];
 
 Compass compass;
+TapDetectionLib accelerometer;
 
 void setup() {
   Serial.begin(9600);
@@ -44,6 +45,8 @@ void setup() {
   I2C_Wrapper::registerScanResponseHandler(&scanResponseHandler);
   I2C_Wrapper::registerStopCommandHandler(&stopCommandHandler);
   Serial.println("Ready to recieve.");
+
+  accelerometer.init();
 }
 
 void stopCommandHandler(stopCommand cmd) {
@@ -98,6 +101,10 @@ void scanResponseHandler(scanResponse cmd) {
 void loop() {
   while (1) {
 	  compass.updateHeading();
+
+    if (accelerometer.checkIfTapped()) {
+      sendStopCommand = true;
+    }
   
     if (sendMoveCommand) {
       Serial.println("Preparing to send move command...");
@@ -126,11 +133,11 @@ void loop() {
       SPI_Wrapper::sendMoveResponse(queuedMoveResponse.uniqueID, queuedMoveResponse.magnitude, queuedMoveResponse.angle, true);
     }
 	
-	if (sendCompassHeading) {
-		Serial.println("Sending compass heading...");
-		sendCompassHeading = false;
-		SPI_Wrapper::sendCompassResponse(queuedCompassCommand.uniqueID, compass.getHeading(), true);
-	}
+  	if (sendCompassHeading) {
+  		Serial.println("Sending compass heading...");
+  		sendCompassHeading = false;
+  		SPI_Wrapper::sendCompassResponse(queuedCompassCommand.uniqueID, compass.getHeading(), true);
+  	}
     
     if (scanBufferStart != scanBufferEnd) {
       Serial.println("Preparing to send scan response...");
