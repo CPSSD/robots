@@ -135,7 +135,7 @@ void respond(moveCommand* com){
 
 void respond(scanResponse scanResp) {
   Serial.println("Sending Scan Response...");
-  SPI_Wrapper::sendScanResponse(com->uniqueID, scanResp.magnitude, scanResp.angle, scanResp.last, true);
+  SPI_Wrapper::sendScanResponse(com->uniqueID, scanResp.angle, scanResp.magnitude, scanResp.last, true);
 }
 
 void moveRobot(moveCommand* com) {
