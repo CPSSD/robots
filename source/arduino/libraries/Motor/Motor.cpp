@@ -107,7 +107,7 @@ void Motor::rotateContinuous(int rotations){
 	}
 	stopRotate();
 	if (rotationFinishedFunction != NULL) {
-		(*rotationFinishedFunction)(encoderCount);
+		(*rotationFinishedFunction)();
 	} else {
 		Serial.println("You need to register a rotation finished function if you want stuff to happen...");
 	}
@@ -126,7 +126,7 @@ void Motor::oneRotation(int fullSpin){
 	}
     	stopRotate();
 	if (rotationFinishedFunction != NULL) {
-		(*rotationFinishedFunction)(encoderCount);
+		(*rotationFinishedFunction)();
 	} else {
 		Serial.println("You need to register a rotation finished function if you want stuff to happen...");
 	}
