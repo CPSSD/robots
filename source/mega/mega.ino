@@ -1,7 +1,12 @@
-#include "SPI_Wrapper.h"
+#include "Arduino.h"
+#include "SPI.h"
 #include "Wire.h"
+#include "SPI_Wrapper.h"
 #include "I2C_Wrapper.h"
 #include "Compass.h"
+#include "Shared_Structs.h"
+#include "TapDetectionLib.h"
+
 
 const int laserScannerID = 30;
 const int motorID = 27;
@@ -82,7 +87,7 @@ void scanResponseHandler(scanResponse cmd) {
   
 void loop() {
   while (1) {
-	compass.updateHeading();
+	  compass.updateHeading();
   
     if (sendMoveCommand) {
       Serial.println("Preparing to send move command...");
@@ -103,11 +108,11 @@ void loop() {
       SPI_Wrapper::sendMoveResponse(queuedMoveResponse.uniqueID, queuedMoveResponse.magnitude, queuedMoveResponse.angle, true);
     }
 	
-	if (sendCompassHeading) {
-		Serial.println("Sending compass heading...");
-		sendCompassHeading = false
-		SPI_Wrapper::sendCompassResponse(queuedCompassCommand.uniqueID, compass.getHeading(), true)
-	}
+	  if (sendCompassHeading) {
+		  Serial.println("Sending compass heading...");
+		  sendCompassHeading = false;
+		  SPI_Wrapper::sendCompassResponse(queuedCompassCommand.uniqueID, compass.getHeading(), true);
+	  }
     
     if (scanBufferStart != scanBufferEnd) {
       Serial.println("Preparing to send scan response...");
