@@ -44,9 +44,9 @@ func (this *Robot) MoveToPoint(x, y int, resized bool) {
 
 // MoveAlongLine moves the robot along a line.
 func (this *Robot) MoveAlongLine(degree, magnitude float64) {
-	x, y := RobotMap.LineToBitmapCoordinate(degree+this.rotation, magnitude)
+	x, y := RobotMap.LineToBitmapCoordinate(float64(int(degree + this.rotation) % 360), magnitude)
 	this.MoveToPoint(x, y, true)
-	if DEBUG {
+	if Debug {
 		fmt.Println("Robots Current Data:", *this)
 	}
 }

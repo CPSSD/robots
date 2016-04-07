@@ -2,15 +2,24 @@
 
 package maps
 
-import "fmt"
-import "math"
-import "RobotDriverProtocol"
 
-const BITMAP_SIZE = 20 // Millimeters Per Bitmap Segment
-const DEBUG = false
+import (
+	"RobotDriverProtocol"
+	"fmt"
+	"math"
+	"sort"
+)
+
+// BitmapScale is the size of each bitmap segment in millimeters
+const BitmapScale = 20
+
+// Debug indicates whether to print verbose debugging output
+const Debug = false
 
 var scanBuffer []RobotDriverProtocol.ScanResponse
 var finishedMapping = false
+
+// RobotMap is the current environment being mapped
 var firstScan = true
 var checkLocation = false
 var followingPath = false
@@ -18,11 +27,12 @@ var RobotMap Map
 var path [][]bool
 
 
+// Map represents a two dimentional map of the environment we are mapping
 type Map struct {
-	width       int
-	height      int
-	last_width  int
-	last_height int
+	width      int
+	height     int
+	lastWidth  int
+	lastHeight int
 
 	robot Robot
 
@@ -179,16 +189,16 @@ func (this *Map) MoveRobotAlongPath(newPath [][]bool, stopBeforePoint bool) {
 func getHorizontalLine(x1, y1, x2, y2 int) (degree, magnitude float64) {
 	fmt.Println("[GetHorizontalLine] (", x1, ",", y1, ") -> (", x2, ",", y2, ")")
 	if x1+1 == x2 && y1 == y2 {
-		return 90, BITMAP_SIZE
+		return 90, BitmapScale
 	}
 	if x1-1 == x2 && y1 == y2 {
-		return 270, BITMAP_SIZE
+		return 270, BitmapScale
 	}
 	if y1-1 == y2 && x1 == x2 {
-		return 0, BITMAP_SIZE
+		return 0, BitmapScale
 	}
 	if y1+1 == y2 && x1 == x2 {
-		return 180, BITMAP_SIZE
+		return 180, BitmapScale
 	}
 	return 0, 0
 }
@@ -228,7 +238,7 @@ func (this *Map) getNextMove(x, y, prevX, prevY int, path [][]bool) (x1 int, y1 
 	return x, y, false
 }
 
-// AddWall adds a wall in position (x, y) of the map. Resized represents if the co-ordinates have been modified due to the BITMAP_SIZE const or not. Expands if neccesary
+// AddWall adds a wall in position (x, y) of the map. Resized represents if the co-ordinates have been modified due to the BitmapScale const or not. Expands if neccesary
 func (this *Map) AddWall(x, y int, resized bool) {
 	if !resized {
 		x, y = ScaleCoordinate(float64(x), float64(y))
@@ -238,7 +248,7 @@ func (this *Map) AddWall(x, y int, resized bool) {
 	if !this.pointInMap(x, y) {
 		expandX, expandY := 0, 0
 		tempMap, expandX, expandY = this.expandMap(x, y)
-		if DEBUG {
+		if Debug {
 			fmt.Println("expandX:", expandX, "expandY:", expandY)
 		}
 		if expandX < 0 {
@@ -260,7 +270,7 @@ func (this *Map) AddWall(x, y int, resized bool) {
 		tempMap.seen[y+expandY][x+expandX] = -1
 		tempMap.floor[y+expandY][x+expandX] = true
 	} else {
-		if DEBUG {
+		if Debug {
 			fmt.Println("Size of Seen Array:", len(tempMap.seen), "*", len(tempMap.seen[0]))
 			fmt.Println("Entering at location::", x, y)
 		}
@@ -291,7 +301,7 @@ func (this *Map) expandMap(x, y int) (*Map, int, int) {
 		expandY = 0
 	}
 
-	if DEBUG {
+	if Debug {
 		fmt.Println("[expandMap(x, y)]: expandY:", expandY)
 	}
 	return this.createExpandedMap(expandX, expandY), expandX, expandY
@@ -371,18 +381,18 @@ func (this *Map) Print(path [][]bool) {
 
 func scale(x float64) float64 {
 	if x != 0 {
-		return float64(x / BITMAP_SIZE)
+		return float64(x / BitmapScale)
 	}
 	return 0
 }
 
-// ScaleCoordinate scales the given co-ordinate and returns them as integers.
-func ScaleCoordinate(x, y float64) (x1, y1 int) {
+// ScaleCoordinate transforms a raw reading from the laser to a position on the bitmap
+func ScaleCoordinate(x, y float64) (int, int) {
 	return int(scale(x)), int(scale(y))
 }
 
 // LineToBitmapCoordinate takes the robots location, draws a line out from it at the given degree and returns the bitmap (rounded down) location  of the resulting point.
-func (this *Map) LineToBitmapCoordinate(degree, distance float64) (x1, y1 int) {
+func (this *Map) LineToBitmapCoordinate(degree, distance float64) (int, int) {
 	x, y := getOpposite(degree, distance)+this.robot.x, -getAdjacent(degree, distance)+this.robot.y
 	return int(x), int(y)
 }
@@ -391,7 +401,7 @@ func (this *Map) LineToBitmapCoordinate(degree, distance float64) (x1, y1 int) {
 func (this *Map) AddWallByLine(degree, distance float64) {
 	distance = scale(distance)
 	x, y := this.LineToBitmapCoordinate(degree, distance)
-	if DEBUG {
+	if Debug {
 		fmt.Println("Adding Wall @", x, y)
 	}
 	this.AddWall(x, y, true)
@@ -400,18 +410,18 @@ func (this *Map) AddWallByLine(degree, distance float64) {
 
 // MarkLineAsSeen marks anything the line passes through as "seen".
 func (this *Map) MarkLineAsSeen(degree, distance float64) {
-	if DEBUG {
+	if Debug {
 		fmt.Println(RobotMap)
 		RobotMap.Print(nil)
 		fmt.Println(degree, distance)
 	}
 	for dist := 0; dist < int(distance); dist++ {
-		if DEBUG {
+		if Debug {
 			fmt.Println(degree, dist)
 		}
 		x, y := this.LineToBitmapCoordinate(degree, float64(dist))
 		if this.pointInMap(x, y) {
-			if DEBUG {
+			if Debug {
 				fmt.Println(x, y)
 			}
 			if this.seen[y][x] == 0 {
@@ -426,22 +436,22 @@ func (this *Map) getAdjacentSeenTilesCount(x, y int) (count int) {
 	count = 0
 	if y+1 < len(this.floor) {
 		if this.seen[y+1][x] == 1 {
-			count += 1
+			count++
 		}
 	}
 	if x+1 < len(this.floor[y]) {
 		if this.seen[y][x+1] == 1 {
-			count += 1
+			count++
 		}
 	}
 	if y-1 >= 0 {
 		if this.seen[y-1][x] == 1 {
-			count += 1
+			count++
 		}
 	}
 	if x-1 >= 0 {
 		if this.seen[y][x-1] == 1 {
-			count += 1
+			count++
 		}
 	}
 	return
@@ -450,7 +460,7 @@ func (this *Map) getAdjacentSeenTilesCount(x, y int) (count int) {
 // ContinueToNextArea figures out where to scan next and goes there.
 func (this *Map) ContinueToNextArea() {
 	// Adds all potential tiles to a queue
-	list := make([]Node, 0)
+	var list []Node
 	for y := 0; y < len(this.floor); y++ {
 		for x := 0; x < len(this.floor[y]); x++ {
 			//			x, y = ScaleCoordinate(x, y)
@@ -471,7 +481,7 @@ func (this *Map) ContinueToNextArea() {
 	list = sortNodeList(list)
 
 	// Prints out list.
-	if DEBUG {
+	if Debug {
 		fmt.Println("Sorted: ")
 		for i := 0; i < len(list); i++ {
 			fmt.Println(list[i].x, list[i].y, list[i].distanceToGoal)
@@ -487,27 +497,22 @@ func (this *Map) ContinueToNextArea() {
 			this.Print(path)
 			this.MoveRobotAlongPath(path, true)
 			return
-		} else {
-			print("No valid path to node", i, "checking next node.")
 		}
+		print("No valid path to node", i, "checking next node.")
 	}
 	if !possible {
 		finishedMapping = true
 	}
 }
 
-// Selection sort for now.
+// SortNodes implements the Sort interface for the Node type
+type SortNodes []Node
+
+func (slice SortNodes) Len() int           { return len(slice) }
+func (slice SortNodes) Swap(i, j int)      { slice[i], slice[j] = slice[j], slice[i] }
+func (slice SortNodes) Less(i, j int) bool { return slice[i].distanceToGoal < slice[j].distanceToGoal }
+
 func sortNodeList(list []Node) []Node {
-	for i := 0; i < len(list); i++ {
-		smallest := i
-		for j := i; j < len(list); j++ {
-			if list[smallest].distanceToGoal > list[j].distanceToGoal {
-				smallest = j
-			}
-		}
-		temp := list[i]
-		list[i] = list[smallest]
-		list[smallest] = temp
-	}
+	sort.Sort(SortNodes(list))
 	return list
 }

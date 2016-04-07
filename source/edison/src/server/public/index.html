@@ -21,6 +21,13 @@
 			request.send(null);
 		}
 		
+		function sendScanCommand() {
+			console.log("Sending Scan Command...");
+			var request = new XMLHttpRequest();
+			request.open("GET", "../scan/", false);
+			request.send(null);
+		}
+
 		function updateResponses(){
 			console.log("Trying to get JSON from /drive/response/");
 			var request = new XMLHttpRequest();
@@ -94,6 +101,7 @@
 				
 				<br /><br />
 				<input class="button" value="Send Command" type="button" id="submit" onclick="submit()" />
+				<input class="button" value="Start Scan" type="button" id="scanSubmit" onclick="sendScanCommand()" />
 			</div>
 			<div class="section">
 				<h2 class='title'><u>Responses</u></h1>
