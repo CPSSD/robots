@@ -2,22 +2,37 @@
 
 package maps
 
-import "fmt"
-import "math"
-import "time"
-import "RobotDriverProtocol"
 
-const BITMAP_SIZE = 2 // Millimeters Per Bitmap Segment
-const DEBUG = false
+import (
+	"RobotDriverProtocol"
+	"fmt"
+	"math"
+	"sort"
+)
 
+// BitmapScale is the size of each bitmap segment in millimeters
+const BitmapScale = 20
+
+// Debug indicates whether to print verbose debugging output
+const Debug = false
+
+var scanBuffer []RobotDriverProtocol.ScanResponse
 var finishedMapping = false
-var RobotMap Map
 
+// RobotMap is the current environment being mapped
+var firstScan = true
+var checkLocation = false
+var followingPath = false
+var RobotMap Map
+var path [][]bool
+
+
+// Map represents a two dimentional map of the environment we are mapping
 type Map struct {
-	width       int
-	height      int
-	last_width  int
-	last_height int
+	width      int
+	height     int
+	lastWidth  int
+	lastHeight int
 
 	robot Robot
 
@@ -28,12 +43,17 @@ type Map struct {
 // MapInit initialises the map and the rdp library, and starts a scan.
 func MapInit() {
 	fmt.Println("[Initialising Map]")
+
 	RobotMap = CreateMap()
 	fmt.Println("[Map Created]")
 	fmt.Println("[Initialising RDP]")
+
 	RDPInit()
 	fmt.Println("[RDP Link Ready]")
 	fmt.Println(RobotMap)
+
+	scanBuffer = make([]RobotDriverProtocol.ScanResponse, 0)
+	
 	RobotDriverProtocol.Scan()
 }
 
@@ -60,59 +80,125 @@ func CreateMap() (createdMap Map) {
 	return
 }
 
+// Creates a fragment of a map, containing all lines from the buffer.
+func createMapFragment(buffer []RobotDriverProtocol.ScanResponse) Map {
+	fragment := CreateMap()
+	for _, line := range buffer {
+		fragment.AddWallByLine(float64(line.Degree), float64(line.Distance))
+	}
+	fmt.Println("Created Fragment: ")
+	fragment.Print(nil)
+	fmt.Println("Robot Location: (", fragment.GetRobot().GetX(), ", ", fragment.GetRobot().GetY(), ")")
+	return fragment
+}
+
+// Adds the last buffer of scan responses to the map, then clears the buffer.
+func (this *Map) addBufferToMap(){
+	for _, response := range scanBuffer {
+		RobotMap.AddWallByLine(float64(response.Degree), float64(response.Distance))
+	}
+	scanBuffer = make([]RobotDriverProtocol.ScanResponse, 0)
+}
+
+func (this *Map) FindLocation(fragment Map) (x int, y int) {
+	fmt.Println("Attempting to find location...")
+	mX, mY, mCount := int(this.GetRobot().GetX()), int(this.GetRobot().GetY()), 0
+
+	fmt.Println("Robots Assumed Location: (", mX, ",", mY, ")")
+	
+	for i := 0; i < this.width; i++ {
+		for j := 0; j < this.height; j++ {
+			if i >= 0 && j >= 0 && i < this.width && j < this.height {
+				count, _, _ := this.probabilityAtLocation(fragment, int(i), int(j))
+				if count != 0 {
+					fmt.Print(count, " ")
+					if mCount < count {
+						mX = i - (fragment.width/2) + int(fragment.GetRobot().GetX()) 
+						mY = j - (fragment.height/2) +  int(fragment.GetRobot().GetY())
+						mCount = count
+					}
+				} else {
+					fmt.Print("  ")
+				}
+			}
+		}
+		fmt.Println("")
+	}
+	
+	fmt.Println("Most Likely Position: (", mX, ", ", mY, "): ", mCount)
+	x = mX
+	y = mY
+	return
+}
+
+func (this *Map) probabilityAtLocation(fragment Map, x int, y int) (int, int, int) {
+	count := 0
+	height := len(fragment.floor)
+	for i := 0; i < height; i++ {
+		width := len(fragment.floor[i])
+		for j := 0; j < width; j++ {
+			checkX := x + i - width/2
+			checkY := y + j - height/2
+			if (checkX >= 0 && checkY >= 0 && checkX < this.width && checkY < this.height){
+				
+				if (fragment.floor[i][j] == true && fragment.floor[i][j] == RobotMap.floor[checkX][checkY]) {
+					count++
+				}
+			} 	
+		}
+	}
+	return count, x, y
+}
+
+func (this *Map) TakeNextStep(lastX int, lastY int) {
+	if len(path) != 0 {
+		x, y, movesLeft := this.getNextMove(int(this.GetRobot().GetX()), int(this.GetRobot().GetY()), lastX, lastY, path)
+		
+		fmt.Println("[TakeNextStep]: (", x, ", ", y, ") | From Location: (", this.GetRobot().GetX(), ", ", this.GetRobot().GetY(), ")")
+	
+		if !movesLeft {
+			fmt.Println("Finished Following path")
+			path = make([][]bool, 0)
+			followingPath = false
+			RobotDriverProtocol.Scan()
+			return
+		} 
+		
+		degree, magnitude := getHorizontalLine(int(this.GetRobot().GetX()), int(this.GetRobot().GetY()), x, y)	
+		fmt.Println("[TakeNextStep]: Required Move: ", degree, " -> ", magnitude)
+		RobotDriverProtocol.Move(uint16(degree), uint32(magnitude))
+	} else {
+		fmt.Println("No more steps to take...")
+		path = make([][]bool, 0)
+		followingPath = false
+
+		RobotDriverProtocol.Scan()
+	}
+}
+
 // MoveRobotAlongPath moves the robot along the given path.
 // Set "stopBeforePoint" to true if you dont want to stop before entering the point given. 
 // Used when following a path into unseen areas to prevent crashes.
-func (this *Map) MoveRobotAlongPath(path [][]bool, stopBeforePoint bool) {
-	prevX, prevY := -1, -1
-	movesLeft := true
-	nextX, nextY := 0, 0
-	for movesLeft {
-		nextX, nextY, movesLeft = this.getNextMove(int(this.robot.x), int(this.robot.y), prevX, prevY, path)
-		if stopBeforePoint {
-			_, _, moreMoves := this.getNextMove(nextX, nextY, int(this.robot.x), int(this.robot.y), path)
-			if !moreMoves {
-				fmt.Println("Made it to last point before goal.")
-				return
-			}
-		}
-		prevX, prevY = int(this.robot.x), int(this.robot.y)
-		//this.robot.MoveToPoint(nextX, nextY, true)
-		degree, magnitude := getHorizontalLine(prevX, prevY, nextX, nextY)
-
-		RobotDriverProtocol.Move(uint16(degree), uint32(magnitude))
-
-		tick := 0
-		waiting := true
-		
-		// While the robot hasn't moved...
-		for waiting && int(this.robot.x) == prevX && int(this.robot.y) == prevY {
-			// Wait for 5 seconds, then exit and try again.
-			if tick >= 50 {
-				waiting = false
-			}
-			fmt.Println("Waiting for response from Arduino. [Sleeping for 3 seconds]")
-			time.Sleep(100 * time.Millisecond)
-			tick += 1;
-		}
-	}
-	
-	fmt.Println("Finished Moving along path. [Sending Scan Request]")
-	RobotDriverProtocol.Scan()
+func (this *Map) MoveRobotAlongPath(newPath [][]bool, stopBeforePoint bool) {
+	path = newPath
+	followingPath = true
+	this.TakeNextStep(int(this.GetRobot().GetX()), int(this.GetRobot().GetY()))
+	fmt.Println("Queued a path for movement...")
 }
 
 func getHorizontalLine(x1, y1, x2, y2 int) (degree, magnitude float64) {
-	if x1+1 == x2 {
-		return 90, BITMAP_SIZE
+	fmt.Println("[GetHorizontalLine] (", x1, ",", y1, ") -> (", x2, ",", y2, ")")
+	if x1+1 == x2 && y1 == y2 {
+		return 90, BitmapScale
 	}
-	if x1-1 == x2 {
-		return 270, BITMAP_SIZE
+	if x1-1 == x2 && y1 == y2 {
+		return 270, BitmapScale
 	}
-	if y1-1 == y2 {
-		return 0, BITMAP_SIZE
+	if y1-1 == y2 && x1 == x2 {
+		return 0, BitmapScale
 	}
-	if y1+1 == y2 {
-		return 180, BITMAP_SIZE
+	if y1+1 == y2 && x1 == x2 {
+		return 180, BitmapScale
 	}
 	return 0, 0
 }
@@ -152,7 +238,7 @@ func (this *Map) getNextMove(x, y, prevX, prevY int, path [][]bool) (x1 int, y1 
 	return x, y, false
 }
 
-// AddWall adds a wall in position (x, y) of the map. Resized represents if the co-ordinates have been modified due to the BITMAP_SIZE const or not. Expands if neccesary
+// AddWall adds a wall in position (x, y) of the map. Resized represents if the co-ordinates have been modified due to the BitmapScale const or not. Expands if neccesary
 func (this *Map) AddWall(x, y int, resized bool) {
 	if !resized {
 		x, y = ScaleCoordinate(float64(x), float64(y))
@@ -162,7 +248,7 @@ func (this *Map) AddWall(x, y int, resized bool) {
 	if !this.pointInMap(x, y) {
 		expandX, expandY := 0, 0
 		tempMap, expandX, expandY = this.expandMap(x, y)
-		if DEBUG {
+		if Debug {
 			fmt.Println("expandX:", expandX, "expandY:", expandY)
 		}
 		if expandX < 0 {
@@ -184,7 +270,7 @@ func (this *Map) AddWall(x, y int, resized bool) {
 		tempMap.seen[y+expandY][x+expandX] = -1
 		tempMap.floor[y+expandY][x+expandX] = true
 	} else {
-		if DEBUG {
+		if Debug {
 			fmt.Println("Size of Seen Array:", len(tempMap.seen), "*", len(tempMap.seen[0]))
 			fmt.Println("Entering at location::", x, y)
 		}
@@ -215,7 +301,7 @@ func (this *Map) expandMap(x, y int) (*Map, int, int) {
 		expandY = 0
 	}
 
-	if DEBUG {
+	if Debug {
 		fmt.Println("[expandMap(x, y)]: expandY:", expandY)
 	}
 	return this.createExpandedMap(expandX, expandY), expandX, expandY
@@ -274,12 +360,14 @@ func (this *Map) Print(path [][]bool) {
 			robotX, robotY := int(this.robot.x), int(this.robot.y)
 			if x == robotX && y == robotY {
 				fmt.Print("* ")
-			} else {
-				if this.floor[y][x] {
+			} else { 
+				if path != nil && path[y][x] {
+					fmt.Print("~ ")
+				} else if this.floor[y][x] {
 					fmt.Print("X ")
 				} else {
 					if this.seen[y][x] == 0 {
-						fmt.Print(this.seen[y][x], " ")
+						fmt.Print("# ")
 					} else {
 						fmt.Print("  ")
 					}
@@ -293,18 +381,18 @@ func (this *Map) Print(path [][]bool) {
 
 func scale(x float64) float64 {
 	if x != 0 {
-		return float64(x / BITMAP_SIZE)
+		return float64(x / BitmapScale)
 	}
 	return 0
 }
 
-// ScaleCoordinate scales the given co-ordinate and returns them as integers.
-func ScaleCoordinate(x, y float64) (x1, y1 int) {
+// ScaleCoordinate transforms a raw reading from the laser to a position on the bitmap
+func ScaleCoordinate(x, y float64) (int, int) {
 	return int(scale(x)), int(scale(y))
 }
 
 // LineToBitmapCoordinate takes the robots location, draws a line out from it at the given degree and returns the bitmap (rounded down) location  of the resulting point.
-func (this *Map) LineToBitmapCoordinate(degree, distance float64) (x1, y1 int) {
+func (this *Map) LineToBitmapCoordinate(degree, distance float64) (int, int) {
 	x, y := getOpposite(degree, distance)+this.robot.x, -getAdjacent(degree, distance)+this.robot.y
 	return int(x), int(y)
 }
@@ -313,7 +401,7 @@ func (this *Map) LineToBitmapCoordinate(degree, distance float64) (x1, y1 int) {
 func (this *Map) AddWallByLine(degree, distance float64) {
 	distance = scale(distance)
 	x, y := this.LineToBitmapCoordinate(degree, distance)
-	if DEBUG {
+	if Debug {
 		fmt.Println("Adding Wall @", x, y)
 	}
 	this.AddWall(x, y, true)
@@ -322,18 +410,18 @@ func (this *Map) AddWallByLine(degree, distance float64) {
 
 // MarkLineAsSeen marks anything the line passes through as "seen".
 func (this *Map) MarkLineAsSeen(degree, distance float64) {
-	if DEBUG {
+	if Debug {
 		fmt.Println(RobotMap)
 		RobotMap.Print(nil)
 		fmt.Println(degree, distance)
 	}
 	for dist := 0; dist < int(distance); dist++ {
-		if DEBUG {
+		if Debug {
 			fmt.Println(degree, dist)
 		}
 		x, y := this.LineToBitmapCoordinate(degree, float64(dist))
 		if this.pointInMap(x, y) {
-			if DEBUG {
+			if Debug {
 				fmt.Println(x, y)
 			}
 			if this.seen[y][x] == 0 {
@@ -348,22 +436,22 @@ func (this *Map) getAdjacentSeenTilesCount(x, y int) (count int) {
 	count = 0
 	if y+1 < len(this.floor) {
 		if this.seen[y+1][x] == 1 {
-			count += 1
+			count++
 		}
 	}
 	if x+1 < len(this.floor[y]) {
 		if this.seen[y][x+1] == 1 {
-			count += 1
+			count++
 		}
 	}
 	if y-1 >= 0 {
 		if this.seen[y-1][x] == 1 {
-			count += 1
+			count++
 		}
 	}
 	if x-1 >= 0 {
 		if this.seen[y][x-1] == 1 {
-			count += 1
+			count++
 		}
 	}
 	return
@@ -372,7 +460,7 @@ func (this *Map) getAdjacentSeenTilesCount(x, y int) (count int) {
 // ContinueToNextArea figures out where to scan next and goes there.
 func (this *Map) ContinueToNextArea() {
 	// Adds all potential tiles to a queue
-	list := make([]Node, 0)
+	var list []Node
 	for y := 0; y < len(this.floor); y++ {
 		for x := 0; x < len(this.floor[y]); x++ {
 			//			x, y = ScaleCoordinate(x, y)
@@ -393,7 +481,7 @@ func (this *Map) ContinueToNextArea() {
 	list = sortNodeList(list)
 
 	// Prints out list.
-	if DEBUG {
+	if Debug {
 		fmt.Println("Sorted: ")
 		for i := 0; i < len(list); i++ {
 			fmt.Println(list[i].x, list[i].y, list[i].distanceToGoal)
@@ -406,29 +494,25 @@ func (this *Map) ContinueToNextArea() {
 	for i := 0; i < len(list); i++ {
 		path, possible := GetRoute(*this, list[i].x, list[i].y)
 		if possible {
+			this.Print(path)
 			this.MoveRobotAlongPath(path, true)
 			return
-		} else {
-			print("No valid path to node", i, "checking next node.")
 		}
+		print("No valid path to node", i, "checking next node.")
 	}
 	if !possible {
 		finishedMapping = true
 	}
 }
 
-// Selection sort for now.
+// SortNodes implements the Sort interface for the Node type
+type SortNodes []Node
+
+func (slice SortNodes) Len() int           { return len(slice) }
+func (slice SortNodes) Swap(i, j int)      { slice[i], slice[j] = slice[j], slice[i] }
+func (slice SortNodes) Less(i, j int) bool { return slice[i].distanceToGoal < slice[j].distanceToGoal }
+
 func sortNodeList(list []Node) []Node {
-	for i := 0; i < len(list); i++ {
-		smallest := i
-		for j := i; j < len(list); j++ {
-			if list[smallest].distanceToGoal > list[j].distanceToGoal {
-				smallest = j
-			}
-		}
-		temp := list[i]
-		list[i] = list[smallest]
-		list[smallest] = temp
-	}
+	sort.Sort(SortNodes(list))
 	return list
 }
