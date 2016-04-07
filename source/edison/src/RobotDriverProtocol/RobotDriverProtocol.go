@@ -122,7 +122,7 @@ func processScanResponse(responseBuffer []uint8) {
 }
 
 func processCompassResponse(responseBuffer []uint8) {
-	if len(responseBuffer < 5) {
+	if len(responseBuffer) < 5 {
 		return
 	}
 	var compassResponse CompassResponse
