@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title> Map View </title>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.3/jquery.min.js"></script>
+
+    <script>
+        // Change this to change the size of the map.
+        var block_size = 20;
+
+
+        function updateMap(canvasObject) {
+            var ctx = canvasObject.getContext("2d");
+            getMapData(ctx);
+        }
+
+        function getMapData(canvasContext) {
+            $.getJSON('http://192.168.1.129:8080/map/bit', function(data) {
+                //alert(data);
+                //console.log(data);
+                //console.log(JSON.parse(data));
+                drawMap(canvasContext, data);  // TODO: change second arg to data.
+            });
+        }
+
+        function drawMap(canvasContext, mapObject) {
+            canvasContext.canvas.height = block_size*mapObject.map.length;
+            canvasContext.canvas.width = block_size*mapObject.map[0].length;
+
+            canvasContext.fillStyle = "#000000";
+            for(var i=0; i<mapObject.map.length; i++) {
+                for(var j=0; j<mapObject.map[0].length; j++) {
+                    if(mapObject.map[i][j]) {
+                        canvasContext.fillRect(block_size*j, block_size*i, block_size, block_size);
+                    }
+                }
+            }
+        }
+
+        function zoomOut() {
+            block_size -= 5;
+            updateMap(document.getElementById("mapCanvas"));
+        }
+
+        function zoomIn() {
+            block_size += 5;
+            updateMap(document.getElementById("mapCanvas"));
+        }
+    </script>
+</head>
+
+<body>
+    <button value="Zoom Out" onClick="zoomOut()">Zoom Out</button>
+    <button value="Zoom In" onClick="zoomIn()"/> Zoom In </button> <br/>
+    <canvas id="mapCanvas" width="200" height="100" style="border:1px solid #c3c3c3;">
+        Your browser does not support the HTML5 canvas tag.
+    </canvas>
+
+    <script>
+        updateMap(document.getElementById("mapCanvas"));
+    </script>
+
+</body>
+</html>
+
