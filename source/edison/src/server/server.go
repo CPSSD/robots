@@ -48,7 +48,7 @@ func load(filename string) *page {
 func driveHandler(w http.ResponseWriter, r *http.Request) {
 	var page *page
 	if r.URL.Path == "/drive/" {
-		page = load("../server/public/index.html")
+		page = load("../server/public/manualControl.html")
 	} else {
 		page = load(("../server/public/" + r.URL.Path[len("/drive/"):]))
 	}
