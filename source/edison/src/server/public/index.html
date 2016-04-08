@@ -10,11 +10,13 @@
         var block_size = 20;
 
 
+	// Handy function to update the map.
         function updateMap(canvasObject) {
             var ctx = canvasObject.getContext("2d");
             getMapData(ctx);
         }
 
+	// Fetches map data from a URL and dispatches to draw the map.
         function getMapData(canvasContext) {
 	    // TODO: Change this URL to the correct one.
             $.getJSON('http://192.168.1.129:8080/map/bit', function(data) {
@@ -25,30 +27,46 @@
             });
         }
 
+	// Draws the map with the current robot location, walls and empty spaces.
         function drawMap(canvasContext, mapObject) {
+	    // Change the canvas size depending on the size of the map.
             canvasContext.canvas.height = block_size*mapObject.map.length;
             canvasContext.canvas.width = block_size*mapObject.map[0].length;
 
-            canvasContext.fillStyle = "#000000";
             for(var i=0; i<mapObject.map.length; i++) {
                 for(var j=0; j<mapObject.map[0].length; j++) {
-                    if(mapObject.map[i][j]) {
-                        canvasContext.fillRect(block_size*j, block_size*i, block_size, block_size);
+                    switch(mapObject.map[i][j]) {
+			default:
+			// Empty space:
+			case 0:
+				canvasContext.fillStyle = "#FFFFFF";
+				canvasContext.fillRect(block_size*j, block_size*i, block_size, block_size);
+			// Wall:
+			case 1:
+				canvasContext.fillStyle = "#000000";
+				canvasContext.fillRect(block_size*j, block_size*i, block_size, block_size);
+			// Robot location:
+			case 2:
+				canvasContext.fillStyle = "#0000FF";
+				canvasContext.fillRect(block_size*j, block_size*i, block_size, block_size);
                     }
                 }
             }
         }
 
+	// Zooms out in the map by reducing the block size.
         function zoomOut() {
             block_size -= 5;
             updateMap(document.getElementById("mapCanvas"));
         }
 
+	// Zooms in in the map by increasing the block size.
         function zoomIn() {
             block_size += 5;
             updateMap(document.getElementById("mapCanvas"));
         }
 
+	// Refreshes the map.
 	function refreshMap() {
 		updateMap(document.getElementById("mapCanvas"));
 	}
