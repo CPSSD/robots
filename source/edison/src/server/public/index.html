@@ -48,15 +48,23 @@
             block_size += 5;
             updateMap(document.getElementById("mapCanvas"));
         }
+
+	function refreshMap() {
+		updateMap(document.getElementById("mapCanvas"));
+	}
     </script>
 </head>
 
+
 <body>
-    <button value="Zoom Out" onClick="zoomOut()">Zoom Out</button>
-    <button value="Zoom In" onClick="zoomIn()"/> Zoom In </button> <br/>
     <canvas id="mapCanvas" width="200" height="100" style="border:1px solid #c3c3c3;">
         Your browser does not support the HTML5 canvas tag.
     </canvas>
+    <br/>
+
+    <button value="Zoom Out" onClick="zoomOut()">Zoom Out</button>
+    <button value="Zoom In" onClick="zoomIn()"/> Zoom In </button>
+    <button value="Refresh Map" onClick="refreshMap()"/> Refresh Map </button>
 
     <script>
         updateMap(document.getElementById("mapCanvas"));
