@@ -9,6 +9,10 @@
         // Change this to change the size of the map.
         var block_size = 20;
 
+	// Store the input destination of the robot.
+	var destX = 0;
+	var destY = 0;
+
 
 	// Handy function to update the map.
         function updateMap(canvasObject) {
@@ -19,6 +23,7 @@
 	// Fetches map data from a URL and dispatches to draw the map.
         function getMapData(canvasContext) {
 	    // TODO: Change this URL to the correct one.
+	    // TODO: Update server.go to have a function to return an int map instead of a bit map.
             $.getJSON('http://192.168.1.129:8080/map/bit', function(data) {
                 //alert(data);
                 //console.log(data);
@@ -70,6 +75,44 @@
 	function refreshMap() {
 		updateMap(document.getElementById("mapCanvas"));
 	}
+
+	// Updates the destination on the map.
+	// Called whenever the map is touched.
+	function updateDestination() {
+		var canvasObject = document.getElementById("mapCanvas");
+        	var ctx = canvasObject.getContext("2d");
+
+		canvasContext.fillStyle = "#00FF00";
+		// TODO: Possibly mixed up the X and Ys...
+		canvasContext.fillRect(block_size*destX, block_size*destY, block_size, block_size);
+	}
+
+	// Function to set the destination variables when the canvas is clicked.
+	function getPosition(event) {
+		var rawX = event.x;
+		var rawY = event.y;
+
+		// Translate raw coordinates to X/Y positions in the grid.
+		destX = rawX / block_size;
+		destY = rawY / block_size;
+
+		// Draw the destination on the map.
+		updateDestination();
+	}
+
+	// Registers a touch handler on the map to get the destination variables.
+	// TODO: May not work in Firefox!
+	function registerTouchHandler() {
+		var canvas =  document.getElementById("mapCanvas");
+		canvas.addEventListener("mousedown", getPosition, false);
+	}
+	
+	// Gets an initial map and registers a handler for clicks on the canvas.
+	function init() {
+		refreshMap();
+		registerTouchHandler();
+	}
+
     </script>
 </head>
 
@@ -85,7 +128,8 @@
     <button value="Refresh Map" onClick="refreshMap()"/> Refresh Map </button>
 
     <script>
-        updateMap(document.getElementById("mapCanvas"));
+	// Gets an initial map and registers a handler for clicks on the canvas.
+	init();
     </script>
 
 </body>
