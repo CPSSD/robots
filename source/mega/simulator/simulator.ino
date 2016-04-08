@@ -18,6 +18,7 @@ typedef enum {
 const float SPEED = 1; //in mm per millisecond
 const int STARTING_X = 150; //This and all distances measured in cm
 const int STARTING_Y = 150;
+const unsigned long SCAN_RESPONSE_INTERVAL = 100; //Values as low as 80 worked in testing
 Point MAP_BOUNDS[] = { {Point(0, 0)}, {Point(300, 0)}, {Point(300, 300)}, {Point(0, 300)} };
 Room room = Room(4, MAP_BOUNDS, Point(STARTING_X, STARTING_Y), 0);
 
@@ -71,8 +72,8 @@ void loop() {
     if(scanResp.magnitude != 4096) {
       respond(scanResp);
     }
-    laserAngle+=10;
-    scanTimer = millis() + 100UL;
+    laserAngle += 5;
+    scanTimer = millis() + SCAN_RESPONSE_INTERVAL;
   }
   
   if(amScanning && laserAngle > 360) {
@@ -126,6 +127,7 @@ void processCommand(command* com) {
   }
   else if(com->commandNumber == scanNum){
     amScanning = true;
+    scanTimer = millis() + SCAN_RESPONSE_INTERVAL;
   }
 }
 
