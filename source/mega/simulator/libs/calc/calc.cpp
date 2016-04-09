@@ -1,9 +1,9 @@
 #include "Arduino.h"
 #include "calc.h"
 #include "math.h"
-#include "structs.h"
+#include "room.h"
 
-float calc::getDistBetweenTwoPoints(point p1, point p2) {
+float calc::getDistBetweenTwoPoints(Point p1, Point p2) {
   return sqrt((pow(p2.x - p1.x, 2)) + (pow(p2.y - p1.y, 2)));
 }
 
@@ -15,69 +15,71 @@ float calc::getDistanceTravelled(float speed, unsigned long time) {
 	return speed * time;
 }
 
-struct MapLine calc::makeLineFromPolar(float angle, float distance, point currentPosition) {
-  MapLine temp;
-  temp.x1y1 = {currentPosition.x, currentPosition.y};
+Point calc::makeLineFromPolar(float angle, float distance, Point currentPosition) {
+  Point temp;
   float xValueDelta = distance * cos(angle);
   if(xValueDelta >= -0.012f && xValueDelta <= 0.012f) {
 	  xValueDelta = 0.00;
   }
+  temp.x = (currentPosition.x + xValueDelta);
   float yValueDelta = distance * sin(angle);
   if(yValueDelta >= -0.012f && yValueDelta <= 0.012f) {
 	  yValueDelta = 0.00;
   }
-  temp.x2y2 = {(currentPosition.x + xValueDelta), (currentPosition.y + yValueDelta)};
+  temp.y = (currentPosition.y + yValueDelta);
   return temp;
 }
 
-struct EquationOfLine calc::getEquationOfLine(MapLine line) {
-  EquationOfLine equ;
-  equ.xy.x = line.x1y1.x;
-  equ.xy.y = line.x1y1.y;
-  if((line.x2y2.x - equ.xy.x) >= -0.01f && (line.x2y2.x - equ.xy.x) <= 0.01f) {
-    equ.isVertical = true;
-  }
-  else {
-    equ.isVertical = false;
-  }
-  equ.m = (line.x2y2.y - equ.xy.y) / (line.x2y2.x - equ.xy.x); //Warning: this will be NaN if line is vertical (as denominator will be zero). The boolean allows for avoiding this posing a problem
-  equ.c = -(equ.m * equ.xy.x) + equ.xy.y;
-  return equ;
+bool calc::checkIfVertical(Point start, Point end) {
+	if((end.x - start.x) >= -0.01f && (end.x - start.x) <= 0.01f) {
+		return true;
+	}
+	else {
+		return false;
+	}
 }
 
-struct point calc::getDestination(struct MapLine moveLine, struct EquationOfLine robotLine, struct EquationOfLine obstacles[]) {
+float calc::getSlopeOfLine(Point start, Point end) {
+	return((end.y - start.y) / (end.x - start.x));
+}
+
+float calc::getCOfLine(float slope, Point start) {
+	return(-(slope * start.x) + start.y);
+}
+
+Point calc::getDestination(Line robotLine, Room room) {
   //For each line, check for valid interception point, get interception point
-  point nearestWall = moveLine.x2y2;
-  point validInterceptPoints[4];
+  Point nearestWall = robotLine.end;
+  Point validInterceptPoints[room.walls.numSides];
   int indexVIP = 0;
-  for(int i = 0; i < 4; i++) {
-    if(hasInterception(obstacles[i], robotLine)) {
+  for(int i = 0; i < (room.walls.numSides); i++) {
+    if(hasInterception(room.walls.sides[i], robotLine)) {
 		//Serial.println(i);
-		validInterceptPoints[indexVIP] = getInterceptPoint(robotLine, obstacles[i]);
+		validInterceptPoints[indexVIP] = getInterceptPoint(robotLine, room.walls.sides[i]);
 		indexVIP++;
     }
   }
   //Determine sign of each translation in x and y, relative to robot
-  float diffInXValuesDest = moveLine.x2y2.x - moveLine.x1y1.x;
+  float diffInXValuesDest = robotLine.end.x - robotLine.start.x;
   if(diffInXValuesDest >= -0.01f && diffInXValuesDest <= 0.01f) {
 	  diffInXValuesDest = 0.00;
   }
-  float diffInYValuesDest = moveLine.x2y2.y - moveLine.x1y1.y;
+  float diffInYValuesDest = robotLine.end.y - robotLine.start.y;
   if(diffInYValuesDest >= -0.01f && diffInYValuesDest <= 0.01f) {
 	  diffInYValuesDest = 0.00;
   }
   
   float diffInXValuesWall, diffInYValuesWall, distBetweenRobotAndDest, distBetweenRobotAndWall;
   //Get distance between robot and destination
-  distBetweenRobotAndDest = getDistBetweenTwoPoints(robotLine.xy, nearestWall);
+  distBetweenRobotAndDest = getDistBetweenTwoPoints(robotLine.start, nearestWall);
   
   for(int i = 0; i < indexVIP; i++) {
 	//Determine sign of each translation for given interception point
-	diffInXValuesWall = validInterceptPoints[i].x - robotLine.xy.x;
+	diffInXValuesWall = validInterceptPoints[i].x - robotLine.start.x;
 	if(diffInXValuesWall >= -0.01f && diffInXValuesWall <= 0.01f) {
 		diffInXValuesWall = 0.00;
 	}
-	diffInYValuesWall = validInterceptPoints[i].y - robotLine.xy.y;
+	diffInYValuesWall = validInterceptPoints[i].y - robotLine.start.y;
 	if(diffInYValuesWall >= -0.01f && diffInYValuesWall <= 0.01f) {
 		diffInYValuesWall = 0.00;
 	}
@@ -85,7 +87,7 @@ struct point calc::getDestination(struct MapLine moveLine, struct EquationOfLine
 	if(( (diffInXValuesDest > 0.0 && diffInXValuesWall > 0.0) || (diffInXValuesDest == 0.0 && diffInXValuesWall == 0.0) || (diffInXValuesDest < 0.0 && diffInXValuesWall < 0.0) )
   &&( (diffInYValuesDest > 0.0 && diffInYValuesWall > 0.0) || (diffInYValuesDest == 0.0 && diffInYValuesWall == 0.0) || (diffInYValuesDest < 0.0 && diffInYValuesWall < 0.0) )) {
 	  //Get distance between robot and interception point
-	  distBetweenRobotAndWall = getDistBetweenTwoPoints(robotLine.xy, validInterceptPoints[i]);
+	  distBetweenRobotAndWall = getDistBetweenTwoPoints(robotLine.start, validInterceptPoints[i]);
 	  //If distance between robot and interception point is shorter than between robot and destination
 	  if(distBetweenRobotAndWall <= distBetweenRobotAndDest) {
 		  nearestWall = validInterceptPoints[i];
@@ -96,17 +98,17 @@ struct point calc::getDestination(struct MapLine moveLine, struct EquationOfLine
   return nearestWall;
 }
 
-boolean calc::hasInterception(EquationOfLine border, EquationOfLine robotMoveLine) {
-	if((robotMoveLine.isVertical && border.isVertical) || (robotMoveLine.m == border.m && (!robotMoveLine.isVertical || !border.isVertical))) { //Lines are parallel
+bool calc::hasInterception(Line border, Line robotLine) {
+	if((robotLine.isVertical && border.isVertical) || (robotLine.m == border.m && (!robotLine.isVertical || !border.isVertical))) { //Lines are parallel
 		return false;
 	}
 	else {
 		//Line is in point-slope form (y = line.m(x - line.x) + line.y
 		//Convert to slope-intercept form: y = (line.m * x) + (line.m * line.x) + line.y
 		//y = line.m * x + ((line.m * line.x) + line.y)
-		float intercept = ((robotMoveLine.m * border.xy.x) + ((-(robotMoveLine.m * robotMoveLine.xy.x)) + robotMoveLine.xy.y));
-		if(robotMoveLine.isVertical || border.isVertical) {
-			if(robotMoveLine.isVertical) {
+		float intercept = ((robotLine.m * border.start.x) + ((-(robotLine.m * robotLine.start.x)) + robotLine.start.y));
+		if(robotLine.isVertical || border.isVertical) {
+			if(robotLine.isVertical) {
 				return true;
 			}
 			if(border.isVertical) {
@@ -124,17 +126,17 @@ boolean calc::hasInterception(EquationOfLine border, EquationOfLine robotMoveLin
 	}
 }
 
-struct point calc::getInterceptPoint(EquationOfLine robotLine, EquationOfLine other) {
-  point intercept;
+Point calc::getInterceptPoint(Line robotLine, Line other) {
+  Point intercept;
   //Special case: one of the lines is vertical.
   //In this event, the x-value of the intercept point will be constant for all values of y.
   //Therefore, we can substitute that value into the equation of the non-vertical line and solve for y.
   if(other.isVertical) {
-    intercept.x = other.xy.x;
+    intercept.x = other.start.x;
     intercept.y = (robotLine.m * intercept.x) + robotLine.c;
   }
   else if(robotLine.isVertical) {
-    intercept.x = robotLine.xy.x;
+    intercept.x = robotLine.start.x;
     intercept.y = (other.m * intercept.x) + other.c;
   }
   else {

@@ -7,6 +7,7 @@
 #define stopCode 2
 #define rotateCode 3
 #define scanCode 4
+#define compassCode 5
 
 #define InitialTransferByte 100
 
@@ -14,6 +15,7 @@ SPI_Move_Command_Handler SPI_Wrapper::moveCommandHandler = NULL;
 SPI_Stop_Command_Handler SPI_Wrapper::stopCommandHandler = NULL;
 SPI_Rotate_Command_Handler SPI_Wrapper::rotateCommandHandler = NULL;
 SPI_Scan_Command_Handler SPI_Wrapper::scanCommandHandler = NULL;
+SPI_Compass_Command_Handler SPI_Wrapper::compassCommandHandler = NULL;
 uint8_t SPI_Wrapper::dataOutBuffer[MAX_BUFFER_SIZE] = {};
 int SPI_Wrapper::bufferOutFillBegin = 0;
 int SPI_Wrapper::bufferOutFillEnd = 0;
@@ -41,6 +43,7 @@ void SPI_Wrapper::init()
 void SPI_Wrapper::sendMoveResponse(uint16_t uniqueID, uint16_t magnitude, uint16_t angle, bool status) {
 	uint8_t length = 8; // 1 byte for the command number, 2 bytes for the ID, 2 for magnitude, 2 for angle, 1 for the status
 	// It might be better to use a helper function to make this easier to read and edit
+	Serial.println("Sending move response");
 	dataOutBuffer[bufferOutFillEnd] = length;
 	dataOutBuffer[(bufferOutFillEnd + 1) % MAX_BUFFER_SIZE] = moveCode;
 	dataOutBuffer[(bufferOutFillEnd + 2) % MAX_BUFFER_SIZE] = (uint8_t)(uniqueID >> 8); 
@@ -97,6 +100,19 @@ void SPI_Wrapper::sendScanResponse(uint16_t uniqueID, uint16_t angle, uint16_t m
 	bufferOutFillEnd = (bufferOutFillEnd + length + 1) % MAX_BUFFER_SIZE;
 }
 
+void SPI_Wrapper::sendCompassResponse(uint16_t uniqueID, uint16_t angle, bool status)
+{
+	uint8_t length = 6; // 1 byte for the command number, 2 bytes for the ID, 2 for angle, 1 for the status
+	dataOutBuffer[bufferOutFillEnd] = length;
+	dataOutBuffer[(bufferOutFillEnd + 1) % MAX_BUFFER_SIZE] = compassCode;
+	dataOutBuffer[(bufferOutFillEnd + 2) % MAX_BUFFER_SIZE] = (uint8_t)(uniqueID >> 8); 
+	dataOutBuffer[(bufferOutFillEnd + 3) % MAX_BUFFER_SIZE] = (uint8_t)uniqueID;
+	dataOutBuffer[(bufferOutFillEnd + 4) % MAX_BUFFER_SIZE] = (uint8_t)(angle >> 8);
+	dataOutBuffer[(bufferOutFillEnd + 5) % MAX_BUFFER_SIZE] = (uint8_t)(angle);
+	dataOutBuffer[(bufferOutFillEnd + 6) % MAX_BUFFER_SIZE] = (uint8_t)(status);
+	bufferOutFillEnd = (bufferOutFillEnd + length + 1) % MAX_BUFFER_SIZE;
+}
+
 void SPI_Wrapper::processReceivedCommand(int length)
 {
 	// 0 is length
@@ -149,6 +165,16 @@ void SPI_Wrapper::processReceivedCommand(int length)
 			}
 			break;
 		}
+		case compassCode:
+		{
+			compassCommand commandStruct;
+			commandStruct.commandNumber = compassCode;
+			commandStruct.uniqueID = ((uint16_t)(commandBuffer[1]) << 8) + (uint16_t)(commandBuffer[2]);
+			if (compassCommandHandler) {
+				(*compassCommandHandler)(commandStruct);
+			}
+			break;
+		}
 	}
 }
 
@@ -170,6 +196,11 @@ void SPI_Wrapper::registerRotateCommandHandler(SPI_Rotate_Command_Handler newCom
 void SPI_Wrapper::registerScanCommandHandler(SPI_Scan_Command_Handler newCommandHandler)
 {
 	scanCommandHandler = newCommandHandler;
+}
+
+void SPI_Wrapper::registerCompassCommandHandler(SPI_Compass_Command_Handler newCommandHandler) 
+{
+	compassCommandHandler = newCommandHandler;
 }
 
 uint8_t SPI_Wrapper::getNextCommandByte()
