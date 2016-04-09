@@ -2,6 +2,7 @@
 
 package maps
 
+// Point is a struct for each point (X, Y) on the map
 type Point struct {
 	X int
 	Y int
