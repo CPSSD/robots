@@ -8,11 +8,10 @@ import (
 	"fmt"
 	"math"
 	"sort"
-	"time"
 )
 
 // BitmapScale is the size of each bitmap segment in millimeters
-const BitmapScale = 2
+const BitmapScale = 20
 
 // Debug indicates whether to print verbose debugging output
 const Debug = false
@@ -190,16 +189,16 @@ func (this *Map) MoveRobotAlongPath(newPath [][]bool, stopBeforePoint bool) {
 func getHorizontalLine(x1, y1, x2, y2 int) (degree, magnitude float64) {
 	fmt.Println("[GetHorizontalLine] (", x1, ",", y1, ") -> (", x2, ",", y2, ")")
 	if x1+1 == x2 && y1 == y2 {
-		return 90, BITMAP_SIZE
+		return 90, BitmapScale
 	}
 	if x1-1 == x2 && y1 == y2 {
-		return 270, BITMAP_SIZE
+		return 270, BitmapScale
 	}
 	if y1-1 == y2 && x1 == x2 {
-		return 0, BITMAP_SIZE
+		return 0, BitmapScale
 	}
 	if y1+1 == y2 && x1 == x2 {
-		return 180, BITMAP_SIZE
+		return 180, BitmapScale
 	}
 	return 0, 0
 }
