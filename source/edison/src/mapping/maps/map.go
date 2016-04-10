@@ -153,7 +153,28 @@ func (this *Map) addBufferToMap() {
 	scanBuffer = make([]RobotDriverProtocol.ScanResponse, 0)
 }
 
-func (this *Map) FindLocation(fragment Map) (x int, y int) {
+// Finds and returns the location of the robot
+func (this *Map) FindLocation() (int, int) {
+	rotationAmmount := 45
+	x, y := this.GetRobot().GetX(), this.GetRobot().GetY()
+	var count = -999
+	var angle = this.GetRobot().getRotation()
+	var currentRotation = this.GetRobot().GetRotation()
+	for i := -rotationAmmount; i < rotationAmmount; i++ {
+		currentRotation = i + this.GetRobot().GetRotation()
+		tempX, tempY, tempCount := findLocation(createMapFragment(currentRotation))
+		if count > bestCount {
+			x = tempX
+			y = tempY
+			count = tempCount
+			angle = i
+		}
+	}
+	this.GetRobot().Rotate(i)
+	return x, y
+}
+
+func (this *Map) findLocation(fragment Map) (int, int, int) {
 	fmt.Println("Attempting to find location...")
 	mX, mY, mCount := int(this.GetRobot().GetX()), int(this.GetRobot().GetY()), 0
 
@@ -179,9 +200,7 @@ func (this *Map) FindLocation(fragment Map) (x int, y int) {
 	}
 
 	fmt.Println("Most Likely Position: (", mX, ", ", mY, "): ", mCount)
-	x = mX
-	y = mY
-	return
+	return mX, mY, mCount
 }
 
 func (this *Map) probabilityAtLocation(fragment Map, x int, y int) (int, int, int) {
