@@ -129,6 +129,12 @@ function init() {
     registerTouchHandler();
 }
 
+// Downloads the current map to the device.
+function downloadMap() {
+    // TODO:
+    return 0;
+}
+
         </script>
     </head>
 
@@ -140,8 +146,12 @@ function init() {
         <br/>
 
         <button value="Zoom Out" onClick="zoomOut()">Zoom Out</button>
-        <button value="Zoom In" onClick="zoomIn()"/> Zoom In </button>
-        <button value="Refresh Map" onClick="refreshMap()"/> Refresh Map </button>
+        <button value="Zoom In" onClick="zoomIn()"> Zoom In </button>
+        <br/>
+        <button value="Refresh Map" onClick="refreshMap()"> Refresh Map </button>
+        <br/>
+        <button value="Download Map" onClick="downloadMap()"> Download Map </button>
+        <!-- <input type="file" value="Upload Map" onClick="uploadMap()"/> -->
 
         <script>
 // Gets an initial map and registers a handler for clicks on the canvas.
