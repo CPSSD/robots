@@ -18,6 +18,8 @@ type jsonMap struct {
 	Code    string   `json:"code"`
 	Message string   `json:"message"`
 	Map     [][]bool `json:"map"`
+	RobotX  int      `json:"robotX"`
+	RobotY  int      `json:"robotY"`
 }
 
 type response struct {
@@ -84,7 +86,8 @@ func moveResponseDisplay(w http.ResponseWriter, r *http.Request) {
 
 func displayBitmap(w http.ResponseWriter, r *http.Request) {
 	bitmap, _ := maps.RobotMap.GetBitmap()
-	var jsonmap = jsonMap{Code: "200", Message: "ok", Map: bitmap}
+	var jsonmap = jsonMap{Code: "200", Message: "ok", Map: bitmap,
+		RobotX: int(maps.RobotMap.robot.GetX()), RobotY: int(maps.RobotMap.robot.GetY())}
 
 	w.Header().Set("Content-Type", "application/json;charset=UTF-8")
 	w.Header().Set("Access-Control-Allow-Origin", "*")
