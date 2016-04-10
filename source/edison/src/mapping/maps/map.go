@@ -134,10 +134,10 @@ func (this *Map) LoadMap(fileName string) {
 }
 
 // Creates a fragment of a map, containing all lines from the buffer.
-func createMapFragment(buffer []RobotDriverProtocol.ScanResponse) Map {
+func createMapFragment(buffer []RobotDriverProtocol.ScanResponse, rotation int) Map {
 	fragment := CreateMap()
 	for _, line := range buffer {
-		fragment.AddWallByLine(float64(line.Degree), float64(line.Distance))
+		fragment.AddWallByLine(float64((int(line.Degree)+rotation)%360), float64(line.Distance))
 	}
 	fmt.Println("Created Fragment: ")
 	fragment.Print(nil)
@@ -156,22 +156,22 @@ func (this *Map) addBufferToMap() {
 // Finds and returns the location of the robot
 func (this *Map) FindLocation() (int, int) {
 	rotationAmmount := 45
-	x, y := this.GetRobot().GetX(), this.GetRobot().GetY()
+	x, y := int(this.GetRobot().GetX()), int(this.GetRobot().GetY())
 	var count = -999
-	var angle = this.GetRobot().getRotation()
-	var currentRotation = this.GetRobot().GetRotation()
+	var angle = int(this.GetRobot().GetRotation())
+	var currentRotation = int(this.GetRobot().GetRotation())
 	for i := -rotationAmmount; i < rotationAmmount; i++ {
-		currentRotation = i + this.GetRobot().GetRotation()
-		tempX, tempY, tempCount := findLocation(createMapFragment(currentRotation))
-		if count > bestCount {
+		currentRotation = i + int(this.GetRobot().GetRotation())
+		tempX, tempY, tempCount := this.findLocation(createMapFragment(scanBuffer, currentRotation))
+		if count > tempCount {
 			x = tempX
 			y = tempY
 			count = tempCount
 			angle = i
 		}
 	}
-	this.GetRobot().Rotate(i)
-	return x, y
+	this.GetRobot().Rotate(float64(angle))
+	return int(x), int(y)
 }
 
 func (this *Map) findLocation(fragment Map) (int, int, int) {
@@ -225,6 +225,17 @@ func (this *Map) probabilityAtLocation(fragment Map, x int, y int) (int, int, in
 func (this *Map) TakeNextStep(lastX int, lastY int) {
 	if len(path) != 0 {
 		x, y, movesLeft := this.getNextMove(int(this.GetRobot().GetX()), int(this.GetRobot().GetY()), lastX, lastY, path)
+		_, _, moreMoves := this.getNextMove(x, y, int(this.GetRobot().GetX()), int(this.GetRobot().GetY()), path)
+
+		// If you are 1 move away from end point
+		if !moreMoves {
+			fmt.Println("No more steps to take...")
+			path = make([][]bool, 0)
+			followingPath = false
+
+			RobotDriverProtocol.Scan()
+			return
+		}
 
 		fmt.Println("[TakeNextStep]: (", x, ", ", y, ") | From Location: (", this.GetRobot().GetX(), ", ", this.GetRobot().GetY(), ")")
 
