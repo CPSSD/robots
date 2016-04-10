@@ -13,6 +13,8 @@ type Node struct {
 	solid          bool
 }
 
+var radius = 1
+
 // GetRoute Calls various functions below and returns the end result of the pathfinding algorithm.
 func GetRoute(robotMap Map, x, y int) ([][]bool, bool) {
 	if Debug {
@@ -25,14 +27,29 @@ func GetRoute(robotMap Map, x, y int) ([][]bool, bool) {
 }
 
 // Creates a Node at each point of the map.
-func createNodeMap(robotMap [][]bool) (nodeMap [][]Node) {
+func createNodeMap(robotMap [][]bool, radius int) (nodeMap [][]Node) {
 	for i := 0; i < len(robotMap); i++ {
 		nodeMap = append(nodeMap, make([]Node, 0))
 		for j := 0; j < len(robotMap[0]); j++ {
-			nodeMap[i] = append(nodeMap[i], Node{id: (j * len(robotMap[0])) + i, x: j, y: i, solid: robotMap[i][j]})
+			if isValidNode(robotMap, i, j, radius) {
+				nodeMap[i] = append(nodeMap[i], Node{id: (j * len(robotMap[0])) + i, x: j, y: i, solid: robotMap[i][j]})
+			}
 		}
 	}
 	return
+}
+
+func isValidNode(robotMap [][]bool, x int, y int, radius int) bool {
+	for i := -radius; i < radius; i++ {
+		for j := -radius; j < radius; j++ {
+			if !(i == 0 && j == 0) {
+				if robotMap[x+i][y+j] {
+					return false
+				}
+			}
+		}
+	}
+	return true
 }
 
 // Pathfinding Algorithm. Based on A*
