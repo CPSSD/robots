@@ -13,7 +13,7 @@ type Node struct {
 	solid          bool
 }
 
-var radius = 1
+var radius = 1 // Radius around robot. Actual dimension is radius * BitmapScale
 
 // GetRoute Calls various functions below and returns the end result of the pathfinding algorithm.
 func GetRoute(robotMap Map, x, y int) ([][]bool, bool) {
@@ -21,7 +21,7 @@ func GetRoute(robotMap Map, x, y int) ([][]bool, bool) {
 		fmt.Println("GetRouteTo(", x, ",", y, ")")
 	}
 	bitmap, _ := robotMap.GetBitmap()
-	nodeMap := createNodeMap(bitmap)
+	nodeMap := createNodeMap(bitmap, radius)
 	getDistanceToGoal(nodeMap, x, y)
 	return pathfind(nodeMap, int(robotMap.GetRobot().GetX()), int(robotMap.GetRobot().GetY()), x, y)
 }
