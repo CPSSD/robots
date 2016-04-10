@@ -1,137 +1,153 @@
 <!DOCTYPE html>
 <html>
 
-<head>
-    <title> Map View </title>
-    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.3/jquery.min.js"></script>
+    <head>
+        <title> Map View </title>
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.3/jquery.min.js"></script>
 
-    <script>
-        // Change this to change the size of the map.
-        var block_size = 20;
+        <script>
+// Change this to change the size of the map.
+var block_size = 20;
 
-	// Store the input destination of the robot.
-	var destX = 0;
-	var destY = 0;
+// Store the input destination of the robot.
+var destX = 0;
+var destY = 0;
 
 
-	// Handy function to update the map.
-        function updateMap(canvasObject) {
-            var ctx = canvasObject.getContext("2d");
-            getMapData(ctx);
-        }
+// Handy function to update the map.
+function updateMap(canvasObject) {
+    var ctx = canvasObject.getContext("2d");
+    getMapData(ctx);
+}
 
-	// Fetches map data from a URL and dispatches to draw the map.
-        function getMapData(canvasContext) {
-	    // TODO: Change this URL to the correct one.
-	    // TODO: Update server.go to have a function to return an int map instead of a bit map.
-            $.getJSON('http://192.168.1.129:8080/map/bit', function(data) {
-                //alert(data);
-                //console.log(data);
-                //console.log(JSON.parse(data));
-                drawMap(canvasContext, data);
+// Fetches map data from a URL and dispatches to draw the map.
+function getMapData(canvasContext) {
+    // TODO: Change this URL to the correct one.
+    // TODO: Update server.go to have a function to return an int map instead of a bit map.
+    $.getJSON('http://192.168.1.129:8080/map/bit', function(data) {
+            //alert(data);
+            //console.log(data);
+            //console.log(JSON.parse(data));
+            drawMap(canvasContext, data);
             });
-        }
+}
 
-	// Draws the map with the current robot location, walls and empty spaces.
-        function drawMap(canvasContext, mapObject) {
-	    // Change the canvas size depending on the size of the map.
-            canvasContext.canvas.height = block_size*mapObject.map.length;
-            canvasContext.canvas.width = block_size*mapObject.map[0].length;
+// Draws the map with the current robot location, walls and empty spaces.
+function drawMap(canvasContext, mapObject) {
+    // Change the canvas size depending on the size of the map.
+    canvasContext.canvas.height = block_size*mapObject.map.length;
+    canvasContext.canvas.width = block_size*mapObject.map[0].length;
 
-            for(var i=0; i<mapObject.map.length; i++) {
-                for(var j=0; j<mapObject.map[0].length; j++) {
-                    switch(mapObject.map[i][j]) {
-			default:
-			// Empty space:
-			case 0:
-				canvasContext.fillStyle = "#FFFFFF";
-				canvasContext.fillRect(block_size*j, block_size*i, block_size, block_size);
-			// Wall:
-			case 1:
-				canvasContext.fillStyle = "#000000";
-				canvasContext.fillRect(block_size*j, block_size*i, block_size, block_size);
-			// Robot location:
-			case 2:
-				canvasContext.fillStyle = "#0000FF";
-				canvasContext.fillRect(block_size*j, block_size*i, block_size, block_size);
-                    }
-                }
+    // Get the current robot position co-ordinates.
+    var robotX = mapObject.robotX;
+    var robotY = mapObject.robotY;
+
+    // Update the map received with positions for the destination and current robot location.
+    mapObject.map[robotX][robotY] = 2;
+
+    // TODO: Get destination from server?
+    // TODO: Make sure X and Ys are right way around.
+    mapObject.map[destX][destY] = 3;
+
+
+    for(var i=0; i<mapObject.map.length; i++) {
+        for(var j=0; j<mapObject.map[0].length; j++) {
+            switch(mapObject.map[i][j]) {
+                default:
+                    // Empty space:
+                case 0:
+                    canvasContext.fillStyle = "#FFFFFF";
+                    canvasContext.fillRect(block_size*j, block_size*i, block_size, block_size);
+                    // Wall:
+                case 1:
+                    canvasContext.fillStyle = "#000000";
+                    canvasContext.fillRect(block_size*j, block_size*i, block_size, block_size);
+                    // Robot location:
+                case 2:
+                    canvasContext.fillStyle = "#0000FF";
+                    canvasContext.fillRect(block_size*j, block_size*i, block_size, block_size);
+                    // Destination:
+                case 3:
+                    canvasContext.fillStyle = "#00FF00";
+                    canvasContext.fillRect(block_size*j, block_size*i, block_size, block_size);
             }
         }
+    }
+}
 
-	// Zooms out in the map by reducing the block size.
-        function zoomOut() {
-            block_size -= 5;
-            updateMap(document.getElementById("mapCanvas"));
-        }
+// Zooms out in the map by reducing the block size.
+function zoomOut() {
+    block_size -= 5;
+    updateMap(document.getElementById("mapCanvas"));
+}
 
-	// Zooms in in the map by increasing the block size.
-        function zoomIn() {
-            block_size += 5;
-            updateMap(document.getElementById("mapCanvas"));
-        }
+// Zooms in in the map by increasing the block size.
+function zoomIn() {
+    block_size += 5;
+    updateMap(document.getElementById("mapCanvas"));
+}
 
-	// Refreshes the map.
-	function refreshMap() {
-		updateMap(document.getElementById("mapCanvas"));
-	}
+// Refreshes the map.
+function refreshMap() {
+    updateMap(document.getElementById("mapCanvas"));
+}
 
-	// Updates the destination on the map.
-	// Called whenever the map is touched.
-	function updateDestination() {
-		var canvasObject = document.getElementById("mapCanvas");
-        	var ctx = canvasObject.getContext("2d");
+// Updates the destination on the map.
+// Called whenever the map is touched.
+function updateDestination() {
+    var canvasObject = document.getElementById("mapCanvas");
+    var ctx = canvasObject.getContext("2d");
 
-		canvasContext.fillStyle = "#00FF00";
-		// TODO: Possibly mixed up the X and Ys...
-		canvasContext.fillRect(block_size*destX, block_size*destY, block_size, block_size);
-	}
+    canvasContext.fillStyle = "#00FF00";
+    // TODO: Possibly mixed up the X and Ys...
+    canvasContext.fillRect(block_size*destX, block_size*destY, block_size, block_size);
+}
 
-	// Function to set the destination variables when the canvas is clicked.
-	function getPosition(event) {
-		var rawX = event.x;
-		var rawY = event.y;
+// Function to set the destination variables when the canvas is clicked.
+function getPosition(event) {
+    var rawX = event.x;
+    var rawY = event.y;
 
-		// Translate raw coordinates to X/Y positions in the grid.
-		destX = rawX / block_size;
-		destY = rawY / block_size;
+    // Translate raw coordinates to X/Y positions in the grid.
+    destX = rawX / block_size;
+    destY = rawY / block_size;
 
-		// Draw the destination on the map.
-		updateDestination();
-	}
+    // Draw the destination on the map.
+    updateDestination();
+}
 
-	// Registers a touch handler on the map to get the destination variables.
-	// TODO: May not work in Firefox!
-	function registerTouchHandler() {
-		var canvas =  document.getElementById("mapCanvas");
-		canvas.addEventListener("mousedown", getPosition, false);
-	}
-	
-	// Gets an initial map and registers a handler for clicks on the canvas.
-	function init() {
-		refreshMap();
-		registerTouchHandler();
-	}
+// Registers a touch handler on the map to get the destination variables.
+// TODO: May not work in Firefox!
+function registerTouchHandler() {
+    var canvas =  document.getElementById("mapCanvas");
+    canvas.addEventListener("mousedown", getPosition, false);
+}
 
-    </script>
-</head>
+// Gets an initial map and registers a handler for clicks on the canvas.
+function init() {
+    refreshMap();
+    registerTouchHandler();
+}
+
+        </script>
+    </head>
 
 
-<body>
-    <canvas id="mapCanvas" width="200" height="100" style="border:1px solid #c3c3c3;">
-        Your browser does not support the HTML5 canvas tag.
-    </canvas>
-    <br/>
+    <body>
+        <canvas id="mapCanvas" width="200" height="100" style="border:1px solid #c3c3c3;">
+            Your browser does not support the HTML5 canvas tag.
+        </canvas>
+        <br/>
 
-    <button value="Zoom Out" onClick="zoomOut()">Zoom Out</button>
-    <button value="Zoom In" onClick="zoomIn()"/> Zoom In </button>
-    <button value="Refresh Map" onClick="refreshMap()"/> Refresh Map </button>
+        <button value="Zoom Out" onClick="zoomOut()">Zoom Out</button>
+        <button value="Zoom In" onClick="zoomIn()"/> Zoom In </button>
+        <button value="Refresh Map" onClick="refreshMap()"/> Refresh Map </button>
 
-    <script>
-	// Gets an initial map and registers a handler for clicks on the canvas.
-	init();
-    </script>
+        <script>
+// Gets an initial map and registers a handler for clicks on the canvas.
+init();
+        </script>
 
-</body>
+    </body>
 </html>
 
