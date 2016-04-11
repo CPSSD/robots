@@ -9,9 +9,10 @@ CA224 robotics project
 
 ### Installation
 
-Run the following commands on the intel Edison
-wget https://raw.githubusercontent.com/CPSSD/robots/master/source/edison/scripts/setup.sh?token=AI1DdYix_T0-em6pZbk13j0GE-V4i7coks5W9HSRwA%3D%3D -O setup.sh
-bash setup.sh
+Run the following commands on the intel Edison:
+  > wget https://raw.githubusercontent.com/CPSSD/robots/master/source/edison/scripts/setup.sh?token=AI1DdYix_T0-em6pZbk13j0GE-V4i7coks5W9HSRwA%3D%3D -O setup.sh
+  
+  > bash setup.sh
 
 
   
