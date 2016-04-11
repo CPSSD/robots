@@ -119,8 +119,8 @@ func (this *Map) LoadMap(fileName string) {
 	reader := csv.NewReader(mapCSV)
 
 	record, err := reader.Read()
-	this.height, _ = strconv.ParseInt(record[0], 10, 32)
-	this.width, _ = strconv.ParseInt(record[1], 10, 32)
+	this.height, _ = int(strconv.ParseInt(record[0], 10, 32))
+	this.width, _ = int(strconv.ParseInt(record[1], 10, 32))
 
 	this.floor = make([][]bool, this.height)
 
