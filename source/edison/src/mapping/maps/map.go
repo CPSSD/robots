@@ -25,6 +25,8 @@ var finishedMapping = false
 var firstScan = true
 var checkLocation = false
 var followingPath = false
+
+// RobotMap is a map of the current room being mapped
 var RobotMap Map
 var path [][]bool
 
@@ -117,7 +119,8 @@ func (this *Map) LoadMap(fileName string) {
 	reader := csv.NewReader(mapCSV)
 
 	record, err := reader.Read()
-	this.height, this.width = strconv.ParseInt(record[0], 10, 32), strconv.ParseInt(record[1], 10, 32)
+	this.height, _ = strconv.ParseInt(record[0], 10, 32)
+	this.width, _ = strconv.ParseInt(record[1], 10, 32)
 
 	this.floor = make([][]bool, this.height)
 
@@ -125,7 +128,7 @@ func (this *Map) LoadMap(fileName string) {
 		this.floor[i] = make([]bool, this.width)
 		record, err := reader.Read()
 		for j := 0; j < this.width; j++ {
-			this.floor[i][j] = strconv.ParseBool(record[j])
+			this.floor[i][j], _ = strconv.ParseBool(record[j])
 		}
 	}
 }
