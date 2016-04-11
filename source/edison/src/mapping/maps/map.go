@@ -126,7 +126,7 @@ func (this *Map) LoadMap(fileName string) {
 
 	for i := 0; i < this.height; i++ {
 		this.floor[i] = make([]bool, this.width)
-		record, err := reader.Read()
+		record, _ := reader.Read()
 		for j := 0; j < this.width; j++ {
 			this.floor[i][j], _ = strconv.ParseBool(record[j])
 		}
