@@ -6,7 +6,6 @@
 #include "Shared_Structs.h"
 #include "QueueList.h"
 
-#define MAX_BUFFER_SIZE 3000
 #define MAX_COMMAND_LENGTH 32
 
 typedef void (*SPI_Move_Command_Handler)(moveCommand);
