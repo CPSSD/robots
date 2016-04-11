@@ -28,6 +28,7 @@ compassCommand queuedCompassCommand;
 moveResponse queuedMoveResponse;
 
 Compass compass;
+TapDetectionLib accelerometer;
 
 void setup() {
   Serial.begin(9600);
@@ -42,6 +43,8 @@ void setup() {
   I2C_Wrapper::registerScanResponseHandler(&scanResponseHandler);
   I2C_Wrapper::registerStopCommandHandler(&stopCommandHandler);
   Serial.println("Ready to recieve.");
+
+  accelerometer.init();
 }
 
 void stopCommandHandler(stopCommand cmd) {
@@ -92,6 +95,10 @@ void scanResponseHandler(scanResponse cmd) {
 void loop() {
   while (1) {
 	  compass.updateHeading();
+
+    if (accelerometer.checkIfTapped()) {
+      sendStopCommand = true;
+    }
   
     if (sendMoveCommand) {
       //Serial.println("Preparing to send move command...");
