@@ -53,7 +53,11 @@ bool Room::addObject(int index, int numSides, Point sides[]) {
 		return false;
 	}
 	else {
+		if(this->objects[index].numSides != 0) { // There is already an object at the index
+			this->totalNumObjSides -= this->objects[index].numSides;
+		}
 		this->objects[index] = Object(numSides, sides);
+		this->totalNumObjSides += numSides;
 		return true;
 	}
 }

@@ -32,7 +32,7 @@ class Room {
 		Room(int numWalls, Point walls[], Point robotCoOrds, int numObjects);
 		Point robot;
 		Object walls;
-		int numObjects;
+		int numObjects, totalNumObjSides;
 		Object* objects;
 		bool addObject(int index, int numSides, Point sides[]);
 };
