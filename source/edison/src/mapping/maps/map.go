@@ -155,12 +155,13 @@ func (this *Map) addBufferToMap() {
 
 // Finds and returns the location of the robot
 func (this *Map) FindLocation() (int, int) {
-	rotationAmmount := 45
+	rotationAmmount := 15
+	rotationJump := 5
 	x, y := int(this.GetRobot().GetX()), int(this.GetRobot().GetY())
 	var count = -999
 	var angle = int(this.GetRobot().GetRotation())
 	var currentRotation = int(this.GetRobot().GetRotation())
-	for i := -rotationAmmount; i < rotationAmmount; i++ {
+	for i := -rotationAmmount; i < rotationAmmount; i+=rotationJump {
 		currentRotation = i + int(this.GetRobot().GetRotation())
 		tempX, tempY, tempCount := this.findLocation(createMapFragment(scanBuffer, currentRotation))
 		if count > tempCount {
@@ -170,6 +171,7 @@ func (this *Map) FindLocation() (int, int) {
 			angle = i
 		}
 	}
+	fmt.Println("Most Likely Position after rotation is: (", x, ", ", y, ")")
 	this.GetRobot().Rotate(float64(angle))
 	return int(x), int(y)
 }
