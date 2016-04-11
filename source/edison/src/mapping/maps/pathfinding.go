@@ -21,13 +21,14 @@ func GetRoute(robotMap Map, x, y int) ([][]bool, bool) {
 		fmt.Println("GetRouteTo(", x, ",", y, ")")
 	}
 	bitmap, _ := robotMap.GetBitmap()
-	nodeMap := createNodeMap(bitmap, radius)
+	nodeMap := map.createNodeMap(radius, xOffset, yOffset)
 	getDistanceToGoal(nodeMap, x, y)
 	return pathfind(nodeMap, int(robotMap.GetRobot().GetX()), int(robotMap.GetRobot().GetY()), x, y)
 }
 
 // Creates a Node at each point of the map.
-func createNodeMap(robotMap [][]bool, radius int) (nodeMap [][]Node) {
+func (this *Map) createNodeMap(radius int, xOffset int, yOffset int) (nodeMap [][]Node) {
+	robotMap := this.floor
 	for i := 0; i < len(robotMap); i++ {
 		nodeMap = append(nodeMap, make([]Node, 0))
 		for j := 0; j < len(robotMap[0]); j++ {
@@ -39,7 +40,7 @@ func createNodeMap(robotMap [][]bool, radius int) (nodeMap [][]Node) {
 	return
 }
 
-func isValidNode(robotMap [][]bool, x int, y int, radius int) bool {
+func (this *Map) isValidNode(robotMap [][]bool, x int, y int, radius int, xOffset int, yOffset int) bool {
 	for i := -radius; i < radius; i++ {
 		if i < len(robotMap) && i >= 0 {
 			for j := -radius; j < radius; j++ {
