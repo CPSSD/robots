@@ -94,7 +94,7 @@ void scanResponseHandler(scanResponse cmd) {
   
 void loop() {
   while (1) {
-	  compass.updateHeading();
+	compass.updateHeading();
 
     if (accelerometer.checkIfTapped()) {
       sendStopCommand = true;
