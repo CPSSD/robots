@@ -1,11 +1,15 @@
+#include "Arduino.h"
+#include "SPI.h"
 #include <QueueList.h>
 #include <HMC5883L.h>
-#include <SPI.h>
 #include <Shared_Structs.h>
-#include "SPI_Wrapper.h"
 #include "Wire.h"
+#include "SPI_Wrapper.h"
 #include "I2C_Wrapper.h"
 #include "Compass.h"
+#include "Shared_Structs.h"
+#include "TapDetectionLib.h"
+
 
 const int laserScannerID = 25;
 const int motorID1 = 17;
@@ -24,6 +28,7 @@ compassCommand queuedCompassCommand;
 moveResponse queuedMoveResponse;
 
 Compass compass;
+TapDetectionLib accelerometer;
 
 void setup() {
   Serial.begin(9600);
@@ -38,6 +43,8 @@ void setup() {
   I2C_Wrapper::registerScanResponseHandler(&scanResponseHandler);
   I2C_Wrapper::registerStopCommandHandler(&stopCommandHandler);
   Serial.println("Ready to recieve.");
+
+  accelerometer.init();
 }
 
 void stopCommandHandler(stopCommand cmd) {
@@ -87,7 +94,11 @@ void scanResponseHandler(scanResponse cmd) {
   
 void loop() {
   while (1) {
-	  compass.updateHeading();
+	compass.updateHeading();
+
+    if (accelerometer.checkIfTapped()) {
+      sendStopCommand = true;
+    }
   
     if (sendMoveCommand) {
       //Serial.println("Preparing to send move command...");
