@@ -1,104 +1,221 @@
-//ADXL345 accelerometer function library
-//Barrett Anderies
-//Sep. 15, 2012
+/*****************************************************************************/
+//	Function:    Header file for class ADXL345
+//  Hardware:    3-Axis Digital Accelerometer(¡À16g)
+//	Arduino IDE: Arduino-1.0
+//	Author:	 Frankie.Chu		
+//	Date: 	 Jan 11,2013
+//	Version: v1.0
+//	by www.seeedstudio.com
+//
+//  This library is free software; you can redistribute it and/or
+//  modify it under the terms of the GNU Lesser General Public
+//  License as published by the Free Software Foundation; either
+//  version 2.1 of the License, or (at your option) any later version.
+//
+//  This library is distributed in the hope that it will be useful,
+//  but WITHOUT ANY WARRANTY; without even the implied warranty of
+//  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+//  Lesser General Public License for more details.
+//
+//  You should have received a copy of the GNU Lesser General Public
+//  License along with this library; if not, write to the Free Software
+//  Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+//
+/*******************************************************************************/
+#include "Arduino.h"
 
-#include <Arduino.h>
 #ifndef ADXL345_h
 #define ADXL345_h
 
-//================================Register Addresses===============================//
+/* ------- Register names ------- */
+#define ADXL345_DEVID 0x00
+#define ADXL345_RESERVED1 0x01
+#define ADXL345_THRESH_TAP 0x1d
+#define ADXL345_OFSX 0x1e
+#define ADXL345_OFSY 0x1f
+#define ADXL345_OFSZ 0x20
+#define ADXL345_DUR 0x21
+#define ADXL345_LATENT 0x22
+#define ADXL345_WINDOW 0x23
+#define ADXL345_THRESH_ACT 0x24
+#define ADXL345_THRESH_INACT 0x25
+#define ADXL345_TIME_INACT 0x26
+#define ADXL345_ACT_INACT_CTL 0x27
+#define ADXL345_THRESH_FF 0x28
+#define ADXL345_TIME_FF 0x29
+#define ADXL345_TAP_AXES 0x2a
+#define ADXL345_ACT_TAP_STATUS 0x2b
+#define ADXL345_BW_RATE 0x2c
+#define ADXL345_POWER_CTL 0x2d
+#define ADXL345_INT_ENABLE 0x2e
+#define ADXL345_INT_MAP 0x2f
+#define ADXL345_INT_SOURCE 0x30
+#define ADXL345_DATA_FORMAT 0x31
+#define ADXL345_DATAX0 0x32
+#define ADXL345_DATAX1 0x33
+#define ADXL345_DATAY0 0x34
+#define ADXL345_DATAY1 0x35
+#define ADXL345_DATAZ0 0x36
+#define ADXL345_DATAZ1 0x37
+#define ADXL345_FIFO_CTL 0x38
+#define ADXL345_FIFO_STATUS 0x39
 
-#define ADXL345_ADDRESS 0x1D                                                     //ADXL345 address (the SEVEN bit device address) the W/R bit is tacked on by the Wire.h library
+#define ADXL345_BW_1600 0xF // 1111
+#define ADXL345_BW_800  0xE // 1110
+#define ADXL345_BW_400  0xD // 1101  
+#define ADXL345_BW_200  0xC // 1100
+#define ADXL345_BW_100  0xB // 1011  
+#define ADXL345_BW_50   0xA // 1010 
+#define ADXL345_BW_25   0x9 // 1001 
+#define ADXL345_BW_12   0x8 // 1000 
+#define ADXL345_BW_6    0x7 // 0111
+#define ADXL345_BW_3    0x6 // 0110
 
-#define THRESH_TAP_ADDRESS 0x1D                                                  //Tap threshold register
-#define OFSX_ADDRESS 0x1E                                                        //X-axis offset register  
-#define OFSY_ADDRESS 0x1F                                                        //Y-axis offset register
-#define OFSZ_ADDRESS 0x20                                                        //Z-axis offset register
-#define DUR_ADDRESS 0x21                                                         //Tap duration register
-#define LATENT_ADDRESS 0x22                                                      //Tap Latency register
-#define WINDOW_ADDRESS 0x23                                                      //Tap window register
-#define THRESH_ACT_ADDRESS 0x24                                                  //Activity threshold register
-#define THRESH_INACT_ADDRESS 0x25                                                //Inactivity threshold register
-#define TIME_INACT_ADDRESS 0x26                                                  //Inactivity time register
-#define ACT_INACT_CTL_ADDRESS 0x27                                               //Axis enable control for activity and inactivity detection register
-#define THRESH_FF_ADDRESS 0x28                                                   //Free-fall threshold register
-#define TIME_FF_ADDRESS 0x29                                                     //Free-fall time register
-#define TAP_AXES_ADDRESS 0x2A                                                    //Axis control for single tap/double tap register 
-#define ACT_TAP_STATUS_ADDRESS 0x2B                                              //Source of single tap/double tap register
-#define BW_RATE_ADDRESS 0x2C                                                     //Data rate and power mode control register
-#define POWER_CTL_ADDRESS 0x2D                                                   //Power-saving features control register
-#define INT_ENABLE_ADDRESS 0x2E                                                  //Interrupt enable control register
-#define INT_MAP_ADDRESS 0x2F                                                     //Interrupt mapping control register
-#define INT_SOURCE_ADDRESS 0x30                                                  //Source of interrupts register
-#define DATA_FORMAT_ADDRESS 0x31                                                 //Data format control register
-#define DATAX0_ADDRESS 0x32                                                      //X-Axis Data 0 register                                                      
-#define DATAX1_ADDRESS 0x33                                                      //X-Axis Data 1 register
-#define DATAY0_ADDRESS 0x34                                                      //Y-Axis Data 0 register
-#define DATAY1_ADDRESS 0x35                                                      //Y-Axis Data 1 register
-#define DATAZ0_ADDRESS 0x36                                                      //Z-Axis Data 0 register
-#define DATAZ1_ADDRESS 0x37                                                      //Z-Axis Data 1 register
-#define FIFO_CTL_ADDRESS 0x38                                                    //FIFO control register
-#define FIFO_STATUS_ADDRESS 0x39                                                 //FIFO status register
 
-class ADXL345 {
-      public:
-      ADXL345();
+/* 
+ Interrupt PINs
+ INT1: 0
+ INT2: 1
+ */
+#define ADXL345_INT1_PIN 0x00
+#define ADXL345_INT2_PIN 0x01
 
-      //Write
+/*Interrupt bit position*/
+#define ADXL345_INT_DATA_READY_BIT 0x07
+#define ADXL345_INT_SINGLE_TAP_BIT 0x06
+#define ADXL345_INT_DOUBLE_TAP_BIT 0x05
+#define ADXL345_INT_ACTIVITY_BIT   0x04
+#define ADXL345_INT_INACTIVITY_BIT 0x03
+#define ADXL345_INT_FREE_FALL_BIT  0x02
+#define ADXL345_INT_WATERMARK_BIT  0x01
+#define ADXL345_INT_OVERRUNY_BIT   0x00
 
-      void setTHRESH_TAP(byte _THRESH_TAP);
-      void setOFSX(byte _OFSX);
-      void setOFSY(byte _OFSY);
-      void setOFSZ(byte _OFSZ);
-      void setDUR(byte _DUR);
-      void setLATENT(byte _LATENT);
-      void setWINDOW(byte _WINDOW);
-      void setTHRESH_ACT(byte _THRESH_ACT);
-      void setTHRESH_INACT(byte _THRESH_INACT);
-      void setTIME_INACT(byte _TIME_INACT);
-      void setACT_INACT_CTL(byte _ACT_INACT_CTL);
-      void setTHRESH_FF(byte _THRESH_FF);
-      void setTIME_FF(byte _TIME_FF);
-      void setTAP_AXES(byte _TAP_AXES);
-      void setBW_RATE(byte _BW_RATE);
-      void setPOWER_CTL(byte _POWER_CTL);
-      void setINT_ENABLE(byte _INT_ENABLE);
-      void setINT_MAP(byte _INT_MAP);
-      void setDATA_FORMAT(byte _DATA_FORMAT);
-      void setFIFO_CTL(byte _FIFO_CTL);
+#define ADXL345_DATA_READY 0x07
+#define ADXL345_SINGLE_TAP 0x06
+#define ADXL345_DOUBLE_TAP 0x05
+#define ADXL345_ACTIVITY   0x04
+#define ADXL345_INACTIVITY 0x03
+#define ADXL345_FREE_FALL  0x02
+#define ADXL345_WATERMARK  0x01
+#define ADXL345_OVERRUNY   0x00
 
-      //Read
+#define ADXL345_OK    1 // no error
+#define ADXL345_ERROR 0 // indicates error is predent
 
-      void readTHRESH_TAP(byte *_THRESH_TAP);
-      void readOFSX(byte *_OFSX);
-      void readOFSY(byte *_OFSY);
-      void readOFSZ(byte *_OFSZ);
-      void readDUR(byte *_DUR);
-      void readLATENT(byte *_LATENT);
-      void readWINDOW(byte *_WINDOW);
-      void readTHRESH_ACT(byte *_THRESH_ACT);
-      void readTHRESH_INACT(byte *_THRESH_INACT);
-      void readTIME_INACT(byte *_TIME_INACT);
-      void readACT_INACT_CTL(byte *_ACT_INACT_CTL);
-      void readTHRESH_FF(byte *_THRESH_FF);
-      void readTIME_FF(byte *_TIME_FF);
-      void readTAP_AXES(byte *_TAP_AXES);
-      void readACT_TAP_STATUS(byte *_ACT_TAP_STATUS);
-      void readBW_RATE(byte *_BW_RATE);
-      void readPOWER_CTL(byte *_POWER_CTL);
-      void readINT_ENABLE(byte *_INT_ENABLE);
-      void readINT_MAP(byte *_INT_MAP);
-      void readINT_SOURCE(byte *_INT_SOURCE);
-      void readDATA_FORMAT(byte *_DATA_FORMAT);
-      void readDATAX(byte *_DATAX0, byte *_DATAX1);
-      void readDATAY(byte *_DATAY0, byte *_DATAY1);
-      void readDATAZ(byte *_DATAZ0, byte *_DATAZ1);
-      void readFIFO_CTL(byte *_FIFO_CTL);
-      void readFIFO_STATUS(byte *_FIFO_STATUS);
+#define ADXL345_NO_ERROR   0 // initial state
+#define ADXL345_READ_ERROR 1 // problem reading accel
+#define ADXL345_BAD_ARG    2 // bad method argument
 
-      private:
-      void writeADXL345(byte _register, byte _val);
-      void readADXL345(byte _register);
+class ADXL345
+{
+public:
+	bool status;           // set when error occurs 
+	// see error code for details
+	byte error_code;       // Initial state
+	double gains[3];        // counts to Gs
+	
+	ADXL345();
+	void powerOn();
+	void readAccel(int* xyx);
+	void readXYZ(int* x, int* y, int* z);
+	void getAcceleration(double *xyz);
+	
+	void setTapThreshold(int tapThreshold);
+	int getTapThreshold();
+	void setAxisGains(double *_gains);
+	void getAxisGains(double *_gains);
+	void setAxisOffset(int x, int y, int z);
+	void getAxisOffset(int* x, int* y, int*z);
+	void setTapDuration(int tapDuration);
+	int getTapDuration();
+	void setDoubleTapLatency(int doubleTapLatency);
+	int getDoubleTapLatency();
+	void setDoubleTapWindow(int doubleTapWindow);
+	int getDoubleTapWindow();
+	void setActivityThreshold(int activityThreshold);
+	int getActivityThreshold();
+	void setInactivityThreshold(int inactivityThreshold);
+	int getInactivityThreshold();
+	void setTimeInactivity(int timeInactivity);
+	int getTimeInactivity();
+	void setFreeFallThreshold(int freeFallthreshold);
+	int getFreeFallThreshold();
+	void setFreeFallDuration(int freeFallDuration);
+	int getFreeFallDuration();
+	
+	bool isActivityXEnabled();
+	bool isActivityYEnabled();
+	bool isActivityZEnabled();
+	bool isInactivityXEnabled();
+	bool isInactivityYEnabled();
+	bool isInactivityZEnabled();
+	bool isActivityAc();
+	bool isInactivityAc();
+	void setActivityAc(bool state);
+	void setInactivityAc(bool state);
+	
+	bool getSuppressBit();
+	void setSuppressBit(bool state);
+	bool isTapDetectionOnX();
+	void setTapDetectionOnX(bool state);
+	bool isTapDetectionOnY();
+	void setTapDetectionOnY(bool state);
+	bool isTapDetectionOnZ();
+	void setTapDetectionOnZ(bool state);
+	
+	void setActivityX(bool state);
+	void setActivityY(bool state);
+	void setActivityZ(bool state);
+	void setInactivityX(bool state);
+	void setInactivityY(bool state);
+	void setInactivityZ(bool state);
+	
+	bool isActivitySourceOnX();
+	bool isActivitySourceOnY();
+	bool isActivitySourceOnZ();
+	bool isTapSourceOnX();
+	bool isTapSourceOnY();
+	bool isTapSourceOnZ();
+	bool isAsleep();
+	
+	bool isLowPower();
+	void setLowPower(bool state);
+	double getRate();
+	void setRate(double rate);
+	void set_bw(byte bw_code);
+	byte get_bw_code();  
+	
+	
+	bool triggered(byte interrupts, int mask);
+	
+	
+	byte getInterruptSource();
+	bool getInterruptSource(byte interruptBit);
+	bool getInterruptMapping(byte interruptBit);
+	void setInterruptMapping(byte interruptBit, bool interruptPin);
+	bool isInterruptEnabled(byte interruptBit);
+	void setInterrupt(byte interruptBit, bool state);
+	
+	void getRangeSetting(byte* rangeSetting);
+	void setRangeSetting(int val);
+	bool getSelfTestBit();
+	void setSelfTestBit(bool selfTestBit);
+	bool getSpiBit();
+	void setSpiBit(bool spiBit);
+	bool getInterruptLevelBit();
+	void setInterruptLevelBit(bool interruptLevelBit);
+	bool getFullResBit();
+	void setFullResBit(bool fullResBit);
+	bool getJustifyBit();
+	void setJustifyBit(bool justifyBit);
+	void printAllRegister();
+	
+private:
+	void writeTo(byte address, byte val);
+	void readFrom(byte address, int num, byte buff[]);
+	void setRegisterBit(byte regAdress, int bitPos, bool state);
+	bool getRegisterBit(byte regAdress, int bitPos);  
+	byte _buff[6] ;    //6 bytes buffer for saving data read from the device
 };
-
+void print_byte(byte val);
 #endif
