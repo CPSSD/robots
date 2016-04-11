@@ -86,6 +86,7 @@ func (this *Map) SaveMap(fileName string) {
 	mapCSV, err := os.Create(fileName)
 	if err != nil {
 		fmt.Println("Error saving map: ", err)
+		return
 	}
 
 	writer := csv.NewWriter(mapCSV)
@@ -95,7 +96,8 @@ func (this *Map) SaveMap(fileName string) {
 	for i := 0; i < this.height; i++ {
 		row := make([]string, this.width)
 		for j := 0; j < this.width; j++ {
-			row[j] = strconv.Itoa(int(this.floor[i][j]))
+
+			row[j] = strconv.FormatBool(this.floor[i][j])
 		}
 		writer.Write(row)
 	}
@@ -115,7 +117,7 @@ func (this *Map) LoadMap(fileName string) {
 	reader := csv.NewReader(mapCSV)
 
 	record, err := reader.Read()
-	this.height, this.width = strconv.Atoi(record[0]), strconv.Atoi(record[1])
+	this.height, this.width = strconv.ParseInt(record[0], 10, 32), strconv.ParseInt(record[1], 10, 32)
 
 	this.floor = make([][]bool, this.height)
 
@@ -123,7 +125,7 @@ func (this *Map) LoadMap(fileName string) {
 		this.floor[i] = make([]bool, this.width)
 		record, err := reader.Read()
 		for j := 0; j < this.width; j++ {
-			this.floor[i][j] = bool(strconv.Atoi(record[j]))
+			this.floor[i][j] = strconv.ParseBool(record[j])
 		}
 	}
 }
