@@ -4,8 +4,8 @@
 #include "Arduino.h"
 #include "stdint.h"
 #include "Shared_Structs.h"
+#include "QueueList.h"
 
-#define MAX_BUFFER_SIZE 256
 #define MAX_COMMAND_LENGTH 32
 
 typedef void (*SPI_Move_Command_Handler)(moveCommand);
@@ -42,10 +42,7 @@ class SPI_Wrapper {
 		static SPI_Scan_Command_Handler scanCommandHandler;
 		static SPI_Compass_Command_Handler compassCommandHandler;
 	
-		// Each command should be stored in the buffer preceeded by a byte telling us the length of the command
-		static uint8_t dataOutBuffer[MAX_BUFFER_SIZE]; // Circular buffer contatining each byte to send
-		static int bufferOutFillBegin;
-		static int bufferOutFillEnd;
+		static QueueList<uint8_t> dataOutQueue;
 		static uint8_t sendingCommandLength;
 		
         static State currentState;

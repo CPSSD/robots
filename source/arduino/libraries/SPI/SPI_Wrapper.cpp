@@ -16,9 +16,8 @@ SPI_Stop_Command_Handler SPI_Wrapper::stopCommandHandler = NULL;
 SPI_Rotate_Command_Handler SPI_Wrapper::rotateCommandHandler = NULL;
 SPI_Scan_Command_Handler SPI_Wrapper::scanCommandHandler = NULL;
 SPI_Compass_Command_Handler SPI_Wrapper::compassCommandHandler = NULL;
-uint8_t SPI_Wrapper::dataOutBuffer[MAX_BUFFER_SIZE] = {};
-int SPI_Wrapper::bufferOutFillBegin = 0;
-int SPI_Wrapper::bufferOutFillEnd = 0;
+
+QueueList<uint8_t> SPI_Wrapper::dataOutQueue = QueueList<uint8_t>();
 uint8_t SPI_Wrapper::sendingCommandLength = 0;
 		
 State SPI_Wrapper::currentState = WaitingToBegin;
@@ -38,79 +37,76 @@ void SPI_Wrapper::init()
 
 	SPDR = InitialTransferByte;
     currentState = WaitingToBegin;
+	dataOutQueue.setPrinter(Serial);
 }
 
 void SPI_Wrapper::sendMoveResponse(uint16_t uniqueID, uint16_t magnitude, uint16_t angle, bool status) {
 	uint8_t length = 8; // 1 byte for the command number, 2 bytes for the ID, 2 for magnitude, 2 for angle, 1 for the status
-	// It might be better to use a helper function to make this easier to read and edit
-	Serial.println("Sending move response");
-	dataOutBuffer[bufferOutFillEnd] = length;
-	dataOutBuffer[(bufferOutFillEnd + 1) % MAX_BUFFER_SIZE] = moveCode;
-	dataOutBuffer[(bufferOutFillEnd + 2) % MAX_BUFFER_SIZE] = (uint8_t)(uniqueID >> 8); 
-	dataOutBuffer[(bufferOutFillEnd + 3) % MAX_BUFFER_SIZE] = (uint8_t)uniqueID;
-	dataOutBuffer[(bufferOutFillEnd + 4) % MAX_BUFFER_SIZE] = (uint8_t)(magnitude >> 8);
-	dataOutBuffer[(bufferOutFillEnd + 5) % MAX_BUFFER_SIZE] = (uint8_t)(magnitude);
-	dataOutBuffer[(bufferOutFillEnd + 6) % MAX_BUFFER_SIZE] = (uint8_t)(angle >> 8);
-	dataOutBuffer[(bufferOutFillEnd + 7) % MAX_BUFFER_SIZE] = (uint8_t)(angle);
-	dataOutBuffer[(bufferOutFillEnd + 8) % MAX_BUFFER_SIZE] = (uint8_t)(status);
-	bufferOutFillEnd = (bufferOutFillEnd + length + 1) % MAX_BUFFER_SIZE;
+	dataOutQueue.push(length);
+	dataOutQueue.push(moveCode);
+	dataOutQueue.push((uint8_t)(uniqueID >> 8)); 
+	dataOutQueue.push((uint8_t)uniqueID);
+	dataOutQueue.push((uint8_t)(magnitude >> 8));
+	dataOutQueue.push((uint8_t)(magnitude));
+	dataOutQueue.push((uint8_t)(angle >> 8));
+	dataOutQueue.push((uint8_t)(angle));
+	dataOutQueue.push((uint8_t)(status));
 }	
 
 void SPI_Wrapper::sendStopResponse(uint16_t uniqueID, uint16_t magnitude, uint16_t angle, bool status) 
 {
 	uint8_t length = 8; // 1 byte for the command number, 2 bytes for the ID, 2 for magnitude, 2 for angle, 1 for the status
-	dataOutBuffer[bufferOutFillEnd] = length;
-	dataOutBuffer[(bufferOutFillEnd + 1) % MAX_BUFFER_SIZE] = stopCode;
-	dataOutBuffer[(bufferOutFillEnd + 2) % MAX_BUFFER_SIZE] = (uint8_t)(uniqueID >> 8); 
-	dataOutBuffer[(bufferOutFillEnd + 3) % MAX_BUFFER_SIZE] = (uint8_t)uniqueID;
-	dataOutBuffer[(bufferOutFillEnd + 4) % MAX_BUFFER_SIZE] = (uint8_t)(magnitude >> 8);
-	dataOutBuffer[(bufferOutFillEnd + 5) % MAX_BUFFER_SIZE] = (uint8_t)(magnitude);
-	dataOutBuffer[(bufferOutFillEnd + 6) % MAX_BUFFER_SIZE] = (uint8_t)(angle >> 8);
-	dataOutBuffer[(bufferOutFillEnd + 7) % MAX_BUFFER_SIZE] = (uint8_t)(angle);
-	dataOutBuffer[(bufferOutFillEnd + 8) % MAX_BUFFER_SIZE] = (uint8_t)(status);
-	bufferOutFillEnd = (bufferOutFillEnd + length + 1) % MAX_BUFFER_SIZE;
+	dataOutQueue.push(length);
+	dataOutQueue.push(stopCode);
+	dataOutQueue.push((uint8_t)(uniqueID >> 8)); 
+	dataOutQueue.push((uint8_t)uniqueID);
+	dataOutQueue.push((uint8_t)(magnitude >> 8));
+	dataOutQueue.push((uint8_t)(magnitude));
+	dataOutQueue.push((uint8_t)(angle >> 8));
+	dataOutQueue.push((uint8_t)(angle));
+	dataOutQueue.push((uint8_t)(status));
 }
 
 void SPI_Wrapper::sendRotateResponse(uint16_t uniqueID, uint16_t angle, bool status) 
 {
 	uint8_t length = 6; // 1 byte for the command number, 2 bytes for the ID, 2 for angle, 1 for the status
-	dataOutBuffer[bufferOutFillEnd] = length;
-	dataOutBuffer[(bufferOutFillEnd + 1) % MAX_BUFFER_SIZE] = rotateCode;
-	dataOutBuffer[(bufferOutFillEnd + 2) % MAX_BUFFER_SIZE] = (uint8_t)(uniqueID >> 8); 
-	dataOutBuffer[(bufferOutFillEnd + 3) % MAX_BUFFER_SIZE] = (uint8_t)uniqueID;
-	dataOutBuffer[(bufferOutFillEnd + 4) % MAX_BUFFER_SIZE] = (uint8_t)(angle >> 8);
-	dataOutBuffer[(bufferOutFillEnd + 5) % MAX_BUFFER_SIZE] = (uint8_t)(angle);
-	dataOutBuffer[(bufferOutFillEnd + 6) % MAX_BUFFER_SIZE] = (uint8_t)(status);
-	bufferOutFillEnd = (bufferOutFillEnd + length + 1) % MAX_BUFFER_SIZE;
+	dataOutQueue.push(length);
+	dataOutQueue.push(rotateCode);
+	dataOutQueue.push((uint8_t)(uniqueID >> 8)); 
+	dataOutQueue.push((uint8_t)uniqueID);
+	dataOutQueue.push((uint8_t)(angle >> 8));
+	dataOutQueue.push((uint8_t)(angle));
+	dataOutQueue.push((uint8_t)(status));
 }
 
 void SPI_Wrapper::sendScanResponse(uint16_t uniqueID, uint16_t angle, uint16_t magnitude, bool last, bool status)
-{
+{	
+	if (dataOutQueue.count() > 300) {
+		return;
+	}
 	uint8_t length = 9; // 1 byte for the command number, 2 bytes for the ID, 1 byte for Last, 2 for angle, 2 for magnitude, 1 for the status
-	dataOutBuffer[bufferOutFillEnd] = length;
-	dataOutBuffer[(bufferOutFillEnd + 1) % MAX_BUFFER_SIZE] = scanCode;
-	dataOutBuffer[(bufferOutFillEnd + 2) % MAX_BUFFER_SIZE] = (uint8_t)(uniqueID >> 8); 
-	dataOutBuffer[(bufferOutFillEnd + 3) % MAX_BUFFER_SIZE] = (uint8_t)uniqueID;
-	dataOutBuffer[(bufferOutFillEnd + 4) % MAX_BUFFER_SIZE] = (uint8_t)(last);
-	dataOutBuffer[(bufferOutFillEnd + 5) % MAX_BUFFER_SIZE] = (uint8_t)(angle >> 8);
-	dataOutBuffer[(bufferOutFillEnd + 6) % MAX_BUFFER_SIZE] = (uint8_t)(angle);
-	dataOutBuffer[(bufferOutFillEnd + 7) % MAX_BUFFER_SIZE] = (uint8_t)(magnitude >> 8);
-	dataOutBuffer[(bufferOutFillEnd + 8) % MAX_BUFFER_SIZE] = (uint8_t)(magnitude);
-	dataOutBuffer[(bufferOutFillEnd + 9) % MAX_BUFFER_SIZE] = (uint8_t)(status);
-	bufferOutFillEnd = (bufferOutFillEnd + length + 1) % MAX_BUFFER_SIZE;
+	dataOutQueue.push(length);
+	dataOutQueue.push(scanCode);
+	dataOutQueue.push((uint8_t)(uniqueID >> 8)); 
+	dataOutQueue.push((uint8_t)uniqueID);
+	dataOutQueue.push((uint8_t)(last));
+	dataOutQueue.push((uint8_t)(angle >> 8));
+	dataOutQueue.push((uint8_t)(angle));
+	dataOutQueue.push((uint8_t)(magnitude >> 8));
+	dataOutQueue.push((uint8_t)(magnitude));
+	dataOutQueue.push((uint8_t)(status));
 }
 
 void SPI_Wrapper::sendCompassResponse(uint16_t uniqueID, uint16_t angle, bool status)
 {
 	uint8_t length = 6; // 1 byte for the command number, 2 bytes for the ID, 2 for angle, 1 for the status
-	dataOutBuffer[bufferOutFillEnd] = length;
-	dataOutBuffer[(bufferOutFillEnd + 1) % MAX_BUFFER_SIZE] = compassCode;
-	dataOutBuffer[(bufferOutFillEnd + 2) % MAX_BUFFER_SIZE] = (uint8_t)(uniqueID >> 8); 
-	dataOutBuffer[(bufferOutFillEnd + 3) % MAX_BUFFER_SIZE] = (uint8_t)uniqueID;
-	dataOutBuffer[(bufferOutFillEnd + 4) % MAX_BUFFER_SIZE] = (uint8_t)(angle >> 8);
-	dataOutBuffer[(bufferOutFillEnd + 5) % MAX_BUFFER_SIZE] = (uint8_t)(angle);
-	dataOutBuffer[(bufferOutFillEnd + 6) % MAX_BUFFER_SIZE] = (uint8_t)(status);
-	bufferOutFillEnd = (bufferOutFillEnd + length + 1) % MAX_BUFFER_SIZE;
+	dataOutQueue.push(length);
+	dataOutQueue.push(compassCode);
+	dataOutQueue.push((uint8_t)(uniqueID >> 8)); 
+	dataOutQueue.push((uint8_t)uniqueID);
+	dataOutQueue.push((uint8_t)(angle >> 8));
+	dataOutQueue.push((uint8_t)(angle));
+	dataOutQueue.push((uint8_t)(status));
 }
 
 void SPI_Wrapper::processReceivedCommand(int length)
@@ -205,11 +201,10 @@ void SPI_Wrapper::registerCompassCommandHandler(SPI_Compass_Command_Handler newC
 
 uint8_t SPI_Wrapper::getNextCommandByte()
 {
-	if ((bufferOutFillBegin == bufferOutFillEnd) || (commandBytesReceived > sendingCommandLength)) {
+	if (dataOutQueue.isEmpty() || (commandBytesReceived > sendingCommandLength)) {
 		return 0;
 	}
-	uint8_t commandByte = dataOutBuffer[bufferOutFillBegin];
-	bufferOutFillBegin = (bufferOutFillBegin + 1) % MAX_BUFFER_SIZE;
+	uint8_t commandByte = dataOutQueue.pop();
 	return commandByte;
 }
 
@@ -257,7 +252,7 @@ void SPI_Wrapper::spiIntteruptFunction()
 			commandBytesReceived++;
 			if ((commandBytesReceived >= sendingCommandLength) && (commandBytesReceived >= receivingCommandLength)) {
 				processReceivedCommand(receivingCommandLength);
-				SPDR = ((bufferOutFillBegin == bufferOutFillEnd) ? 0 : 1);
+				SPDR = (dataOutQueue.isEmpty() ? 0 : 1);
 				currentState = CheckingIfFinished;
 			} else {
 				SPDR = (byte)getNextCommandByte();
@@ -268,7 +263,7 @@ void SPI_Wrapper::spiIntteruptFunction()
 		{
 			// If we last sent 1 or byteReceived is 1 then we change state to sendingCommand. 
 			// Otherwise go to waiting
-			if ((bufferOutFillBegin != bufferOutFillEnd) || (byteReceived == 1)) {
+			if (!dataOutQueue.isEmpty() || (byteReceived == 1)) {
 				sendingCommandLength = getNextCommandByte();
 				SPDR = (byte)sendingCommandLength;
 				currentState = SendingLength;
