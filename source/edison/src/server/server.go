@@ -72,6 +72,20 @@ func driveCommand(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintf(w, "Sending move command: %d/%d, (angle/distance)", angle, distance)
 }
 
+// X first, then Y: ie.. /setDestination/<X>/<Y> where X and Y are the X and Y co-ordinates of the destination on the map
+func destinationHandler(w http.ResponseWriter, r *http.Request) {
+	data := strings.Split(r.URL.Path[len("/setDestination/"):], "/")
+	X, _ := strconv.Atoi(data[0])
+	Y, _ := strconv.Atoi(data[1])
+	path, possible := maps.GetRoute(maps.RobotMap, X, Y)
+	if possible {
+		fmt.Fprintf(w, "Moving robot to (%d, %d)", X, Y)
+		go maps.RobotMap.MoveRobotAlongPath(path, false)
+	} else {
+		fmt.Fprintf(w, "Path to (%d, %d) is not possible", X, Y)
+	}
+}
+
 func moveResponseDisplay(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintf(w, "{\"Responses\": [")
 	for i, response := range responseHistory {
@@ -160,6 +174,7 @@ func StartServer() {
 	http.HandleFunc("/drive/submit/", driveCommand)
 	http.HandleFunc("/drive/response/", moveResponseDisplay)
 	http.HandleFunc("/scan/", scanCommand)
+	http.HandleFunc("/setDestination/", destinationHandler)
 	http.HandleFunc("/map/bit", displayBitmap)
 	http.ListenAndServe(":8080", nil)
 }
