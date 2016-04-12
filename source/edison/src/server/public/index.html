@@ -14,6 +14,27 @@ var destX = 0;
 var destY = 0;
 
 
+// Function to return a JSON object from a query.
+function get_json_from_query(query) {
+    var return_me = 0;
+
+    var request = new XMLHttpRequest();
+    request.onreadystatechange = function() {
+        // If Request Finished and Status is "OK"
+        if (request.readyState == 4 && request.status == 200) {
+            jsonResponse = JSON.parse(request.responseText);
+            return_me = jsonResponse;
+        }
+    };
+
+    // TODO: Find out what the querys should be.
+    request.open("GET", query, true);
+    request.send();
+
+    return return_me;
+}
+
+
 // Handy function to update the map.
 function updateMap(canvasObject) {
     var ctx = canvasObject.getContext("2d");
