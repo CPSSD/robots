@@ -41,10 +41,14 @@ func createNodeMap(robotMap [][]bool, radius int) (nodeMap [][]Node) {
 
 func isValidNode(robotMap [][]bool, x int, y int, radius int) bool {
 	for i := -radius; i < radius; i++ {
-		for j := -radius; j < radius; j++ {
-			if !(i == 0 && j == 0) {
-				if robotMap[x+i][y+j] {
-					return false
+		if i < len(robotMap) && i >= 0 {
+			for j := -radius; j < radius; j++ {
+				if j < len(robotMap[i]) && j >= 0 {
+					if !(i == 0 && j == 0) {
+						if robotMap[x+i][y+j] {
+							return false
+						}
+					}
 				}
 			}
 		}

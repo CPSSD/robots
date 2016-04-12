@@ -4,9 +4,12 @@ package maps
 
 import (
 	"RobotDriverProtocol"
+	"encoding/csv"
 	"fmt"
 	"math"
+	"os"
 	"sort"
+	"strconv"
 )
 
 // BitmapScale is the size of each bitmap segment in millimeters
@@ -22,6 +25,8 @@ var finishedMapping = false
 var firstScan = true
 var checkLocation = false
 var followingPath = false
+
+// RobotMap is a map of the current room being mapped
 var RobotMap Map
 var path [][]bool
 
@@ -78,6 +83,56 @@ func CreateMap() (createdMap Map) {
 	return
 }
 
+//SaveMap saves a Map to a file
+func (this *Map) SaveMap(fileName string) {
+	mapCSV, err := os.Create(fileName)
+	if err != nil {
+		fmt.Println("Error saving map: ", err)
+		return
+	}
+
+	writer := csv.NewWriter(mapCSV)
+
+	writer.Write([]string{strconv.Itoa(this.height), strconv.Itoa(this.width)})
+
+	for i := 0; i < this.height; i++ {
+		row := make([]string, this.width)
+		for j := 0; j < this.width; j++ {
+
+			row[j] = strconv.FormatBool(this.floor[i][j])
+		}
+		writer.Write(row)
+	}
+
+	writer.Flush()
+	mapCSV.Close()
+}
+
+//LoadMap reads a Map from a file
+func (this *Map) LoadMap(fileName string) {
+	mapCSV, err := os.Open(fileName)
+	if err != nil {
+		fmt.Println("Error loading map: ", err)
+	}
+	defer mapCSV.Close()
+
+	reader := csv.NewReader(mapCSV)
+
+	record, err := reader.Read()
+	this.height, _ = strconv.Atoi(record[0])
+	this.width, _ = strconv.Atoi(record[1])
+
+	this.floor = make([][]bool, this.height)
+
+	for i := 0; i < this.height; i++ {
+		this.floor[i] = make([]bool, this.width)
+		record, _ := reader.Read()
+		for j := 0; j < this.width; j++ {
+			this.floor[i][j], _ = strconv.ParseBool(record[j])
+		}
+	}
+}
+
 // Creates a fragment of a map, containing all lines from the buffer.
 func createMapFragment(buffer []RobotDriverProtocol.ScanResponse, rotation int) Map {
 	fragment := CreateMap()
@@ -100,12 +155,13 @@ func (this *Map) addBufferToMap() {
 
 // Finds and returns the location of the robot
 func (this *Map) FindLocation() (int, int) {
-	rotationAmmount := 45
+	rotationAmmount := 15
+	rotationJump := 5
 	x, y := int(this.GetRobot().GetX()), int(this.GetRobot().GetY())
 	var count = -999
 	var angle = int(this.GetRobot().GetRotation())
 	var currentRotation = int(this.GetRobot().GetRotation())
-	for i := -rotationAmmount; i < rotationAmmount; i++ {
+	for i := -rotationAmmount; i < rotationAmmount; i+=rotationJump {
 		currentRotation = i + int(this.GetRobot().GetRotation())
 		tempX, tempY, tempCount := this.findLocation(createMapFragment(scanBuffer, currentRotation))
 		if count > tempCount {
@@ -115,6 +171,7 @@ func (this *Map) FindLocation() (int, int) {
 			angle = i
 		}
 	}
+	fmt.Println("Most Likely Position after rotation is: (", x, ", ", y, ")")
 	this.GetRobot().Rotate(float64(angle))
 	return int(x), int(y)
 }

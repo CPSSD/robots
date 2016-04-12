@@ -114,8 +114,8 @@ func processScanResponse(responseBuffer []uint8) {
 	scanResponse.Type = 4
 	scanResponse.ID = (uint16(responseBuffer[0]) << 8) + uint16(responseBuffer[1])
 	scanResponse.Last = (responseBuffer[2] > 0)
-	scanResponse.Distance = (uint16(responseBuffer[3]) << 8) + uint16(responseBuffer[4])
-	scanResponse.Degree = (uint16(responseBuffer[5]) << 8) + uint16(responseBuffer[6])
+	scanResponse.Degree = (uint16(responseBuffer[3]) << 8) + uint16(responseBuffer[4])
+	scanResponse.Distance = (uint16(responseBuffer[5]) << 8) + uint16(responseBuffer[6])
 	scanResponse.Success = (responseBuffer[7] > 0)
 	fmt.Println("Passing scanResponse to responseHandler")
 	fireResponseHandler(scanResponse)
