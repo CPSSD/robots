@@ -47,6 +47,11 @@ func load(filename string) *page {
 	return &page{Title: filename, Body: body}
 }
 
+func indexHandler(w http.ResponseWriter, r *http.Request) {
+	page := load("../server/public/index.html")
+	fmt.Fprintf(w, "%s", page.Body)
+}
+
 func driveHandler(w http.ResponseWriter, r *http.Request) {
 	var page *page
 	if r.URL.Path == "/drive/" {
@@ -181,6 +186,7 @@ func StartServer() {
 
 	RobotDriverProtocol.RegisterResponseHandler(ResponseHandler)
 
+	http.HandleFunc("/", indexHandler)
 	http.HandleFunc("/kill/", killHandler)
 	http.HandleFunc("/drive/", driveHandler)
 	http.HandleFunc("/drive/submit/", driveCommand)
