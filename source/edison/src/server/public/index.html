@@ -13,28 +13,6 @@ var block_size = 20;
 var destX = 0;
 var destY = 0;
 
-
-// Function to return a JSON object from a query.
-function get_json_from_query(query) {
-    var return_me = 0;
-
-    var request = new XMLHttpRequest();
-    request.onreadystatechange = function() {
-        // If Request Finished and Status is "OK"
-        if (request.readyState == 4 && request.status == 200) {
-            jsonResponse = JSON.parse(request.responseText);
-            return_me = jsonResponse;
-        }
-    };
-
-    // TODO: Find out what the querys should be.
-    request.open("GET", query, true);
-    request.send();
-
-    return return_me;
-}
-
-
 // Handy function to update the map.
 function updateMap(canvasObject) {
     var ctx = canvasObject.getContext("2d");
@@ -43,14 +21,12 @@ function updateMap(canvasObject) {
 
 // Fetches map data from a URL and dispatches to draw the map.
 function getMapData(canvasContext) {
-    // TODO: Change this URL to the correct one.
-    // TODO: Update server.go to have a function to return an int map instead of a bit map.
-    $.getJSON('http://192.168.1.129:8080/map/bit', function(data) {
+    $.getJSON('/map/bit', function(data) {
             //alert(data);
             //console.log(data);
             //console.log(JSON.parse(data));
             drawMap(canvasContext, data);
-            });
+    });
 }
 
 // Draws the map with the current robot location, walls and empty spaces.
@@ -67,30 +43,22 @@ function drawMap(canvasContext, mapObject) {
     mapObject.map[robotX][robotY] = 2;
 
     // TODO: Get destination from server?
-    // TODO: Make sure X and Ys are right way around.
     mapObject.map[destX][destY] = 3;
 
-
-    for(var i=0; i<mapObject.map.length; i++) {
-        for(var j=0; j<mapObject.map[0].length; j++) {
-            switch(mapObject.map[i][j]) {
-                default:
-                    // Empty space:
-                case 0:
-                    canvasContext.fillStyle = "#FFFFFF";
-                    canvasContext.fillRect(block_size*j, block_size*i, block_size, block_size);
-                    // Wall:
-                case 1:
-                    canvasContext.fillStyle = "#000000";
-                    canvasContext.fillRect(block_size*j, block_size*i, block_size, block_size);
-                    // Robot location:
-                case 2:
-                    canvasContext.fillStyle = "#0000FF";
-                    canvasContext.fillRect(block_size*j, block_size*i, block_size, block_size);
-                    // Destination:
-                case 3:
-                    canvasContext.fillStyle = "#00FF00";
-                    canvasContext.fillRect(block_size*j, block_size*i, block_size, block_size);
+    for (var i = 0; i < mapObject.map.length; i++) {
+        for (var j = 0; j < mapObject.map[i].length; j++) {
+			if (i == mapObject.robotX && j == mapObject.robotY) {
+				// Robot location
+				canvasContext.fillStyle = "#0000FF";
+				canvasContext.fillRect(block_size*j, block_size*i, block_size, block_size);
+			} else if (mapObject.map[i][j]) {
+				// Wall
+				canvasContext.fillStyle = "#000000";
+				canvasContext.fillRect(block_size*j, block_size*i, block_size, block_size);
+			} else {
+				// Empty space
+				canvasContext.fillStyle = "#FFFFFF";
+                canvasContext.fillRect(block_size*j, block_size*i, block_size, block_size);
             }
         }
     }
