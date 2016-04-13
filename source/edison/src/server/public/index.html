@@ -92,6 +92,18 @@ function updateDestination() {
     canvasContext.fillRect(block_size*destX, block_size*destY, block_size, block_size);
 }
 
+// Sends a setDestination command to the server.
+function setDestination(X, Y) {
+    $.getJSON('/setDestination/'+X+'/'+Y, function(data) {
+            //alert(data);
+            //console.log(data);
+            //console.log(JSON.parse(data));
+
+            // Draw the destination on the map.
+            updateDestination();
+    });
+}
+
 // Function to set the destination variables when the canvas is clicked.
 function getPosition(event) {
     var rawX = event.x;
@@ -101,8 +113,8 @@ function getPosition(event) {
     destX = rawX / block_size;
     destY = rawY / block_size;
 
-    // Draw the destination on the map.
-    updateDestination();
+    // Send command to set the destination and update the visible map.
+    setDestination(destX, destY);
 }
 
 // Registers a touch handler on the map to get the destination variables.
