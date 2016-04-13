@@ -118,7 +118,7 @@ func moveResponseDisplay(w http.ResponseWriter, r *http.Request) {
 func displayBitmap(w http.ResponseWriter, r *http.Request) {
 	bitmap, _ := maps.RobotMap.GetBitmap()
 	var jsonmap = jsonMap{Code: "200", Message: "ok", Map: bitmap,
-		RobotX: int(maps.RobotMap.robot.GetX()), RobotY: int(maps.RobotMap.robot.GetY())}
+		RobotX: int(maps.RobotMap.GetRobot().GetX()), RobotY: int(maps.RobotMap.GetRobot().GetY())}
 
 	w.Header().Set("Content-Type", "application/json;charset=UTF-8")
 	w.Header().Set("Access-Control-Allow-Origin", "*")
