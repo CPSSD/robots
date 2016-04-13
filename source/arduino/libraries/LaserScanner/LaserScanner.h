@@ -25,7 +25,7 @@ class LaserScanner {
 		static void setScanFreq(int freq, int distance, ScanType type, int queuedRotations);
 		static void setDetectionAngle(int startAngle, int endAngle);
 		static void setDetectionRange(int range);
-		static void sendScanResponse(LaserReading reading);
+		static void sendScanResponse(LaserReading reading, bool lastScan);
 		static void onMotorFinish();
 		
 		static void setDetectionParameters(int startAngle, int endAngle, int distance);

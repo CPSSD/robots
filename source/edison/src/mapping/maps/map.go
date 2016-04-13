@@ -13,7 +13,7 @@ import (
 )
 
 // BitmapScale is the size of each bitmap segment in millimeters
-const BitmapScale = 20
+const BitmapScale = 10
 
 // Debug indicates whether to print verbose debugging output
 const Debug = false
@@ -53,9 +53,10 @@ func MapInit() {
 
 	RDPInit()
 	fmt.Println("[RDP Link Ready]")
-	fmt.Println(RobotMap)
 
 	scanBuffer = make([]RobotDriverProtocol.ScanResponse, 0)
+
+	defer RobotMap.Print(nil)
 
 	RobotDriverProtocol.Scan()
 }
@@ -73,6 +74,11 @@ func (this *Map) GetBitmap() ([][]bool, bool) {
 // GetRobot returns the maps robot.
 func (this *Map) GetRobot() *Robot {
 	return &this.robot
+}
+
+// FollowingPath Returns the followingPath boolean
+func FollowingPath() bool {
+	return followingPath
 }
 
 // CreateMap creates an empty 1x1 map (this single point will be the robots starting position.)
@@ -161,7 +167,7 @@ func (this *Map) FindLocation() (int, int) {
 	var count = -999
 	var angle = int(this.GetRobot().GetRotation())
 	var currentRotation = int(this.GetRobot().GetRotation())
-	for i := -rotationAmmount; i < rotationAmmount; i+=rotationJump {
+	for i := -rotationAmmount; i < rotationAmmount; i += rotationJump {
 		currentRotation = i + int(this.GetRobot().GetRotation())
 		tempX, tempY, tempCount := this.findLocation(createMapFragment(scanBuffer, currentRotation))
 		if count > tempCount {
