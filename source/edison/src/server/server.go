@@ -94,6 +94,12 @@ func destinationHandler(w http.ResponseWriter, r *http.Request) {
 	data := strings.Split(r.URL.Path[len("/setDestination/"):], "/")
 	X, _ := strconv.Atoi(data[0])
 	Y, _ := strconv.Atoi(data[1])
+
+	if maps.FollowingPath() {
+		fmt.Fprintf(w, "Already following a path, no action taken")
+		return
+	}
+
 	path, possible := maps.GetRoute(maps.RobotMap, X, Y)
 	if possible {
 		fmt.Fprintf(w, "Moving robot to (%d, %d)", X, Y)
