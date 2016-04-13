@@ -2,12 +2,14 @@
 
 package maps
 
-
 import (
 	"RobotDriverProtocol"
+	"encoding/csv"
 	"fmt"
 	"math"
+	"os"
 	"sort"
+	"strconv"
 )
 
 // BitmapScale is the size of each bitmap segment in millimeters
@@ -23,9 +25,10 @@ var finishedMapping = false
 var firstScan = true
 var checkLocation = false
 var followingPath = false
+
+// RobotMap is a map of the current room being mapped
 var RobotMap Map
 var path [][]bool
-
 
 // Map represents a two dimentional map of the environment we are mapping
 type Map struct {
@@ -53,7 +56,7 @@ func MapInit() {
 	fmt.Println(RobotMap)
 
 	scanBuffer = make([]RobotDriverProtocol.ScanResponse, 0)
-	
+
 	RobotDriverProtocol.Scan()
 }
 
@@ -80,11 +83,61 @@ func CreateMap() (createdMap Map) {
 	return
 }
 
+//SaveMap saves a Map to a file
+func (this *Map) SaveMap(fileName string) {
+	mapCSV, err := os.Create(fileName)
+	if err != nil {
+		fmt.Println("Error saving map: ", err)
+		return
+	}
+
+	writer := csv.NewWriter(mapCSV)
+
+	writer.Write([]string{strconv.Itoa(this.height), strconv.Itoa(this.width)})
+
+	for i := 0; i < this.height; i++ {
+		row := make([]string, this.width)
+		for j := 0; j < this.width; j++ {
+
+			row[j] = strconv.FormatBool(this.floor[i][j])
+		}
+		writer.Write(row)
+	}
+
+	writer.Flush()
+	mapCSV.Close()
+}
+
+//LoadMap reads a Map from a file
+func (this *Map) LoadMap(fileName string) {
+	mapCSV, err := os.Open(fileName)
+	if err != nil {
+		fmt.Println("Error loading map: ", err)
+	}
+	defer mapCSV.Close()
+
+	reader := csv.NewReader(mapCSV)
+
+	record, err := reader.Read()
+	this.height, _ = strconv.Atoi(record[0])
+	this.width, _ = strconv.Atoi(record[1])
+
+	this.floor = make([][]bool, this.height)
+
+	for i := 0; i < this.height; i++ {
+		this.floor[i] = make([]bool, this.width)
+		record, _ := reader.Read()
+		for j := 0; j < this.width; j++ {
+			this.floor[i][j], _ = strconv.ParseBool(record[j])
+		}
+	}
+}
+
 // Creates a fragment of a map, containing all lines from the buffer.
-func createMapFragment(buffer []RobotDriverProtocol.ScanResponse) Map {
+func createMapFragment(buffer []RobotDriverProtocol.ScanResponse, rotation int) Map {
 	fragment := CreateMap()
 	for _, line := range buffer {
-		fragment.AddWallByLine(float64(line.Degree), float64(line.Distance))
+		fragment.AddWallByLine(float64((int(line.Degree)+rotation)%360), float64(line.Distance))
 	}
 	fmt.Println("Created Fragment: ")
 	fragment.Print(nil)
@@ -93,19 +146,42 @@ func createMapFragment(buffer []RobotDriverProtocol.ScanResponse) Map {
 }
 
 // Adds the last buffer of scan responses to the map, then clears the buffer.
-func (this *Map) addBufferToMap(){
+func (this *Map) addBufferToMap() {
 	for _, response := range scanBuffer {
 		RobotMap.AddWallByLine(float64(response.Degree), float64(response.Distance))
 	}
 	scanBuffer = make([]RobotDriverProtocol.ScanResponse, 0)
 }
 
-func (this *Map) FindLocation(fragment Map) (x int, y int) {
+// Finds and returns the location of the robot
+func (this *Map) FindLocation() (int, int) {
+	rotationAmmount := 15
+	rotationJump := 5
+	x, y := int(this.GetRobot().GetX()), int(this.GetRobot().GetY())
+	var count = -999
+	var angle = int(this.GetRobot().GetRotation())
+	var currentRotation = int(this.GetRobot().GetRotation())
+	for i := -rotationAmmount; i < rotationAmmount; i+=rotationJump {
+		currentRotation = i + int(this.GetRobot().GetRotation())
+		tempX, tempY, tempCount := this.findLocation(createMapFragment(scanBuffer, currentRotation))
+		if count > tempCount {
+			x = tempX
+			y = tempY
+			count = tempCount
+			angle = i
+		}
+	}
+	fmt.Println("Most Likely Position after rotation is: (", x, ", ", y, ")")
+	this.GetRobot().Rotate(float64(angle))
+	return int(x), int(y)
+}
+
+func (this *Map) findLocation(fragment Map) (int, int, int) {
 	fmt.Println("Attempting to find location...")
 	mX, mY, mCount := int(this.GetRobot().GetX()), int(this.GetRobot().GetY()), 0
 
 	fmt.Println("Robots Assumed Location: (", mX, ",", mY, ")")
-	
+
 	for i := 0; i < this.width; i++ {
 		for j := 0; j < this.height; j++ {
 			if i >= 0 && j >= 0 && i < this.width && j < this.height {
@@ -113,8 +189,8 @@ func (this *Map) FindLocation(fragment Map) (x int, y int) {
 				if count != 0 {
 					fmt.Print(count, " ")
 					if mCount < count {
-						mX = i - (fragment.width/2) + int(fragment.GetRobot().GetX()) 
-						mY = j - (fragment.height/2) +  int(fragment.GetRobot().GetY())
+						mX = i - (fragment.width / 2) + int(fragment.GetRobot().GetX())
+						mY = j - (fragment.height / 2) + int(fragment.GetRobot().GetY())
 						mCount = count
 					}
 				} else {
@@ -124,11 +200,9 @@ func (this *Map) FindLocation(fragment Map) (x int, y int) {
 		}
 		fmt.Println("")
 	}
-	
+
 	fmt.Println("Most Likely Position: (", mX, ", ", mY, "): ", mCount)
-	x = mX
-	y = mY
-	return
+	return mX, mY, mCount
 }
 
 func (this *Map) probabilityAtLocation(fragment Map, x int, y int) (int, int, int) {
@@ -139,12 +213,12 @@ func (this *Map) probabilityAtLocation(fragment Map, x int, y int) (int, int, in
 		for j := 0; j < width; j++ {
 			checkX := x + i - width/2
 			checkY := y + j - height/2
-			if (checkX >= 0 && checkY >= 0 && checkX < this.width && checkY < this.height){
-				
-				if (fragment.floor[i][j] == true && fragment.floor[i][j] == RobotMap.floor[checkX][checkY]) {
+			if checkX >= 0 && checkY >= 0 && checkX < this.width && checkY < this.height {
+
+				if fragment.floor[i][j] == true && fragment.floor[i][j] == RobotMap.floor[checkX][checkY] {
 					count++
 				}
-			} 	
+			}
 		}
 	}
 	return count, x, y
@@ -153,18 +227,29 @@ func (this *Map) probabilityAtLocation(fragment Map, x int, y int) (int, int, in
 func (this *Map) TakeNextStep(lastX int, lastY int) {
 	if len(path) != 0 {
 		x, y, movesLeft := this.getNextMove(int(this.GetRobot().GetX()), int(this.GetRobot().GetY()), lastX, lastY, path)
-		
+		_, _, moreMoves := this.getNextMove(x, y, int(this.GetRobot().GetX()), int(this.GetRobot().GetY()), path)
+
+		// If you are 1 move away from end point
+		if !moreMoves {
+			fmt.Println("No more steps to take...")
+			path = make([][]bool, 0)
+			followingPath = false
+
+			RobotDriverProtocol.Scan()
+			return
+		}
+
 		fmt.Println("[TakeNextStep]: (", x, ", ", y, ") | From Location: (", this.GetRobot().GetX(), ", ", this.GetRobot().GetY(), ")")
-	
+
 		if !movesLeft {
 			fmt.Println("Finished Following path")
 			path = make([][]bool, 0)
 			followingPath = false
 			RobotDriverProtocol.Scan()
 			return
-		} 
-		
-		degree, magnitude := getHorizontalLine(int(this.GetRobot().GetX()), int(this.GetRobot().GetY()), x, y)	
+		}
+
+		degree, magnitude := getHorizontalLine(int(this.GetRobot().GetX()), int(this.GetRobot().GetY()), x, y)
 		fmt.Println("[TakeNextStep]: Required Move: ", degree, " -> ", magnitude)
 		RobotDriverProtocol.Move(uint16(degree), uint32(magnitude))
 	} else {
@@ -177,7 +262,7 @@ func (this *Map) TakeNextStep(lastX int, lastY int) {
 }
 
 // MoveRobotAlongPath moves the robot along the given path.
-// Set "stopBeforePoint" to true if you dont want to stop before entering the point given. 
+// Set "stopBeforePoint" to true if you dont want to stop before entering the point given.
 // Used when following a path into unseen areas to prevent crashes.
 func (this *Map) MoveRobotAlongPath(newPath [][]bool, stopBeforePoint bool) {
 	path = newPath
@@ -360,7 +445,7 @@ func (this *Map) Print(path [][]bool) {
 			robotX, robotY := int(this.robot.x), int(this.robot.y)
 			if x == robotX && y == robotY {
 				fmt.Print("* ")
-			} else { 
+			} else {
 				if path != nil && path[y][x] {
 					fmt.Print("~ ")
 				} else if this.floor[y][x] {

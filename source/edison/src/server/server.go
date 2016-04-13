@@ -62,6 +62,18 @@ func scanCommand(w http.ResponseWriter, r *http.Request) {
 	RobotDriverProtocol.Scan()
 }
 
+// The URL should contain the filename to save the map to: /saveMap/<fileName>
+func saveMap(w http.ResponseWriter, r *http.Request) {
+	fileName := r.URL.Path[len("/saveMap/"):]
+	maps.RobotMap.SaveMap(fileName)
+}
+
+// The URL should contain the filename to load the map from: /saveMap/<fileName>
+func loadMap(w http.ResponseWriter, r *http.Request) {
+	fileName := r.URL.Path[len("/loadMap/"):]
+	maps.RobotMap.LoadMap(fileName)
+}
+
 // Angle first, then distance: ie.. /drive/submit/<angle>/<distance>
 func driveCommand(w http.ResponseWriter, r *http.Request) {
 	data := strings.Split(r.URL.Path[len("/drive/submit/"):], "/")
@@ -176,5 +188,7 @@ func StartServer() {
 	http.HandleFunc("/scan/", scanCommand)
 	http.HandleFunc("/setDestination/", destinationHandler)
 	http.HandleFunc("/map/bit", displayBitmap)
+	http.HandleFunc("/saveMap/", saveMap)
+	http.HandleFunc("/loadMap/", loadMap)
 	http.ListenAndServe(":8080", nil)
 }

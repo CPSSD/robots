@@ -13,28 +13,48 @@ type Node struct {
 	solid          bool
 }
 
+var radius = 1 // Radius around robot. Actual dimension is radius * BitmapScale
+
 // GetRoute Calls various functions below and returns the end result of the pathfinding algorithm.
 func GetRoute(robotMap Map, x, y int) ([][]bool, bool) {
 	if Debug {
 		fmt.Println("GetRouteTo(", x, ",", y, ")")
 	}
 	bitmap, _ := robotMap.GetBitmap()
-	nodeMap := createNodeMap(bitmap)
+	nodeMap := createNodeMap(bitmap, radius)
 	getDistanceToGoal(nodeMap, x, y)
 	return pathfind(nodeMap, int(robotMap.GetRobot().GetX()), int(robotMap.GetRobot().GetY()), x, y)
 }
 
 // Creates a Node at each point of the map.
-func createNodeMap(robotMap [][]bool) (nodeMap [][]Node) {
+func createNodeMap(robotMap [][]bool, radius int) (nodeMap [][]Node) {
 	for i := 0; i < len(robotMap); i++ {
 		nodeMap = append(nodeMap, make([]Node, 0))
 		for j := 0; j < len(robotMap[0]); j++ {
-			nodeMap[i] = append(nodeMap[i], Node{id: (j * len(robotMap[0])) + i, x: j, y: i, solid: robotMap[i][j]})
+			if isValidNode(robotMap, i, j, radius) {
+				nodeMap[i] = append(nodeMap[i], Node{id: (j * len(robotMap[0])) + i, x: j, y: i, solid: robotMap[i][j]})
+			}
 		}
 	}
 	return
 }
 
+func isValidNode(robotMap [][]bool, x int, y int, radius int) bool {
+	for i := -radius; i < radius; i++ {
+		if i < len(robotMap) && i >= 0 {
+			for j := -radius; j < radius; j++ {
+				if j < len(robotMap[i]) && j >= 0 {
+					if !(i == 0 && j == 0) {
+						if robotMap[x+i][y+j] {
+							return false
+						}
+					}
+				}
+			}
+		}
+	}
+	return true
+}
 // Pathfinding Algorithm. Based on A*
 func pathfind(nodeMap [][]Node, startX, startY, x, y int) ([][]bool, bool) {
 	closedList := make(map[int]*Node)

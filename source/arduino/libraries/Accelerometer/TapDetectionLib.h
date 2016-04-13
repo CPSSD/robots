@@ -14,3 +14,5 @@ class TapDetectionLib {
     private:
         ADXL345 adxl;
 };
+
+#endif // TapDetectionLib_H
