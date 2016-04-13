@@ -122,22 +122,21 @@ void scanArea(int scanFreq, int distance, ScanType scanType) {
     }
     LaserScanner::totalRotations = 0;
 
+    
+    LaserReading firstReading;
     for (int i = 0; i < LaserScanner::scansToDo; i++) {
       if (LaserScanner::lastRotationData[i].angle / totalRotations != i) {
         Serial.println("\t- Error @ this location");
       } else {
+        firstReading = LaserScanner::lastRotationData[i];
         if (LaserScanner::pushScanData) {
           Serial.println("\t- Sending Scan Data");
-          LaserScanner::sendScanResponse(LaserReading{LaserScanner::lastRotationData[i].angle / LaserScanner::queuedRotations, LaserScanner::lastRotationData[i].distance / LaserScanner::queuedRotations});
+          delay(80);
+          LaserScanner::sendScanResponse(LaserReading{LaserScanner::lastRotationData[i].angle / LaserScanner::queuedRotations, LaserScanner::lastRotationData[i].distance / LaserScanner::queuedRotations}, false);
         }
       }
-      Serial.print("[");
-      Serial.print("i");
-      Serial.print("]: ");
-      Serial.print(LaserScanner::lastRotationData[i].angle / totalRotations);
-      Serial.print(", ");
-      Serial.println(LaserScanner::lastRotationData[i].distance / totalRotations);
-    }
+    }  
+    LaserScanner::sendScanResponse(LaserReading{firstReading.angle / LaserScanner::queuedRotations, firstReading.distance / LaserScanner::queuedRotations}, true);    
   } else if (scanType == Default) {
     LaserScanner::pushScanData = true;
     motor.rotateWithCorrection(distance);

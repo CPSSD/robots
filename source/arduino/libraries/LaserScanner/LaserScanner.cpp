@@ -35,18 +35,12 @@ LaserScanner::~LaserScanner(){
 	
 }
 
-void LaserScanner::sendScanResponse(LaserReading reading){
-	bool lastScan = false;
+void LaserScanner::sendScanResponse(LaserReading reading, bool lastScan){
 	if (reading.angle == -1 || reading.distance == -1 || reading.distance >= 1060){
 		return;
 	}
-	if (scanTick == scansToDo){
-		lastScan = true;
-	}
 	int angle = tickToDegrees(reading.angle);
-	Serial.print("Angle: ");
-	Serial.println(angle);
-	// uint8_t masterId, uint16_t uniqueID, uint16_t angle, uint16_t magnitude, bool last, bool status
+	
 	I2C_Wrapper::sendScanResponse(masterID, 0, (uint16_t) angle, (uint16_t) reading.distance, lastScan, true);
 }
 
@@ -154,7 +148,7 @@ void LaserScanner::getContinuousReading(int encoderCount){
 				lastRotationData[scanTick-1] = reading;
 				if (pushScanData){
 					Serial.println("Sending Scan Data...");
-					sendScanResponse(reading);
+					sendScanResponse(reading, false);
 				}
 			} else if (scanType == Average) {
 				if (totalRotations == 0){
