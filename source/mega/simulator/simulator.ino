@@ -150,11 +150,11 @@ void respond(scanResponse scanResp) {
 
 void moveRobot(moveCommand* com) {
   destination = calculations.makeLineFromPolar((float((com->angle + 90) % 360) * PI) / 180 , com->magnitude, currentPosition);
-  movingAngle = float(com->angle) + (int)round((angleSlip * (degreeOfError / maxDegreeOfError)));
+  movingAngle = float(com->angle) + (int)lround((angleSlip * (degreeOfError / maxDegreeOfError)));
   terminus = calculations.makeLineFromPolar((float((movingAngle + 90) % 360) * PI) / 180, com->magnitude, currentPosition);
   Line ray = Line(currentPosition, terminus);
   terminus = calculations.getDestination(ray, room);
-  distTravelled = (unsigned long)round(calculations.getDistBetweenTwoPoints(ray.start, terminus) * (1.0 - (degreeOfError / maxDegreeOfError)));
+  distTravelled = (unsigned long)lround(calculations.getDistBetweenTwoPoints(ray.start, terminus) * (1.0 - (degreeOfError / maxDegreeOfError)));
   amMoving = true;
   startedMoving = millis();
   moveTimer = millis() + calculations.getTravelTime(((com->magnitude) * 10), SPEED);
@@ -166,7 +166,7 @@ scanResponse scan(){
   com->uniqueID = 4;
   Line ray = Line(currentPosition, (calculations.makeLineFromPolar((((float)((laserAngle + 90) % 360) * PI) / 180), 4096.0, currentPosition)));
   nearestWall = calculations.getDestination(ray, room);
-  scanResp.magnitude = (unsigned int)round(calculations.getDistBetweenTwoPoints(ray.start, nearestWall));
+  scanResp.magnitude = (unsigned long)lround(calculations.getDistBetweenTwoPoints(ray.start, nearestWall));
   scanResp.last = (laserAngle == 360);
   return scanResp;
 }
