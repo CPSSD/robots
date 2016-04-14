@@ -134,7 +134,7 @@ func processCompassResponse(responseBuffer []uint8) {
 
 // processResponse will process a response
 func processResponse(responseBuffer []uint8) {
-	fmt.Println(responseBuffer)
+	// fmt.Println(responseBuffer)
 	switch responseBuffer[0] {
 	case 1: //move response
 		processMoveResponse(responseBuffer[1:])
@@ -164,8 +164,8 @@ func sendNextCommand() bool {
 		length = data[0]
 	}
 	if length > 0 {
-		fmt.Println("Length > 0")
-		fmt.Println(length)
+		// fmt.Println("Length > 0")
+		// fmt.Println(length)
 
 		dataBuffer := make([]uint8, length)
 		if len(buffersToSend) > 0 {
