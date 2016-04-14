@@ -61,6 +61,14 @@ void loop() {
 
   if(amMoving && millis() >= moveTimer) {
     respond((moveCommand*)com);
+    Serial.println("---------- Current Pos"); 
+    Serial.print(currentPosition.x);
+    Serial.println(", ");
+    Serial.println(currentPosition.y);
+    Serial.println("--------- Destination");
+    Serial.print(destination.x);
+    Serial.println(", ");
+    Serial.println(destination.y);
     currentPosition = destination;
     amMoving = false;
     delete com;
@@ -141,9 +149,9 @@ void respond(scanResponse scanResp) {
 }
 
 void moveRobot(moveCommand* com) {
-  destination = calculations.makeLineFromPolar(com->angle, com->magnitude, currentPosition);
-  movingAngle = com->angle + (int)round((angleSlip * (degreeOfError / maxDegreeOfError)));
-  terminus = calculations.makeLineFromPolar(movingAngle, com->magnitude, currentPosition);
+  destination = calculations.makeLineFromPolar((float((com->angle + 90) % 360) * PI) / 180 , com->magnitude, currentPosition);
+  movingAngle = float(com->angle) + (int)round((angleSlip * (degreeOfError / maxDegreeOfError)));
+  terminus = calculations.makeLineFromPolar((float((movingAngle + 90) % 360) * PI) / 180, com->magnitude, currentPosition);
   Line ray = Line(currentPosition, terminus);
   terminus = calculations.getDestination(ray, room);
   distTravelled = (unsigned long)round(calculations.getDistBetweenTwoPoints(ray.start, terminus) * (1.0 - (degreeOfError / maxDegreeOfError)));
@@ -156,7 +164,7 @@ scanResponse scan(){
   scanResponse scanResp;
   scanResp.angle = laserAngle;
   com->uniqueID = 4;
-  Line ray = Line(currentPosition, (calculations.makeLineFromPolar(((((float)laserAngle) * PI) / 180), 4096.0, currentPosition)));
+  Line ray = Line(currentPosition, (calculations.makeLineFromPolar((((float)((laserAngle + 90) % 360) * PI) / 180), 4096.0, currentPosition)));
   nearestWall = calculations.getDestination(ray, room);
   scanResp.magnitude = (unsigned int)round(calculations.getDistBetweenTwoPoints(ray.start, nearestWall));
   scanResp.last = (laserAngle == 360);
