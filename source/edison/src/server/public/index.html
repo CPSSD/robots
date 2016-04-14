@@ -10,8 +10,8 @@
 var block_size = 20;
 
 // Store the input destination of the robot.
-var destX = 0;
-var destY = 0;
+var destX = -1;
+var destY = -1;
 
 // Handy function to update the map.
 function updateMap(canvasObject) {
@@ -39,27 +39,22 @@ function drawMap(canvasContext, mapObject) {
     var robotX = mapObject.robotX;
     var robotY = mapObject.robotY;
 
-    // Update the map received with positions for the destination and current robot location.
-    mapObject.map[robotX][robotY] = 2;
-
-    // TODO: Get destination from server?
-    mapObject.map[destX][destY] = 3;
-
     for (var i = 0; i < mapObject.map.length; i++) {
         for (var j = 0; j < mapObject.map[i].length; j++) {
-            if (i == mapObject.robotY && j == mapObject.robotX) {				
+            if (i == robotY && j == robotX) {
                 // Robot location
                 canvasContext.fillStyle = "#0000FF";
-                canvasContext.fillRect(block_size*j, block_size*i, block_size, block_size);
-            } else if (mapObject.map[i][j]) {	
+            else if (i == destY && j == destX) {
+                // Destination
+                canvasContext.fillStyle = "#00FF00";
+            } else if (mapObject.map[i][j]) {
                 // Wall
                 canvasContext.fillStyle = "#000000";
-                canvasContext.fillRect(block_size*j, block_size*i, block_size, block_size);
             } else {
                 // Empty space
                 canvasContext.fillStyle = "#FFFFFF";
-                canvasContext.fillRect(block_size*j, block_size*i, block_size, block_size);
             }
+            canvasContext.fillRect(block_size*j, block_size*i, block_size, block_size);
         }
     }
 }
@@ -161,4 +156,3 @@ init();
 
     </body>
 </html>
-
