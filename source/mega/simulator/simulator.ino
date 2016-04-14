@@ -16,11 +16,11 @@ typedef enum {
 } comNums;
 
 const float SPEED = 1; //in mm per millisecond
-const int STARTING_X = 150; //This and all distances measured in cm
-const int STARTING_Y = 150;
+const int STARTING_X = 30; //This and all distances measured in cm
+const int STARTING_Y = 30;
 const unsigned long SCAN_RESPONSE_INTERVAL = 100; //Values as low as 80 worked in testing
 Point MAP_BOUNDS[] = { {Point(0, 0)}, {Point(300, 0)}, {Point(300, 300)}, {Point(0, 300)} };
-Room room = Room(4, MAP_BOUNDS, Point(STARTING_X, STARTING_Y), 0);
+Room room = Room(4, MAP_BOUNDS, Point(STARTING_X, STARTING_Y), 1);
 
 unsigned long startedMoving, moveTimer, scanTimer, rotateTimer, distTravelled;
 int id, magnitude, movingAngle, laserAngle;
@@ -46,6 +46,9 @@ void setup() {
   amScanning = false;
   amMoving = false;
   amRotating = false;
+  Point newObjHolder[] = { {Point(145, 145)}, {Point(155, 145)}, {Point(155, 155)}, {Point(145, 155)} };
+  Serial.print("Adding object 1: ");
+  Serial.println(room.addObject(0, 4, newObjHolder));
   scanTimer = millis();
 }
 

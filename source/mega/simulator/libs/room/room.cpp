@@ -46,6 +46,7 @@ Room::Room(int numWalls, Point walls[], Point robotCoOrds, int numObjects) {
 	this->robot = robotCoOrds;
 	this->numObjects = numObjects;
 	this->objects = new Object[numObjects];
+	this->maxNumObjSides = numWalls;
 }
 
 bool Room::addObject(int index, int numSides, Point sides[]) {
@@ -53,11 +54,8 @@ bool Room::addObject(int index, int numSides, Point sides[]) {
 		return false;
 	}
 	else {
-		if(this->objects[index].numSides != 0) { // There is already an object at the index
-			this->totalNumObjSides -= this->objects[index].numSides;
-		}
 		this->objects[index] = Object(numSides, sides);
-		this->totalNumObjSides += numSides;
+		this->maxNumObjSides = max(maxNumObjSides, numSides);
 		return true;
 	}
 }

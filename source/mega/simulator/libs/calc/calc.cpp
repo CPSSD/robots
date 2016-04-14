@@ -50,8 +50,9 @@ float calc::getCOfLine(float slope, Point start) {
 Point calc::getDestination(Line robotLine, Room room) {
   //For each line, check for valid interception point, get interception point
   Point nearestWall = robotLine.end;
-  Point validInterceptPoints[(room.numObjects) + 1][(room.walls.numSides) + (room.totalNumObjSides)];
+  Point validInterceptPoints[(room.numObjects) + 1][room.maxNumObjSides];
   int indexVIP[(room.numObjects) + 1];
+  indexVIP[0] = 0;
   for(int i = 0; i < (room.walls.numSides); i++) {
     if(hasInterception(room.walls.sides[i], robotLine)) {
 		validInterceptPoints[0][indexVIP[0]] = getInterceptPoint(robotLine, room.walls.sides[i]);
@@ -59,10 +60,11 @@ Point calc::getDestination(Line robotLine, Room room) {
     }
   }
 	for(int j = 1; j < ((room.numObjects) + 1); j++) {
-		for(int k = 0; k < room.objects[j].numSides; k++) {
-			if(hasInterception(room.objects[j].sides[k], robotLine)) {
-			validInterceptPoints[j][indexVIP[j - 1]] = getInterceptPoint(robotLine, room.objects[j].sides[k]);
-			indexVIP[j - 1]++;
+		indexVIP[j] = 0;
+		for(int k = 0; k < room.objects[j - 1].numSides; k++) {
+			if(hasInterception(room.objects[j - 1].sides[k], robotLine)) {
+			validInterceptPoints[j][indexVIP[j]] = getInterceptPoint(robotLine, room.objects[j].sides[k]);
+			indexVIP[j]++;
 			}
 		}
 	}
