@@ -19,7 +19,6 @@ int WheelMotors::D2 = 7;
 const int M1 = 5;
 const int M2 = 6;
 const uint8_t masterId = 15;
-const uint8_t otherArduinoId = 16;
 
 unsigned long WheelMotors::timeSinceStart = millis();
 unsigned long WheelMotors::commandTimer;
@@ -44,47 +43,42 @@ PID WheelMotors::myPID2 = PID(&M2_Input, &M2_Output, &Setpoint, .3, 0, 0, DIRECT
 double WheelMotors::speed = 0;
 
 bool WheelMotors::isFinished(){
-		if(finished){
-				return true;
-		}
-		return false;
+	return finished;
 }
 
 void WheelMotors::setup(){
-		attachInterrupt(M1_Interrupt,M1_EncoderISR,FALLING);
-		attachInterrupt(M2_Interrupt,M2_EncoderISR,FALLING);
+	attachInterrupt(M1_Interrupt,M1_EncoderISR,FALLING);
+	attachInterrupt(M2_Interrupt,M2_EncoderISR,FALLING);
 
-		//myPID1.SetOutputLimits(100,255);
-		myPID1.SetSampleTime(100);
-		myPID1.SetMode(AUTOMATIC);
-		//myPID2.SetOutputLimits(100,255);
-		myPID2.SetSampleTime(100);
-		myPID2.SetMode(AUTOMATIC);
+	myPID1.SetSampleTime(100);
+	myPID1.SetMode(AUTOMATIC);
+	myPID2.SetSampleTime(100);
+	myPID2.SetMode(AUTOMATIC);
 
-		pinMode(D1, OUTPUT);
-		pinMode(D2, OUTPUT);
-		digitalWrite(D1,HIGH);
-		digitalWrite(D2,HIGH);
+	pinMode(D1, OUTPUT);
+	pinMode(D2, OUTPUT);
+	digitalWrite(D1,HIGH);
+	digitalWrite(D2,HIGH);
 }
 
 void WheelMotors::setSpeed(double newSpeed){
-		speed = newSpeed;
+	speed = newSpeed;
 }
 
 double WheelMotors::getSpeed(){
-		return speed;
+	return speed;
 }
 
 moveCommand WheelMotors::getMove(){
-		return currentMove;
+	return currentMove;
 }
 
 uint16_t WheelMotors::getMagnitude(){
-		return currentMove.magnitude;
+	return currentMove.magnitude;
 }
 
 int WheelMotors::getAngle(){
-		return currentMove.angle;
+	return currentMove.angle;
 }
 
 int WheelMotors::setSetpoint(int wheelSpeed){
@@ -154,13 +148,9 @@ void WheelMotors::stopMotors(){
 }
 
 void WheelMotors::checkEndpointReached(int distance){
-	//Serial.print("Checked: ");
-	//Serial.println(distance);
 	if(M1_Total + M1_EncoderCount > distance && M2_Total + M2_EncoderCount > distance){
 		finished = true;
 		stop();
-		//Serial.println("")
-		//I2C_Wrapper::sendStopCommand(otherArduinoId);
 		commandHandled = true;
 	}
 }
@@ -168,51 +158,49 @@ void WheelMotors::checkEndpointReached(int distance){
 void WheelMotors::runPID(){
 	last100ms = millis();
 	if(last100ms - prevTimer > 100){
-			prevTimer = last100ms;
+		prevTimer = last100ms;
+		Serial.print("Setpoint: "); Serial.println(Setpoint);
 
-			Serial.print("Setpoint: "); Serial.println(Setpoint);
+		M1_Input = M1_EncoderCount;
+		M2_Input = M2_EncoderCount;
+		M1_Total += M1_EncoderCount;
+		M2_Total += M2_EncoderCount;
+		Serial.print("M1 EncoderCount: "); Serial.println(M1_EncoderCount);
+		Serial.print("M1 Total: "); Serial.println(M1_Total);
+		Serial.print("M2 EncoderCount: "); Serial.println(M2_EncoderCount);
+		Serial.print("M2 Total: ");Serial.println(M2_Total);
 
-			M1_Input = M1_EncoderCount;
-			M2_Input = M2_EncoderCount;
-			M1_Total += M1_EncoderCount;
-			M2_Total += M2_EncoderCount;
-			Serial.print("M1 EncoderCount: "); Serial.println(M1_EncoderCount);
-			Serial.print("M1 Total: "); Serial.println(M1_Total);
-			Serial.print("M2 EncoderCount: "); Serial.println(M2_EncoderCount);
-			Serial.print("M2 Total: ");Serial.println(M2_Total);
+		reset();
 
-			M1_EncoderCount = 0;
-			M2_EncoderCount = 0;
+		myPID1.Compute();
+		myPID2.Compute();
+		if(M1_Input > Setpoint){
+			M1_Output = (Setpoint - M1_Input) * .3;
+		}
+		if(M2_Input > Setpoint){
+			M2_Output = (Setpoint - M2_Input) * .3;
+		}
+		Serial.print("M1 Input: "); Serial.println(M1_Input);
+		Serial.print("M2 Input: "); Serial.println(M2_Input);
+		Serial.print("M1 Output: "); Serial.println(M1_Output);
+		Serial.print("M2 Output: "); Serial.println(M2_Output);
 
-			myPID1.Compute();
-			myPID2.Compute();
-			if(M1_Input > Setpoint){
-					M1_Output = (Setpoint - M1_Input) * .3;
-			}
-			if(M2_Input > Setpoint){
-					M2_Output = (Setpoint - M2_Input) * .3;
-			}
-			Serial.print("M1 Input: "); Serial.println(M1_Input);
-			Serial.print("M2 Input: "); Serial.println(M2_Input);
-			Serial.print("M1 Output: "); Serial.println(M1_Output);
-			Serial.print("M2 Output: "); Serial.println(M2_Output);
+		double M1_Speed = ((M1_Output + prev_M1_Speed) * 255) / 180;
+		Serial.print("M1 Speed: "); Serial.println(M1_Speed);
+		double M2_Speed = ((M2_Output + prev_M2_Speed) * 255) / 180;
 
-			double M1_Speed = ((M1_Output + prev_M1_Speed) * 255) / 180;
-			Serial.print("M1 Speed: "); Serial.println(M1_Speed);
-			double M2_Speed = ((M2_Output + prev_M2_Speed) * 255) / 180;
+		prev_M1_Speed = (M1_Speed * 180) / 255;
+		prev_M2_Speed = (M2_Speed * 180) / 255;
 
-			prev_M1_Speed = (M1_Speed * 180) / 255;
-			prev_M2_Speed = (M2_Speed * 180) / 255;
+		Serial.print("prev M1 Speed: "); Serial.println(prev_M1_Speed);
 
-			Serial.print("prev M1 Speed: "); Serial.println(prev_M1_Speed);
-
-			if(M1_Speed > 255) M1_Speed = 255;
-			if(M2_Speed > 255) M2_Speed = 255;
-			analogWrite(M1,M1_Speed);
-			analogWrite(M2,M2_Speed);
-			Serial.println();
-			Serial.println();
-			//printInfo();
+		if(M1_Speed > 255) M1_Speed = 255;
+		if(M2_Speed > 255) M2_Speed = 255;
+		analogWrite(M1,M1_Speed);
+		analogWrite(M2,M2_Speed);
+		Serial.println();
+		Serial.println();
+		//printInfo();
 	}
 }
 
@@ -240,21 +228,24 @@ void WheelMotors::moveCommandHandler(moveCommand command){
 
 
 void WheelMotors::printInfo(){
+	Serial.println();
 
-		Serial.println();
-
-		Serial.println(Setpoint);
-		Serial.print("Motor 1 Input: ");
-		Serial.println(M1_Input);
-		Serial.print("Motor 2 Input: ");
-		Serial.println(M2_Input);
+	Serial.println(Setpoint);
+	Serial.print("Motor 1 Input: ");
+	Serial.println(M1_Input);
+	Serial.print("Motor 2 Input: ");
+	Serial.println(M2_Input);
     Serial.print("Motor 1 Output: ");
     Serial.println(M1_Output);
-		Serial.print("Motor 2 Output: ");
-		Serial.println(M2_Output);
-    Serial.print("Motor 1 Encoder count: ");
+	Serial.print("Motor 2 Output: ");
+	Serial.println(M2_Output);
+	Serial.print("Motor 1 EncoderCount: ");
+	Serial.println(M1_EncoderCount);
+	Serial.print("Motor 2 EncoderCount: ");
+	Serial.println(M2_EncoderCount);
+	Serial.print("Motor 1 Total Encoder count: ");
     Serial.println(M1_Total);
-    Serial.print("Motor 2 Encoder count: ");
+	Serial.print("Motor 2 Total Encoder count: ");
     Serial.println(M2_Total);
 
     Serial.println();
