@@ -153,10 +153,6 @@ func createMapFragment(buffer []RobotDriverProtocol.ScanResponse, rotation int) 
 
 // Adds the last buffer of scan responses to the map, then clears the buffer.
 func (this *Map) addBufferToMap() {
-	fragment := createMapFragment(scanBuffer, 0)
-	fragment.Print(nil)
-	fmt.Println("^^^ This is what i received from scan response!")
-	fmt.Println(this.GetRobot().GetRotation(), " <= Robots Current Rotation")
 	for _, response := range scanBuffer {
 		RobotMap.AddWallByLine(float64(response.Degree) + float64(this.GetRobot().GetRotation()), float64(response.Distance))
 	}
