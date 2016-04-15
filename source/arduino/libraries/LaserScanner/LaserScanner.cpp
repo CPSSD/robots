@@ -104,9 +104,9 @@ void LaserScanner::sendDetectResponse(int angle, int distance) {
 void LaserScanner::detectObjects(int encoderCount){	
 	if (encoderCount != lastEncoderCount && (encoderCount >= detectAngleStart && encoderCount <= detectAngleEnd)){
 		LaserReading reading = getSingleReading(encoderCount);
-		Serial.print(reading.angle);
-		Serial.print(": Distance away: ");
-		Serial.println(reading.distance);
+		//Serial.print(reading.angle);
+		//Serial.print(": Distance away: ");
+		//Serial.println(reading.distance);
 		
 		if (reading.distance <= -1 || reading.distance >= 1000){
 			lastEncoderCount = encoderCount;
@@ -114,9 +114,9 @@ void LaserScanner::detectObjects(int encoderCount){
 		}
 		
 		if (reading.distance <= detectionRange){
-			Serial.println("-> Found object! Be careful!");
+			//Serial.println("-> Found object! Be careful!");
 			int degree = ((float)reading.angle / 3360.0) * 360.0;
-			Serial.println(degree);
+			//Serial.println(degree);
 			sendDetectResponse(degree, reading.distance);
 		}
 		
@@ -147,7 +147,7 @@ void LaserScanner::getContinuousReading(int encoderCount){
 			if (scanType == Default) { 
 				lastRotationData[scanTick-1] = reading;
 				if (pushScanData){
-					Serial.println("Sending Scan Data...");
+					//Serial.println("Sending Scan Data...");
 					sendScanResponse(reading, false);
 				}
 			} else if (scanType == Average) {
@@ -160,27 +160,21 @@ void LaserScanner::getContinuousReading(int encoderCount){
 				}
 			} else if (scanType == Interval) {
 				if ((scanTick - scanOffset) % queuedRotations == 0) {
-					Serial.println(scanTick);
+					//Serial.println(scanTick);
 					lastRotationData[scanTick-1] = reading;
 				} else {
 					lastRotationData[scanTick-1] = LaserReading{-1, -1};
 				}
 			}
 			
-			if (scanType == Interval && (scanTick - scanOffset) % queuedRotations == 0) {
-				Serial.print("[");
-				Serial.print(scanTick-1);
-				Serial.print(" | ");
-				Serial.print(lastRotationData[scanTick-1].distance);
-				Serial.println("]");
-			} else if (scanType != Interval){
-				Serial.print("[");
-				Serial.print(scanTick-1);
-				Serial.print(" | ");
-				Serial.print(lastRotationData[scanTick-1].distance);
-				Serial.println("]");
+			if ((scanType == Interval && (scanTick - scanOffset) % queuedRotations == 0) 
+				|| (scanType != Interval)){
+				//Serial.print("[");
+				//Serial.print(scanTick-1);
+				//Serial.print(" | ");
+				//Serial.print(lastRotationData[scanTick-1].distance);
+				//Serial.println("]");
 			}
-			
 			lastEncoderCount = encoderCount;
 		}
 	}
