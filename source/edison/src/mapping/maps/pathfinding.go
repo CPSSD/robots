@@ -13,8 +13,7 @@ type Node struct {
 	solid          bool
 }
 
-var radius = 30 // Radius around robot.
-
+var radius = 50 // Radius around robot.
 // GetRoute Calls various functions below and returns the end result of the pathfinding algorithm.
 func GetRoute(robotMap Map, x, y int) ([][]bool, bool) {
 	if Debug {
@@ -25,12 +24,20 @@ func GetRoute(robotMap Map, x, y int) ([][]bool, bool) {
 	return pathfind(nodeMap, int(robotMap.GetRobot().GetX()), int(robotMap.GetRobot().GetY()), x, y)
 }
 
+func getOffset(x, y, distance, rotation int) (xOffset, yOffset int) {
+	xOffset = distance * Math.Cos(rotation)
+	yOffset = distance * Math.Sin(rotation)
+	fmt.println("Offset should be -> ", xOffset, ", ", yOffset)
+}
+
 // Creates a Node at each point of the map.
 func (this *Map) createNodeMap(radius int) (nodeMap [][]Node) {
 	robotMap := this.floor
 	for i := 0; i < len(robotMap); i++ {
 		nodeMap = append(nodeMap, make([]Node, 0))
 		for j := 0; j < len(robotMap[0]); j++ {
+			// getOffset(...) Will print out debug info for now, not actually implemented into the pathfinding yet
+			_, _ := getOffset(j, i, this.GetRobot().GetRotation())
 			nodeMap[i] = append(nodeMap[i], Node{id: (j * len(robotMap[0])) + i, x: j, y: i, solid: !isValidNode(this.floor, j, i, radius)})
 		}
 	}

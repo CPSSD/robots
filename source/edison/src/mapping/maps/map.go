@@ -154,15 +154,15 @@ func createMapFragment(buffer []RobotDriverProtocol.ScanResponse, rotation int) 
 // Adds the last buffer of scan responses to the map, then clears the buffer.
 func (this *Map) addBufferToMap() {
 	for _, response := range scanBuffer {
-		RobotMap.AddWallByLine(float64(response.Degree) + float64(this.GetRobot().GetRotation()), float64(response.Distance))
+		RobotMap.AddWallByLine(float64(response.Degree)+float64(this.GetRobot().GetRotation()), float64(response.Distance))
 	}
 	scanBuffer = make([]RobotDriverProtocol.ScanResponse, 0)
 }
 
 // Finds and returns the location of the robot
 func (this *Map) FindLocation() (int, int) {
-	rotationAmmount := 15
-	rotationJump := 5
+	rotationAmmount := 30
+	rotationJump := 1
 	x, y := int(this.GetRobot().GetX()), int(this.GetRobot().GetY())
 	var count = -999
 	var angle = int(this.GetRobot().GetRotation())
@@ -214,14 +214,13 @@ func (this *Map) findLocation(fragment Map) (int, int, int) {
 func (this *Map) probabilityAtLocation(fragment Map, x int, y int) (int, int, int) {
 	count := 0
 	height := len(fragment.floor)
-	for i := 0; i < height; i++ {
-		width := len(fragment.floor[i])
-		for j := 0; j < width; j++ {
-			checkX := x + i - width/2
-			checkY := y + j - height/2
+	for yOffset := 0; yOffset < height; yOffset++ {
+		width := len(fragment.floor[yOffset])
+		for xOffset := 0; xOffset < width; xOffset++ {
+			checkX := x + xOffset - width/2
+			checkY := y + yOffset - height/2
 			if checkX >= 0 && checkY >= 0 && checkX < this.width && checkY < this.height {
-
-				if fragment.floor[i][j] == true && fragment.floor[i][j] == RobotMap.floor[checkX][checkY] {
+				if fragment.floor[yOffset][xOffset] == true && fragment.floor[yOffset][xOffset] == RobotMap.floor[checkX][checkY] {
 					count++
 				}
 			}
