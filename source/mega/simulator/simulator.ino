@@ -142,8 +142,6 @@ void processCommand(command* com) {
     SPI_Wrapper::sendStopResponse(com->uniqueID, (uint16_t)distanceMoved, (uint16_t)movingAngle, true);
   }
   else if(com->commandNumber == rotateNum) {
-    com->uniqueID = uniqueID;
-    uniqueID++;
     respond((rotateCommand*)com);
     delete com;
     com = NULL;
@@ -183,7 +181,6 @@ void moveRobot(moveCommand* com) {
 scanResponse scan(){
   scanResponse scanResp;
   scanResp.angle = laserAngle;
-  com->uniqueID = 4;
   Line ray = Line(currentPosition, (calculations.makeLineFromPolar((((float)((laserAngle + 90) % 360) * PI) / 180), 4096.0, currentPosition)));
   nearestWall = calculations.getDestination(ray, room);
   scanResp.magnitude = (unsigned long)lround(calculations.getDistBetweenTwoPoints(ray.start, nearestWall));
