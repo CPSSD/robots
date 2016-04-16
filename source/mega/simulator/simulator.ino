@@ -25,7 +25,7 @@ Point MAP_BOUNDS[] = { {Point(0, 0)}, {Point(300, 0)}, {Point(300, 300)}, {Point
 Room room = Room(4, MAP_BOUNDS, Point(STARTING_X, STARTING_Y), 1);
 
 unsigned long startedMoving, moveTimer, scanTimer, rotateTimer, distTravelled;
-int uniqueID, magnitude, movingAngle, laserAngle, physicalAngle;
+int magnitude, movingAngle, laserAngle, physicalAngle;
 bool amScanning, amMoving, amRotating;
 
 Point currentPosition, destination, terminus, nearestWall;
@@ -130,8 +130,6 @@ void compassCommandHandler(compassCommand compCom) {
 
 void processCommand(command* com) {
   if(com->commandNumber == moveNum) {
-    com->uniqueID = uniqueID;
-    uniqueID++;
     moveRobot((moveCommand*)com);
   }
   else if(com->commandNumber == stopNum) {
@@ -152,8 +150,6 @@ void processCommand(command* com) {
     scanTimer = millis() + SCAN_RESPONSE_INTERVAL;
   }
   else if(com->commandNumber == compassNum) {
-    com->uniqueID = uniqueID;
-    uniqueID++;
     respond((compassCommand*)com);
     delete com;
     com = NULL;
@@ -189,8 +185,6 @@ void moveRobot(moveCommand* com) {
 scanResponse scan() {
   scanResponse scanResp;
   scanResp.angle = laserAngle;
-  com->uniqueID = uniqueID;
-  uniqueID++;
   Line ray = Line(currentPosition, (calculations.makeLineFromPolar((((float)((laserAngle + 90) % 360) * PI) / 180), 4096.0, currentPosition)));
   nearestWall = calculations.getDestination(ray, room);
   scanResp.magnitude = (unsigned long)lround(calculations.getDistBetweenTwoPoints(ray.start, nearestWall));
