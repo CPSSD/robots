@@ -1,5 +1,6 @@
 #include "room.h"
 #include "calc.h";
+#include "Arduino.h";
 
 Point::Point() {
 	this->x = 0.0;
