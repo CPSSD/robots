@@ -13,26 +13,48 @@ type Node struct {
 	solid          bool
 }
 
+var radius = 30 // Radius around robot.
+
 // GetRoute Calls various functions below and returns the end result of the pathfinding algorithm.
 func GetRoute(robotMap Map, x, y int) ([][]bool, bool) {
 	if Debug {
 		fmt.Println("GetRouteTo(", x, ",", y, ")")
 	}
-	bitmap, _ := robotMap.GetBitmap()
-	nodeMap := createNodeMap(bitmap)
+	nodeMap := robotMap.createNodeMap(radius)
 	getDistanceToGoal(nodeMap, x, y)
 	return pathfind(nodeMap, int(robotMap.GetRobot().GetX()), int(robotMap.GetRobot().GetY()), x, y)
 }
 
 // Creates a Node at each point of the map.
-func createNodeMap(robotMap [][]bool) (nodeMap [][]Node) {
+func (this *Map) createNodeMap(radius int) (nodeMap [][]Node) {
+	robotMap := this.floor
 	for i := 0; i < len(robotMap); i++ {
 		nodeMap = append(nodeMap, make([]Node, 0))
 		for j := 0; j < len(robotMap[0]); j++ {
-			nodeMap[i] = append(nodeMap[i], Node{id: (j * len(robotMap[0])) + i, x: j, y: i, solid: robotMap[i][j]})
+			nodeMap[i] = append(nodeMap[i], Node{id: (j * len(robotMap[0])) + i, x: j, y: i, solid: !isValidNode(this.floor, j, i, radius)})
 		}
 	}
 	return
+}
+
+func isValidNode(robotMap [][]bool, x int, y int, radius int) bool {
+	distanceToScale := radius / BitmapScale
+	for yOffset := -distanceToScale; yOffset <= distanceToScale; yOffset++ {
+		if y+yOffset < len(robotMap) && y+yOffset >= 0 {
+			for xOffset := -distanceToScale; xOffset <= distanceToScale; xOffset++ {
+				if x+xOffset < len(robotMap[y+yOffset]) && x+xOffset >= 0 {
+					if !(xOffset == 0 && yOffset == 0) {
+						if distanceToScale <= getDistanceToPoint(x, y, x+xOffset, y+yOffset) {
+							if robotMap[y+yOffset][x+xOffset] {
+								return false
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+	return true
 }
 
 // Pathfinding Algorithm. Based on A*
@@ -141,6 +163,11 @@ func (this *Node) addToList(nodeMap [][]Node, x, y int, list map[int]*Node, clos
 // Gets distance to goal for a single node (minimum steps to target (horizontal and vertical))
 func (this *Node) getDistanceToGoal(x, y int) {
 	this.distanceToGoal = int(math.Abs(float64((x - this.x))) + math.Abs(float64(y-this.y)))
+}
+
+// GetDistanceToPoint Gets distance between two points
+func getDistanceToPoint(x1, y1, x2, y2 int) int {
+	return int(math.Abs(float64((x2 - x1))) + math.Abs(float64(y2-y1)))
 }
 
 // Gets distance to goal for all nodes (minimum steps to target (horizontal and vertical))
