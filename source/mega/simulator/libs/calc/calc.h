@@ -13,6 +13,8 @@ class calc {
 		float getDistBetweenTwoPoints(Point p1, Point p2);
 		float getTravelTime(unsigned long distance, float speed);
 		float getDistanceTravelled(float speed, unsigned long time);
+		static bool isWithinEpsilonOf(float value, float epsilon, float of);
+		float correctFloatErr(float value, float epsilon, float of);
 		Point makeLineFromPolar(float angle, float distance, Point currentPosition);
 		static bool checkIfVertical(Point start, Point end);
 		static float getSlopeOfLine(Point start, Point end);

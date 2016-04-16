@@ -16,10 +16,10 @@ typedef enum {
 } comNums;
 
 const float SPEED = 1; //in mm per millisecond
-const int STARTING_X = 30; //This and all distances measured in cm
-const int STARTING_Y = 30;
+const int STARTING_X = 70; //This and all distances measured in cm
+const int STARTING_Y = 70;
 const unsigned long SCAN_RESPONSE_INTERVAL = 100; //Values as low as 80 worked in testing
-Point MAP_BOUNDS[] = { {Point(0, 0)}, {Point(300, 0)}, {Point(300, 300)}, {Point(0, 300)} };
+Point MAP_BOUNDS[] = { {Point(0, 0)}, {Point(600, 0)}, {Point(600, 600)}, {Point(0, 600)} };
 Room room = Room(4, MAP_BOUNDS, Point(STARTING_X, STARTING_Y), 1);
 
 unsigned long startedMoving, moveTimer, scanTimer, rotateTimer, distTravelled;
@@ -46,7 +46,7 @@ void setup() {
   amScanning = false;
   amMoving = false;
   amRotating = false;
-  Point newObjHolder[] = { {Point(145, 145)}, {Point(155, 145)}, {Point(155, 155)}, {Point(145, 155)} };
+  Point newObjHolder[] = { {Point(295, 295)}, {Point(305, 295)}, {Point(305, 305)}, {Point(295, 305)} };
   Serial.print("Adding object 1: ");
   Serial.println(room.addObject(0, 4, newObjHolder));
   scanTimer = millis();
@@ -66,11 +66,11 @@ void loop() {
     respond((moveCommand*)com);
     Serial.println("---------- Current Pos"); 
     Serial.print(currentPosition.x);
-    Serial.println(", ");
+    Serial.print(", ");
     Serial.println(currentPosition.y);
     Serial.println("--------- Destination");
     Serial.print(destination.x);
-    Serial.println(", ");
+    Serial.print(", ");
     Serial.println(destination.y);
     currentPosition = destination;
     amMoving = false;
@@ -148,6 +148,11 @@ void respond(moveCommand* com){
 
 void respond(scanResponse scanResp) {
   Serial.println("Sending Scan Response...");
+  /*Serial.print("Angle: ");
+  Serial.print(scanResp.angle);
+  Serial.print("\t Distance: ");
+  Serial.print(scanResp.magnitude);
+  Serial.println();*/
   SPI_Wrapper::sendScanResponse(com->uniqueID, scanResp.angle, scanResp.magnitude, scanResp.last, true);
 }
 
