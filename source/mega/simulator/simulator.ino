@@ -34,7 +34,7 @@ scanResponse scanResp;
 
 float maxDegreeOfError = 100.0;
 float degreeOfError = 0.0;
-int angleSlip = 3;
+int angleSlip = 20;
 
 void setup() {
   SPI_Wrapper::init();
@@ -171,7 +171,7 @@ void respond(compassCommand* com) {
 
 void moveRobot(moveCommand* com) {
   destination = calculations.makeLineFromPolar((float((com->angle + 90) % 360) * PI) / 180 , com->magnitude, currentPosition);
-  movingAngle = float(com->angle) + (int)lround((angleSlip * (degreeOfError / maxDegreeOfError)));
+  movingAngle = com->angle + (int)lround((angleSlip * (degreeOfError / maxDegreeOfError)));
   physicalAngle = physicalAngle + (int)lround((angleSlip * (degreeOfError / maxDegreeOfError)));
   terminus = calculations.makeLineFromPolar((float((movingAngle + 90) % 360) * PI) / 180, com->magnitude, currentPosition);
   Line ray = Line(currentPosition, terminus);
