@@ -5,6 +5,7 @@
 #include <room.h>
 #include "math.h"
 #include <Shared_Structs.h>
+#include <QueueList.h>
 
 calc calculations;
 
@@ -12,7 +13,8 @@ typedef enum {
   moveNum  = 1,
   stopNum  = 2,
   rotateNum  = 3,
-  scanNum  = 4
+  scanNum  = 4,
+  compassNum = 5
 } comNums;
 
 const float SPEED = 1; //in mm per millisecond
@@ -23,7 +25,7 @@ Point MAP_BOUNDS[] = { {Point(0, 0)}, {Point(300, 0)}, {Point(300, 300)}, {Point
 Room room = Room(4, MAP_BOUNDS, Point(STARTING_X, STARTING_Y), 1);
 
 unsigned long startedMoving, moveTimer, scanTimer, rotateTimer, distTravelled;
-int id, magnitude, movingAngle, laserAngle;
+int uniqueID, magnitude, movingAngle, laserAngle, physicalAngle;
 bool amScanning, amMoving, amRotating;
 
 Point currentPosition, destination, terminus, nearestWall;
@@ -39,6 +41,7 @@ void setup() {
   SPI_Wrapper::registerMoveCommandHandler(&moveCommandHandler);
   SPI_Wrapper::registerScanCommandHandler(&scanCommandHandler);
   SPI_Wrapper::registerStopCommandHandler(&stopCommandHandler);
+  SPI_Wrapper::registerCompassCommandHandler(&compassCommandHandler);
   Serial.begin(9600);
   Serial.println("Starting...");
   currentPosition.x = STARTING_X;
@@ -119,30 +122,45 @@ void scanCommandHandler(scanCommand scanCom) {
   }
 }
 
+void compassCommandHandler(compassCommand compCom) {
+  if (com == NULL) {
+    com =  new compassCommand(compCom);
+  }
+}
+
 void processCommand(command* com) {
-  if(com->commandNumber == moveNum){
+  if(com->commandNumber == moveNum) {
+    com->uniqueID = uniqueID;
+    uniqueID++;
     moveRobot((moveCommand*)com);
   }
-  else if(com->commandNumber == stopNum){
+  else if(com->commandNumber == stopNum) {
     amMoving = false;
     unsigned long totalDistance = calculations.getDistBetweenTwoPoints(currentPosition, destination);
     float distanceMoved = (((float)(millis() - startedMoving))/(float)(moveTimer - startedMoving))*(float)(totalDistance);
     
     // Change currentPosition to represent the distance moved
-    currentPosition = calculations.makeLineFromPolar(movingAngle, (uint16_t)distanceMoved, currentPosition);
+    currentPosition = calculations.makeLineFromPolar(movingAngle, distanceMoved, currentPosition);
     
-    SPI_Wrapper::sendStopResponse(com->uniqueID, (uint16_t)distanceMoved, (uint16_t)movingAngle, true);
+    SPI_Wrapper::sendStopResponse(com->uniqueID, distanceMoved, movingAngle, true);
   }
   else if(com->commandNumber == rotateNum){
     // rotate command to be implemented
   }
-  else if(com->commandNumber == scanNum){
+  else if(com->commandNumber == scanNum) {
     amScanning = true;
     scanTimer = millis() + SCAN_RESPONSE_INTERVAL;
   }
+  else if(com->commandNumber == compassNum) {
+    com->uniqueID = uniqueID;
+    uniqueID++;
+    respond((compassCommand*)com);
+    delete com;
+    com = NULL;
+  }
 }
 
-void respond(moveCommand* com){
+void respond(moveCommand* com) {
   SPI_Wrapper::sendMoveResponse(com->uniqueID, distTravelled, movingAngle, true);
 }
 
@@ -151,9 +169,14 @@ void respond(scanResponse scanResp) {
   SPI_Wrapper::sendScanResponse(com->uniqueID, scanResp.angle, scanResp.magnitude, scanResp.last, true);
 }
 
+void respond(compassCommand* com) {
+  SPI_Wrapper::sendCompassResponse(com->uniqueID, ((physicalAngle - 90) % 360), true);
+}
+
 void moveRobot(moveCommand* com) {
   destination = calculations.makeLineFromPolar((float((com->angle + 90) % 360) * PI) / 180 , com->magnitude, currentPosition);
   movingAngle = float(com->angle) + (int)lround((angleSlip * (degreeOfError / maxDegreeOfError)));
+  physicalAngle = physicalAngle + (int)lround((angleSlip * (degreeOfError / maxDegreeOfError)));
   terminus = calculations.makeLineFromPolar((float((movingAngle + 90) % 360) * PI) / 180, com->magnitude, currentPosition);
   Line ray = Line(currentPosition, terminus);
   terminus = calculations.getDestination(ray, room);
@@ -163,10 +186,11 @@ void moveRobot(moveCommand* com) {
   moveTimer = millis() + calculations.getTravelTime(((com->magnitude) * 10), SPEED);
 }
 
-scanResponse scan(){
+scanResponse scan() {
   scanResponse scanResp;
   scanResp.angle = laserAngle;
-  com->uniqueID = 4;
+  com->uniqueID = uniqueID;
+  uniqueID++;
   Line ray = Line(currentPosition, (calculations.makeLineFromPolar((((float)((laserAngle + 90) % 360) * PI) / 180), 4096.0, currentPosition)));
   nearestWall = calculations.getDestination(ray, room);
   scanResp.magnitude = (unsigned long)lround(calculations.getDistBetweenTwoPoints(ray.start, nearestWall));
