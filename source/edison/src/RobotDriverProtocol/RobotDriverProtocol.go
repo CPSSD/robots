@@ -122,7 +122,7 @@ func processScanResponse(responseBuffer []uint8) {
 }
 
 func processCompassResponse(responseBuffer []uint8) {
-	if len(responseBuffer < 5) {
+	if len(responseBuffer) < 5 {
 		return
 	}
 	var compassResponse CompassResponse
@@ -158,7 +158,7 @@ func sendNextCommand() bool {
 
 	data := make([]uint8, 1)
 	data[0] = length
-	time.Sleep(time.Millisecond)
+	time.Sleep(time.Millisecond/10)
 	SPI.TransferAndReceiveData(data)
 	if data[0] > length {
 		length = data[0]
@@ -173,10 +173,10 @@ func sendNextCommand() bool {
 			buffersToSend = buffersToSend[1:]
 		}
 
-		time.Sleep(time.Millisecond)
+		time.Sleep(time.Millisecond/10)
 
 		for i := 0; i < len(dataBuffer); i++ {
-			time.Sleep(time.Millisecond)
+			time.Sleep(time.Millisecond/10)
 			data[0] = dataBuffer[i]
 			SPI.TransferAndReceiveData(data)
 			dataBuffer[i] = data[0]
@@ -193,7 +193,7 @@ func sendNextCommand() bool {
 			notFinished = true
 		}
 
-		time.Sleep(time.Millisecond)
+		time.Sleep(time.Millisecond/10)
 		SPI.TransferAndReceiveData(data)
 
 		return (notFinished == true || data[0] == 1)
@@ -203,7 +203,7 @@ func sendNextCommand() bool {
 
 func spiLoop() {
 	for {
-		time.Sleep(20 * time.Millisecond)
+		time.Sleep(2 * time.Millisecond)
 		data := make([]uint8, 1)
 		data[0] = initiateTransfer
 		SPI.TransferAndReceiveData(data)

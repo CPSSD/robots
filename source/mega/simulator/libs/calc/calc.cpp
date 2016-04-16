@@ -50,15 +50,24 @@ float calc::getCOfLine(float slope, Point start) {
 Point calc::getDestination(Line robotLine, Room room) {
   //For each line, check for valid interception point, get interception point
   Point nearestWall = robotLine.end;
-  Point validInterceptPoints[room.walls.numSides];
-  int indexVIP = 0;
+  Point validInterceptPoints[(room.numObjects) + 1][room.maxNumObjSides];
+  int indexVIP[(room.numObjects) + 1];
+  indexVIP[0] = 0;
   for(int i = 0; i < (room.walls.numSides); i++) {
     if(hasInterception(room.walls.sides[i], robotLine)) {
-		//Serial.println(i);
-		validInterceptPoints[indexVIP] = getInterceptPoint(robotLine, room.walls.sides[i]);
-		indexVIP++;
+		validInterceptPoints[0][indexVIP[0]] = getInterceptPoint(robotLine, room.walls.sides[i]);
+		indexVIP[0]++;
     }
   }
+	for(int j = 1; j < ((room.numObjects) + 1); j++) {
+		indexVIP[j] = 0;
+		for(int k = 0; k < room.objects[j - 1].numSides; k++) {
+			if(hasInterception(room.objects[j - 1].sides[k], robotLine)) {
+			validInterceptPoints[j][indexVIP[j]] = getInterceptPoint(robotLine, room.objects[j].sides[k]);
+			indexVIP[j]++;
+			}
+		}
+	}
   //Determine sign of each translation in x and y, relative to robot
   float diffInXValuesDest = robotLine.end.x - robotLine.start.x;
   if(diffInXValuesDest >= -0.01f && diffInXValuesDest <= 0.01f) {
@@ -73,27 +82,29 @@ Point calc::getDestination(Line robotLine, Room room) {
   //Get distance between robot and destination
   distBetweenRobotAndDest = getDistBetweenTwoPoints(robotLine.start, nearestWall);
   
-  for(int i = 0; i < indexVIP; i++) {
-	//Determine sign of each translation for given interception point
-	diffInXValuesWall = validInterceptPoints[i].x - robotLine.start.x;
-	if(diffInXValuesWall >= -0.01f && diffInXValuesWall <= 0.01f) {
-		diffInXValuesWall = 0.00;
-	}
-	diffInYValuesWall = validInterceptPoints[i].y - robotLine.start.y;
-	if(diffInYValuesWall >= -0.01f && diffInYValuesWall <= 0.01f) {
-		diffInYValuesWall = 0.00;
-	}
-	//If the signs match, we're facing the right direction
-	if(( (diffInXValuesDest > 0.0 && diffInXValuesWall > 0.0) || (diffInXValuesDest == 0.0 && diffInXValuesWall == 0.0) || (diffInXValuesDest < 0.0 && diffInXValuesWall < 0.0) )
-  &&( (diffInYValuesDest > 0.0 && diffInYValuesWall > 0.0) || (diffInYValuesDest == 0.0 && diffInYValuesWall == 0.0) || (diffInYValuesDest < 0.0 && diffInYValuesWall < 0.0) )) {
-	  //Get distance between robot and interception point
-	  distBetweenRobotAndWall = getDistBetweenTwoPoints(robotLine.start, validInterceptPoints[i]);
-	  //If distance between robot and interception point is shorter than between robot and destination
-	  if(distBetweenRobotAndWall <= distBetweenRobotAndDest) {
-		  nearestWall = validInterceptPoints[i];
-		  distBetweenRobotAndDest = distBetweenRobotAndWall;
+  for(int i = 0; i < ((room.numObjects) + 1); i++) {
+	for(int j = 0; j < indexVIP[i]; j++) {
+		//Determine sign of each translation for given interception point
+		diffInXValuesWall = validInterceptPoints[i][j].x - robotLine.start.x;
+		if(diffInXValuesWall >= -0.01f && diffInXValuesWall <= 0.01f) {
+			diffInXValuesWall = 0.00;
 		}
-	}
+		diffInYValuesWall = validInterceptPoints[i][j].y - robotLine.start.y;
+		if(diffInYValuesWall >= -0.01f && diffInYValuesWall <= 0.01f) {
+			diffInYValuesWall = 0.00;
+		}
+		//If the signs match, we're facing the right direction
+		if(( (diffInXValuesDest > 0.0 && diffInXValuesWall > 0.0) || (diffInXValuesDest == 0.0 && diffInXValuesWall == 0.0) || (diffInXValuesDest < 0.0 && diffInXValuesWall < 0.0) )
+	  &&( (diffInYValuesDest > 0.0 && diffInYValuesWall > 0.0) || (diffInYValuesDest == 0.0 && diffInYValuesWall == 0.0) || (diffInYValuesDest < 0.0 && diffInYValuesWall < 0.0) )) {
+		  //Get distance between robot and interception point
+		  distBetweenRobotAndWall = getDistBetweenTwoPoints(robotLine.start, validInterceptPoints[i][j]);
+		  //If distance between robot and interception point is shorter than between robot and destination
+		  if(distBetweenRobotAndWall <= distBetweenRobotAndDest) {
+			  nearestWall = validInterceptPoints[i][j];
+			  distBetweenRobotAndDest = distBetweenRobotAndWall;
+			}
+		}
+	  }
   }
   return nearestWall;
 }
