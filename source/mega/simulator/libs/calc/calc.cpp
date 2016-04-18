@@ -89,15 +89,31 @@ Point calc::getDestination(Line robotLine, Room room) {
 	diffInYValuesDest = correctFloatErr(diffInYValuesDest, 0.01f, 0.00f);
 
 	float diffInXValuesWall, diffInYValuesWall, distBetweenRobotAndDest, distBetweenRobotAndWall;
+	Point stepBack;
 	//Get distance between robot and destination
 	distBetweenRobotAndDest = getDistBetweenTwoPoints(robotLine.start, nearestWall);
 
 	for(int i = 0; i < ((room.numObjects) + 1); i++) {
 		for(int j = 0; j < indexVIP[i]; j++) {
+			//Check if near a wall or object, and  trying to go through it
+			if(validInterceptPoints[i][j].x == robotLine.start.x && validInterceptPoints[i][j].y == robotLine.start.y) {
+				stepBack = Point(((2 * (robotLine.start.x - robotLine.end.x)) + robotLine.end.x), ((2 * (robotLine.start.y - robotLine.end.y)) + robotLine.end.y)); //P = d(B - A) + A where:
+																																									//A is the starting point (x0, y0) of the line segment,
+																																									//B is the end point (x1, y1),
+																																									//d is the distance from starting point A to the desired collinear point,
+																																									//and P is the desired collinear point
+				//Check signs of translations. If they match, we're trying to go through
+				diffInXValuesWall = validInterceptPoints[i][j].x - stepBack.x;
+				diffInYValuesWall = validInterceptPoints[i][j].y - stepBack.y;
+				if(( (diffInXValuesDest > 0.0 && diffInXValuesWall > 0.0) || (diffInXValuesDest == 0.0 && diffInXValuesWall == 0.0) || (diffInXValuesDest < 0.0 && diffInXValuesWall < 0.0) )
+				&&( (diffInYValuesDest > 0.0 && diffInYValuesWall > 0.0) || (diffInYValuesDest == 0.0 && diffInYValuesWall == 0.0) || (diffInYValuesDest < 0.0 && diffInYValuesWall < 0.0) )) {
+					return robotLine.start;
+				}
+			}
 			//Determine sign of each translation for given interception point
 			diffInXValuesWall = validInterceptPoints[i][j].x - robotLine.start.x;
-			diffInXValuesWall = correctFloatErr(diffInXValuesWall, 0.01f, 0.00f);
 			diffInYValuesWall = validInterceptPoints[i][j].y - robotLine.start.y;
+			diffInXValuesWall = correctFloatErr(diffInXValuesWall, 0.01f, 0.00f);
 			diffInYValuesWall = correctFloatErr(diffInYValuesWall, 0.01f, 0.00f);
 			//If the signs match, we're facing the right direction
 			if(( (diffInXValuesDest > 0.0 && diffInXValuesWall > 0.0) || (diffInXValuesDest == 0.0 && diffInXValuesWall == 0.0) || (diffInXValuesDest < 0.0 && diffInXValuesWall < 0.0) )
