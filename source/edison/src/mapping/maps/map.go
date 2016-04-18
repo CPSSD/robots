@@ -160,7 +160,7 @@ func (this *Map) addBufferToMap() {
 }
 
 // FindLocation finds and returns the location of the robot based on the current scan information and the previous map information
-func (this *Map) FindLocation() (int, int) {
+func (this *Map) FindLocation() (int, int, float64) {
 	rotationAmmount := 30
 	rotationJump := 1
 	x, y := int(this.GetRobot().GetX()), int(this.GetRobot().GetY())
@@ -178,8 +178,7 @@ func (this *Map) FindLocation() (int, int) {
 		}
 	}
 	fmt.Println("Most Likely Position after rotation is: (", x, ", ", y, ")")
-	this.GetRobot().Rotate(float64(angle))
-	return x, y
+	return x, y, float64(angle)
 }
 
 func (this *Map) findLocation(fragment Map) (int, int, int) {
