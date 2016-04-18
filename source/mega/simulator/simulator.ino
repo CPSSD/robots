@@ -1,3 +1,4 @@
+#include <QueueList.h>
 #include <SPI.h>
 #include <SPI_Wrapper.h>
 
@@ -16,8 +17,8 @@ typedef enum {
 } comNums;
 
 const float SPEED = 1; //in mm per millisecond
-const int STARTING_X = 70; //This and all distances measured in cm
-const int STARTING_Y = 70;
+const int STARTING_X = 300; //This and all distances measured in cm
+const int STARTING_Y = 300;
 const unsigned long SCAN_RESPONSE_INTERVAL = 100; //Values as low as 80 worked in testing
 Point MAP_BOUNDS[] = { {Point(0, 0)}, {Point(600, 0)}, {Point(600, 600)}, {Point(0, 600)} };
 Room room = Room(4, MAP_BOUNDS, Point(STARTING_X, STARTING_Y), 1);
@@ -46,7 +47,7 @@ void setup() {
   amScanning = false;
   amMoving = false;
   amRotating = false;
-  Point newObjHolder[] = { {Point(295, 295)}, {Point(305, 295)}, {Point(305, 305)}, {Point(295, 305)} };
+  Point newObjHolder[] = { {Point(0, 0)}, {Point(80, 0)}, {Point(80, 80)}, {Point(0, 80)} };
   Serial.print("Adding object 1: ");
   Serial.println(room.addObject(0, 4, newObjHolder));
   scanTimer = millis();
@@ -63,7 +64,6 @@ void loop() {
   }
 
   if(amMoving && millis() >= moveTimer) {
-    respond((moveCommand*)com);
     Serial.println("---------- Current Pos"); 
     Serial.print(currentPosition.x);
     Serial.print(", ");
@@ -72,6 +72,8 @@ void loop() {
     Serial.print(destination.x);
     Serial.print(", ");
     Serial.println(destination.y);
+    delay(50);
+    respond((moveCommand*)com);
     currentPosition = destination;
     amMoving = false;
     delete com;
