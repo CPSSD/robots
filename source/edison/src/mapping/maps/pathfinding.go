@@ -25,9 +25,10 @@ func GetRoute(robotMap Map, x, y int) ([][]bool, bool) {
 }
 
 func getOffset(x, y, distance, rotation int) (xOffset, yOffset int) {
-	xOffset = distance * Math.Cos(rotation)
-	yOffset = distance * Math.Sin(rotation)
-	fmt.println("Offset should be -> ", xOffset, ", ", yOffset)
+	xOffset = int(float64(distance) * math.Cos(float64(rotation)))
+	yOffset = int(float64(distance) * math.Sin(float64(rotation)))
+	fmt.Println("Offset should be -> ", xOffset, ", ", yOffset)
+	return
 }
 
 // Creates a Node at each point of the map.
@@ -36,8 +37,6 @@ func (this *Map) createNodeMap(radius int) (nodeMap [][]Node) {
 	for i := 0; i < len(robotMap); i++ {
 		nodeMap = append(nodeMap, make([]Node, 0))
 		for j := 0; j < len(robotMap[0]); j++ {
-			// getOffset(...) Will print out debug info for now, not actually implemented into the pathfinding yet
-			_, _ := getOffset(j, i, this.GetRobot().GetRotation())
 			nodeMap[i] = append(nodeMap[i], Node{id: (j * len(robotMap[0])) + i, x: j, y: i, solid: !isValidNode(this.floor, j, i, radius)})
 		}
 	}

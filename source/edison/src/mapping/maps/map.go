@@ -12,12 +12,10 @@ import (
 	"strconv"
 )
 
-// BitmapScale is the size of each bitmap segment in millimeters
-const BitmapScale = 10
-
 // Debug indicates whether to print verbose debugging output
 const Debug = false
 
+var BitmapScale int
 var scanBuffer []RobotDriverProtocol.ScanResponse
 var finishedMapping = false
 
@@ -44,7 +42,8 @@ type Map struct {
 }
 
 // MapInit initialises the map and the rdp library, and starts a scan.
-func MapInit() {
+func MapInit(bitmapScale int) {
+	BitmapScale = bitmapScale
 	fmt.Println("[Initialising Map]")
 
 	RobotMap = CreateMap()
@@ -145,9 +144,7 @@ func createMapFragment(buffer []RobotDriverProtocol.ScanResponse, rotation int) 
 	for _, line := range buffer {
 		fragment.AddWallByLine(float64((int(line.Degree)+rotation)%360), float64(line.Distance))
 	}
-	fmt.Println("Created Fragment: ")
-	fragment.Print(nil)
-	fmt.Println("Robot Location: (", fragment.GetRobot().GetX(), ", ", fragment.GetRobot().GetY(), ")")
+	fmt.Println("[", rotation, "] Robot Location: (", fragment.GetRobot().GetX(), ", ", fragment.GetRobot().GetY(), ")")
 	return fragment
 }
 
@@ -192,18 +189,18 @@ func (this *Map) findLocation(fragment Map) (int, int, int) {
 			if i >= 0 && j >= 0 && i < this.width && j < this.height {
 				count, _, _ := this.probabilityAtLocation(fragment, int(i), int(j))
 				if count != 0 {
-					fmt.Print(count, " ")
+					// fmt.Print(count, " ")
 					if count > mCount {
 						mX = i - (fragment.width / 2) + int(fragment.GetRobot().GetX())
 						mY = j - (fragment.height / 2) + int(fragment.GetRobot().GetY())
 						mCount = count
 					}
 				} else {
-					fmt.Print("  ")
+					// fmt.Print("  ")
 				}
 			}
 		}
-		fmt.Println("")
+		// fmt.Println("")
 	}
 
 	fmt.Println("Most Likely Position: (", mX, ", ", mY, "): ", mCount)
@@ -219,7 +216,7 @@ func (this *Map) probabilityAtLocation(fragment Map, x int, y int) (int, int, in
 			checkX := x + xOffset - width/2
 			checkY := y + yOffset - height/2
 			if checkX >= 0 && checkY >= 0 && checkX < this.width && checkY < this.height {
-				if fragment.floor[yOffset][xOffset] == true && fragment.floor[yOffset][xOffset] == RobotMap.floor[checkX][checkY] {
+				if fragment.floor[yOffset][xOffset] == true && fragment.floor[yOffset][xOffset] == RobotMap.floor[checkY][checkX] {
 					count++
 				}
 			}
@@ -278,16 +275,16 @@ func (this *Map) MoveRobotAlongPath(newPath [][]bool, stopBeforePoint bool) {
 func getHorizontalLine(x1, y1, x2, y2 int) (degree, magnitude float64) {
 	fmt.Println("[GetHorizontalLine] (", x1, ",", y1, ") -> (", x2, ",", y2, ")")
 	if x1+1 == x2 && y1 == y2 {
-		return 90, BitmapScale
+		return 90, float64(BitmapScale)
 	}
 	if x1-1 == x2 && y1 == y2 {
-		return 270, BitmapScale
+		return 270, float64(BitmapScale)
 	}
 	if y1-1 == y2 && x1 == x2 {
-		return 0, BitmapScale
+		return 0, float64(BitmapScale)
 	}
 	if y1+1 == y2 && x1 == x2 {
-		return 180, BitmapScale
+		return 180, float64(BitmapScale)
 	}
 	return 0, 0
 }
@@ -444,6 +441,9 @@ func (this *Map) createExpandedMap(expandX, expandY int) (tempMap *Map) {
 
 // Print ouputs the state of the map in a nice way.
 func (this *Map) Print(path [][]bool) {
+	if !Debug {
+		return
+	}
 	for y := 0; y < this.height; y++ {
 		for x := 0; x < this.width; x++ {
 			robotX, robotY := int(this.robot.x), int(this.robot.y)
@@ -470,7 +470,7 @@ func (this *Map) Print(path [][]bool) {
 
 func scale(x float64) float64 {
 	if x != 0 {
-		return float64(x / BitmapScale)
+		return float64(x / float64(BitmapScale))
 	}
 	return 0
 }

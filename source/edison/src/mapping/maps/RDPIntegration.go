@@ -68,8 +68,8 @@ func scanResponse(response RobotDriverProtocol.ScanResponse) {
 			fmt.Println("Robot should be here at this location: (", RobotMap.GetRobot().GetX(), ", ", RobotMap.GetRobot().GetY(), ")")
 			x, y, rotation := RobotMap.FindLocation()
 			RobotMap.GetRobot().MoveToPoint(x, y, true)
-			RobotMap.addBufferToMap()
 			RobotMap.GetRobot().Rotate(float64(rotation))
+			RobotMap.addBufferToMap()
 		}
 
 		lastAction = "Scan"
