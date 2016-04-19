@@ -2,7 +2,10 @@
 
 package maps
 
-import "fmt"
+import (
+	"fmt"
+	"math"
+)
 
 type Line struct {
 	P1       Point
@@ -17,6 +20,56 @@ func (this Line) getSlope() (int, bool) {
 		return 0, true
 	}
 	return ((this.P1.Y - this.P2.Y) / (this.P1.X - this.P2.X)), false
+}
+
+func (this Line) getAngleFrom(point Point) int {
+	if this.pointOnLine(point) {
+		if this.Vertical {
+			if this.getOtherPoint(point).Y < point.Y {
+				return 0
+			}
+			return 180
+		} else {
+			if this.getOtherPoint(point).X < point.X {
+				return 270
+			}
+			return 90
+		}
+	}
+	fmt.Println("[Point::getAngleFrom] Attempting to get angle for a point thats not on the line...")
+	return 0
+}
+
+func (this Line) getLength() int {
+	a := float64((this.P1.X - this.P2.X) * (this.P1.X - this.P2.X))
+	b := float64((this.P1.Y - this.P2.Y) * (this.P1.Y - this.P2.Y))
+
+	slope, _ := this.getSlope()
+
+	if this.Vertical {
+		return int(math.Abs(float64(this.P1.Y-this.P2.Y))) * BitmapScale
+	} else if slope == 0 {
+		return int(math.Abs(float64(this.P1.X-this.P2.X))) * BitmapScale
+	}
+
+	return int(math.Sqrt(a+b)) * BitmapScale
+}
+
+func (this Line) pointOnLine(point Point) bool {
+	return this.P1.equals(point) || this.P2.equals(point)
+}
+
+func (this Line) getOtherPoint(point Point) Point {
+	if this.pointOnLine(point) {
+		if this.P1.equals(point) {
+			return this.P2
+		}
+
+		if this.P2.equals(point) {
+			return this.P1
+		}
+	}
+	return point
 }
 
 // Returns true if the lines have a point in common. (Not Point of Intersection)

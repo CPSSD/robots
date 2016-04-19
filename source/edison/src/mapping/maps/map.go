@@ -24,9 +24,12 @@ var firstScan = true
 var checkLocation = false
 var followingPath = false
 
+var pathIndex = 0
+
 // RobotMap is a map of the current room being mapped
 var RobotMap Map
 var path [][]bool
+var lineMap []Line
 
 // Map represents a two dimentional map of the environment we are mapping
 type Map struct {
@@ -227,31 +230,28 @@ func (this *Map) probabilityAtLocation(fragment Map, x int, y int) (int, int, in
 
 func (this *Map) TakeNextStep(lastX int, lastY int) {
 	if len(path) != 0 {
-		x, y, movesLeft := this.getNextMove(int(this.GetRobot().GetX()), int(this.GetRobot().GetY()), lastX, lastY, path)
-		_, _, moreMoves := this.getNextMove(x, y, int(this.GetRobot().GetX()), int(this.GetRobot().GetY()), path)
+		robotPoint := Point{int(this.GetRobot().GetX()), int(this.GetRobot().GetY())}
+		line, movesLeft := this.getNextMove(int(this.GetRobot().GetX()), int(this.GetRobot().GetY()), lastX, lastY, path)
+		_, moreMoves := this.getNextMove(line.getOtherPoint(robotPoint).X, line.getOtherPoint(robotPoint).Y, int(this.GetRobot().GetX()), int(this.GetRobot().GetY()), path)
 
 		// If you are 1 move away from end point
-		if !moreMoves {
+		if !moreMoves || !movesLeft {
 			fmt.Println("No more steps to take...")
 			path = make([][]bool, 0)
+			lineMap = make([]Line, 0)
 			followingPath = false
 
 			RobotDriverProtocol.Scan()
 			return
 		}
 
-		fmt.Println("[TakeNextStep]: (", x, ", ", y, ") | From Location: (", this.GetRobot().GetX(), ", ", this.GetRobot().GetY(), ")")
+		fmt.Println("[TakeNextStep]: (", line, ") | From Location: (", robotPoint, ")")
 
-		if !movesLeft {
-			fmt.Println("Finished Following path")
-			path = make([][]bool, 0)
-			followingPath = false
-			RobotDriverProtocol.Scan()
-			return
-		}
+		degree := line.getAngleFrom(robotPoint)
+		magnitude := line.getLength()
 
-		degree, magnitude := getHorizontalLine(int(this.GetRobot().GetX()), int(this.GetRobot().GetY()), x, y)
 		fmt.Println("[TakeNextStep]: Required Move: ", degree, " -> ", magnitude)
+
 		RobotDriverProtocol.Move(uint16(degree), uint32(magnitude))
 	} else {
 		fmt.Println("No more steps to take...")
@@ -272,23 +272,6 @@ func (this *Map) MoveRobotAlongPath(newPath [][]bool, stopBeforePoint bool) {
 	fmt.Println("Queued a path for movement...")
 }
 
-func getHorizontalLine(x1, y1, x2, y2 int) (degree, magnitude float64) {
-	fmt.Println("[GetHorizontalLine] (", x1, ",", y1, ") -> (", x2, ",", y2, ")")
-	if x1+1 == x2 && y1 == y2 {
-		return 90, float64(BitmapScale)
-	}
-	if x1-1 == x2 && y1 == y2 {
-		return 270, float64(BitmapScale)
-	}
-	if y1-1 == y2 && x1 == x2 {
-		return 0, float64(BitmapScale)
-	}
-	if y1+1 == y2 && x1 == x2 {
-		return 180, float64(BitmapScale)
-	}
-	return 0, 0
-}
-
 // MoveRobotAlongLine moves the robot to the end point of the line.
 func (this *Map) MoveRobotAlongLine(degree, magnitude float64) {
 	this.robot.MoveAlongLine(degree, scale(magnitude))
@@ -300,28 +283,23 @@ func (this *Map) MoveRobotToPoint(x, y int) {
 }
 
 // Returns the next move in the path.
-func (this *Map) getNextMove(x, y, prevX, prevY int, path [][]bool) (x1 int, y1 int, possibleMove bool) {
-	if x-1 != prevX && !(x-1 < 0 || x-1 >= this.width) {
-		if path[y][x-1] {
-			return x - 1, y, true
+func (this *Map) getNextMove(x, y, prevX, prevY int, path [][]bool) (line Line, possibleMove bool) {
+	lines := BitmapToVector(path)
+	fmt.Println("Line Map: ", lines)
+	fmt.Println("Index: ", pathIndex, " | Size: ", len(lines))
+
+	robotPoint := Point{x, y}
+	prevRobotPoint := Point{prevX, prevY}
+
+	for _, line := range lines {
+		if !line.pointOnLine(prevRobotPoint) {
+			if line.pointOnLine(robotPoint) {
+				return lines[pathIndex], true
+			}
 		}
 	}
-	if x+1 != prevX && !(x+1 < 0 || x+1 >= this.width) {
-		if path[y][x+1] {
-			return x + 1, y, true
-		}
-	}
-	if y-1 != prevY && !(y-1 < 0 || y-1 >= this.height) {
-		if path[y-1][x] {
-			return x, y - 1, true
-		}
-	}
-	if y+1 != prevY && !(y+1 < 0 || y+1 >= this.height) {
-		if path[y+1][x] {
-			return x, y + 1, true
-		}
-	}
-	return x, y, false
+
+	return Line{}, false
 }
 
 // AddWall adds a wall in position (x, y) of the map. Resized represents if the co-ordinates have been modified due to the BitmapScale const or not. Expands if neccesary

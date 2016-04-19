@@ -100,4 +100,6 @@ func stopResponse(response RobotDriverProtocol.StopResponse) {
 	lastAction = "Stop"
 	currentID = -1
 
+	RobotDriverProtocol.Scan()
+
 }

@@ -13,7 +13,7 @@ type Node struct {
 	solid          bool
 }
 
-var radius = 50 // Radius around robot.
+var radius = 20 // Radius around robot.
 // GetRoute Calls various functions below and returns the end result of the pathfinding algorithm.
 func GetRoute(robotMap Map, x, y int) ([][]bool, bool) {
 	if Debug {
