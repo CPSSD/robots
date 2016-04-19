@@ -81,6 +81,8 @@ function updateDestination() {
     var canvasObject = document.getElementById("mapCanvas");
     var ctx = canvasObject.getContext("2d");
 
+	console.log(destX, " -> ", destY);
+
     canvasContext.fillStyle = "#00FF00";
     canvasContext.fillRect(block_size*destX, block_size*destY, block_size, block_size);
 }
@@ -102,9 +104,13 @@ function getPosition(event) {
     var rawX = event.clientX;
     var rawY = event.clientY;
 
-    // Translate raw coordinates to X/Y positions in the grid.
-    destX = rawX / block_size;
-    destY = rawY / block_size;
+	var canvasObject = document.getElementById("mapCanvas").getBoundingClientRect();
+	rawX -= canvasObject.left;
+	rawY -= canvasObject.top;
+
+	// Translate raw coordinates to X/Y positions in the grid.
+	destX = Math.floor(rawX / block_size);
+    destY = Math.floor(rawY / block_size);
 
     // Send command to set the destination and update the visible map.
     setDestination(destX, destY);

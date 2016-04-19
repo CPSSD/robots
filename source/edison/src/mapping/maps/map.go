@@ -232,11 +232,12 @@ func (this *Map) TakeNextStep(lastX int, lastY int) {
 	if len(path) != 0 {
 		robotPoint := Point{int(this.GetRobot().GetX()), int(this.GetRobot().GetY())}
 		line, movesLeft := this.getNextMove(int(this.GetRobot().GetX()), int(this.GetRobot().GetY()), lastX, lastY, path)
-		_, moreMoves := this.getNextMove(line.getOtherPoint(robotPoint).X, line.getOtherPoint(robotPoint).Y, int(this.GetRobot().GetX()), int(this.GetRobot().GetY()), path)
-
+		
+		fmt.Println("currentLocation: ", robotPoint)
 		// If you are 1 move away from end point
-		if !moreMoves || !movesLeft {
+		if !movesLeft {
 			fmt.Println("No more steps to take...")
+			fmt.Println("... ", line)
 			path = make([][]bool, 0)
 			lineMap = make([]Line, 0)
 			followingPath = false
@@ -268,7 +269,7 @@ func (this *Map) TakeNextStep(lastX int, lastY int) {
 func (this *Map) MoveRobotAlongPath(newPath [][]bool, stopBeforePoint bool) {
 	path = newPath
 	followingPath = true
-	this.TakeNextStep(int(this.GetRobot().GetX()), int(this.GetRobot().GetY()))
+	this.TakeNextStep(-1, -1)
 	fmt.Println("Queued a path for movement...")
 }
 
@@ -292,9 +293,12 @@ func (this *Map) getNextMove(x, y, prevX, prevY int, path [][]bool) (line Line, 
 	prevRobotPoint := Point{prevX, prevY}
 
 	for _, line := range lines {
+		fmt.Println("Did ", line, " get past here?")
+		fmt.Println("Previous Loc: ", prevRobotPoint)
 		if !line.pointOnLine(prevRobotPoint) {
+			fmt.Println("\t", line, " contains ", robotPoint, " => ", line.pointOnLine(robotPoint))
 			if line.pointOnLine(robotPoint) {
-				return lines[pathIndex], true
+				return line, true
 			}
 		}
 	}

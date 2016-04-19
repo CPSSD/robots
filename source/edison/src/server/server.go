@@ -91,9 +91,12 @@ func driveCommand(w http.ResponseWriter, r *http.Request) {
 
 // X first, then Y: ie.. /setDestination/<X>/<Y> where X and Y are the X and Y co-ordinates of the destination on the map
 func destinationHandler(w http.ResponseWriter, r *http.Request) {
+	fmt.Print("Destination set to ")
 	data := strings.Split(r.URL.Path[len("/setDestination/"):], "/")
 	X, _ := strconv.Atoi(data[0])
 	Y, _ := strconv.Atoi(data[1])
+
+	fmt.Print(X, " ", Y, "\n")
 
 	if maps.FollowingPath() {
 		fmt.Fprintf(w, "Already following a path, no action taken")
