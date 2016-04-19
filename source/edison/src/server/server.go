@@ -48,7 +48,12 @@ func load(filename string) *page {
 }
 
 func indexHandler(w http.ResponseWriter, r *http.Request) {
-	page := load("../server/public/index.html")
+	var page *page
+	if r.URL.Path == "/" {
+		page = load("../server/public/index.html")
+	} else {
+		page = load(("../server/public/" + r.URL.Path[len("/"):]))
+	}
 	fmt.Fprintf(w, "%s", page.Body)
 }
 
