@@ -166,7 +166,7 @@ void respond(scanResponse scanResp) {
 }
 
 void respond(compassCommand* com) {
-  SPI_Wrapper::sendCompassResponse(com->uniqueID, ((physicalAngle - 90) % 360), true);
+  SPI_Wrapper::sendCompassResponse(com->uniqueID, ((physicalAngle + 270) % 360), true);
 }
 
 void moveRobot(moveCommand* com) {
