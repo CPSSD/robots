@@ -56,9 +56,21 @@ func MapInit(bitmapScale int) {
 	RDPInit()
 	fmt.Println("[RDP Link Ready]")
 
+	for i := 0; i < 360; i++ {
+		if i >= 250 {
+			RobotMap.AddWallByLine(float64(i), 80)
+		} else {
+			RobotMap.AddWallByLine(float64(i), 200)
+		}
+	}
+	RobotMap.AddWallByLine(270, 200)
+	RobotMap.GetRobot().Rotate(0);
+	RobotMap.ContinueToNextArea()
+	RobotMap.Print(path)
+
 	scanBuffer = make([]RobotDriverProtocol.ScanResponse, 0)
 
-	defer RobotMap.Print(nil)
+	//defer RobotMap.Print(nil)
 
 	RobotDriverProtocol.Scan()
 }
@@ -232,7 +244,7 @@ func (this *Map) TakeNextStep(lastX int, lastY int) {
 	if len(path) != 0 {
 		robotPoint := Point{int(this.GetRobot().GetX()), int(this.GetRobot().GetY())}
 		line, movesLeft := this.getNextMove(int(this.GetRobot().GetX()), int(this.GetRobot().GetY()), lastX, lastY, path)
-		
+
 		fmt.Println("currentLocation: ", robotPoint)
 		// If you are 1 move away from end point
 		if !movesLeft {
@@ -293,10 +305,14 @@ func (this *Map) getNextMove(x, y, prevX, prevY int, path [][]bool) (line Line, 
 	prevRobotPoint := Point{prevX, prevY}
 
 	for _, line := range lines {
-		fmt.Println("Did ", line, " get past here?")
-		fmt.Println("Previous Loc: ", prevRobotPoint)
+		if Debug {
+			fmt.Println("Did ", line, " get past here?")
+			fmt.Println("Previous Loc: ", prevRobotPoint)
+		}
 		if !line.pointOnLine(prevRobotPoint) {
-			fmt.Println("\t", line, " contains ", robotPoint, " => ", line.pointOnLine(robotPoint))
+			if Debug {
+				fmt.Println("\t", line, " contains ", robotPoint, " => ", line.pointOnLine(robotPoint))
+			}
 			if line.pointOnLine(robotPoint) {
 				return line, true
 			}
@@ -424,7 +440,7 @@ func (this *Map) createExpandedMap(expandX, expandY int) (tempMap *Map) {
 // Print ouputs the state of the map in a nice way.
 func (this *Map) Print(path [][]bool) {
 	if !Debug {
-		return
+		//return
 	}
 	for y := 0; y < this.height; y++ {
 		for x := 0; x < this.width; x++ {
@@ -505,24 +521,15 @@ func (this *Map) MarkLineAsSeen(degree, distance float64) {
 // Counts the ammount of seen tiles (that are just empty space) surrounding the current tile (horizontaly and vertically)
 func (this *Map) getAdjacentSeenTilesCount(x, y int) (count int) {
 	count = 0
-	if y+1 < len(this.floor) {
-		if this.seen[y+1][x] == 1 {
-			count++
-		}
-	}
-	if x+1 < len(this.floor[y]) {
-		if this.seen[y][x+1] == 1 {
-			count++
-		}
-	}
-	if y-1 >= 0 {
-		if this.seen[y-1][x] == 1 {
-			count++
-		}
-	}
-	if x-1 >= 0 {
-		if this.seen[y][x-1] == 1 {
-			count++
+	for yOffset := -1; yOffset <= 1; yOffset++ {
+		for xOffset := -1; xOffset <= 1; xOffset++ {
+			if !(yOffset == 0 && xOffset == 0) {
+				if y+yOffset >= 0 && x+xOffset >= 0 && y+yOffset < len(this.floor) && x+xOffset < len(this.floor[0]) {
+					if this.seen[y+yOffset][x+xOffset] == 1 {
+						count++
+					}
+				}
+			}
 		}
 	}
 	return

@@ -17,9 +17,6 @@ func RDPInit() {
 
 // RDPConnector handles the incoming data.
 func RDPConnector(data interface{}) {
-	//	fmt.Println()
-	//	fmt.Println("\tData Recieved =>", data)
-
 	switch response := data.(type) {
 	case RobotDriverProtocol.MoveResponse:
 		moveResponse(response)
@@ -34,7 +31,6 @@ func RDPConnector(data interface{}) {
 
 func moveResponse(response RobotDriverProtocol.MoveResponse) {
 	fmt.Print("[Move Response] Angle:", response.Angle, " // Magnitude:", response.Magnitude)
-	//	fmt.Println("\t[Response] { ID:", response.ID, " // Type:", response.Type, "}")
 
 	if followingPath {
 		lastX := RobotMap.GetRobot().GetX()
@@ -54,7 +50,6 @@ func moveResponse(response RobotDriverProtocol.MoveResponse) {
 
 func scanResponse(response RobotDriverProtocol.ScanResponse) {
 	fmt.Println("[Scan Response] Degree: ", response.Degree, " // Distance: ", response.Distance)
-	//	fmt.Println("\t[Response] { ID:", response.ID, " // Type:", response.Type, "}")
 
 	// Add a wall at the specific location.
 	// When last response, find next location to move to in map.go
