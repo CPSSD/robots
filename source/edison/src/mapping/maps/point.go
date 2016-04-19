@@ -8,6 +8,10 @@ type Point struct {
 	Y int
 }
 
+func (this Point) equals(point Point) bool {
+	return this.X == point.X && this.Y == point.Y
+}
+
 // Returns true if this point is connected horizontaly or vertically to 'point'.
 // @TODO: Work on diagonal support and cleaning up non-essential lines.
 func (this Point) nextTo(point Point) bool {

@@ -3,9 +3,13 @@ package main
 import (
 	"mapping/maps"
 	"server"
+	"flag"
 )
 
+var bitmapScale = flag.Int("scale", 10, "Scale for the bitmap")
+
 func main() {
-	maps.MapInit()
+	flag.Parse()
+	maps.MapInit(*bitmapScale)
 	server.StartServer()
 }

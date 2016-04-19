@@ -13,7 +13,6 @@ var block_size = 20;
 var destX = -1;
 var destY = -1;
 
-// Handy function to update the map.
 function updateMap(canvasObject) {
     var ctx = canvasObject.getContext("2d");
     getMapData(ctx);
@@ -82,8 +81,9 @@ function updateDestination() {
     var canvasObject = document.getElementById("mapCanvas");
     var ctx = canvasObject.getContext("2d");
 
+	console.log(destX, " -> ", destY);
+
     canvasContext.fillStyle = "#00FF00";
-    // TODO: Possibly mixed up the X and Ys...
     canvasContext.fillRect(block_size*destX, block_size*destY, block_size, block_size);
 }
 
@@ -101,34 +101,31 @@ function setDestination(X, Y) {
 
 // Function to set the destination variables when the canvas is clicked.
 function getPosition(event) {
-    var rawX = event.x;
-    var rawY = event.y;
+    var rawX = event.clientX;
+    var rawY = event.clientY;
 
-    // Translate raw coordinates to X/Y positions in the grid.
-    destX = rawX / block_size;
-    destY = rawY / block_size;
+	var canvasObject = document.getElementById("mapCanvas").getBoundingClientRect();
+	rawX -= canvasObject.left;
+	rawY -= canvasObject.top;
+
+	// Translate raw coordinates to X/Y positions in the grid.
+	destX = Math.floor(rawX / block_size);
+    destY = Math.floor(rawY / block_size);
 
     // Send command to set the destination and update the visible map.
     setDestination(destX, destY);
 }
 
 // Registers a touch handler on the map to get the destination variables.
-// TODO: May not work in Firefox!
 function registerTouchHandler() {
     var canvas =  document.getElementById("mapCanvas");
-    canvas.addEventListener("mousedown", getPosition, false);
+    canvas.addEventListener("click", getPosition, false);
 }
 
 // Gets an initial map and registers a handler for clicks on the canvas.
 function init() {
     refreshMap();
     registerTouchHandler();
-}
-
-// Downloads the current map to the device.
-function downloadMap() {
-    // TODO:
-    return 0;
 }
 
         </script>
@@ -146,8 +143,6 @@ function downloadMap() {
         <br/>
         <button value="Refresh Map" onClick="refreshMap()"> Refresh Map </button>
         <br/>
-        <button value="Download Map" onClick="downloadMap()"> Download Map </button>
-        <!-- <input type="file" value="Upload Map" onClick="uploadMap()"/> -->
 
         <script>
 // Gets an initial map and registers a handler for clicks on the canvas.
