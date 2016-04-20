@@ -307,8 +307,8 @@ func (this *Map) getNextMove(x, y, prevX, prevY int, path [][]bool) (line Line, 
 	prevRobotPoint := Point{prevX, prevY}
 
 	for i := 0; i < len(lines); i++ {
-		if line.getLength() > minimumScanDistance {
-			line1, line2 := line.split()
+		if lines[i].getLength() > minimumScanDistance {
+			line1, line2 := lines[i].split()
 			lines[i] = line1
 			lines = append(lines, line2)
 			i--
