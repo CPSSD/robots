@@ -34,6 +34,7 @@ class WheelMotors{
 		static unsigned long timeSinceStart, timePassed, commandTimer, prevTimer, last100ms;
 		static void M1_EncoderISR();
 		static void M2_EncoderISR();
+		static void addToTotalCount(unsigned long M1, unsigned long M2);
 		static void reset();
 		static void resetAll();
 		static void printInfo();

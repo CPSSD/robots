@@ -29,7 +29,7 @@ unsigned long WheelMotors::prevTimer = millis();
 bool WheelMotors::finished = false;
 bool WheelMotors::commandHandled = false;
 
-double WheelMotors::Setpoint = 180;
+double WheelMotors::Setpoint = 0;
 double WheelMotors::M1_Input = 0;
 double WheelMotors::M2_Input = 0;
 double WheelMotors::M1_Output = 0;
@@ -127,7 +127,7 @@ void WheelMotors::start(){
 	analogWrite(M2,255);
 }
 
-//stops wheels
+//stops wheels & sends stop response
 void WheelMotors::stop(){
 	analogWrite(M1,0);
 	analogWrite(M2,0);
@@ -142,11 +142,13 @@ void WheelMotors::stop(){
 	resetAll();
 }
 
+// stops motors
 void WheelMotors::stopMotors(){
 	analogWrite(M1,0);
 	analogWrite(M2,0);
 }
 
+//stops wheels once distance has been reached
 void WheelMotors::checkEndpointReached(int distance){
 	if(M1_Total + M1_EncoderCount > distance && M2_Total + M2_EncoderCount > distance){
 		finished = true;
@@ -155,51 +157,49 @@ void WheelMotors::checkEndpointReached(int distance){
 	}
 }
 
+void WheelMotors::addToTotalCount(unsigned long M1, unsigned long M2){
+	M1_Total += M1;
+	M2_Total += M2;
+}
+
+// runs PID
 void WheelMotors::runPID(){
 	last100ms = millis();
+
 	if(last100ms - prevTimer > 100){
 		prevTimer = last100ms;
 		Serial.print("Setpoint: "); Serial.println(Setpoint);
 
 		M1_Input = M1_EncoderCount;
 		M2_Input = M2_EncoderCount;
-		M1_Total += M1_EncoderCount;
-		M2_Total += M2_EncoderCount;
-		Serial.print("M1 EncoderCount: "); Serial.println(M1_EncoderCount);
-		Serial.print("M1 Total: "); Serial.println(M1_Total);
-		Serial.print("M2 EncoderCount: "); Serial.println(M2_EncoderCount);
-		Serial.print("M2 Total: ");Serial.println(M2_Total);
-
+		addToTotalCount(M1_EncoderCount,M2_EncoderCount);
 		reset();
 
 		myPID1.Compute();
 		myPID2.Compute();
+
+		//Negate readings if going too fast
 		if(M1_Input > Setpoint){
 			M1_Output = (Setpoint - M1_Input) * .3;
 		}
 		if(M2_Input > Setpoint){
 			M2_Output = (Setpoint - M2_Input) * .3;
 		}
-		Serial.print("M1 Input: "); Serial.println(M1_Input);
-		Serial.print("M2 Input: "); Serial.println(M2_Input);
-		Serial.print("M1 Output: "); Serial.println(M1_Output);
-		Serial.print("M2 Output: "); Serial.println(M2_Output);
 
+		//set new Speeds
 		double M1_Speed = ((M1_Output + prev_M1_Speed) * 255) / 180;
-		Serial.print("M1 Speed: "); Serial.println(M1_Speed);
 		double M2_Speed = ((M2_Output + prev_M2_Speed) * 255) / 180;
 
+		//log previous speed for next loop
 		prev_M1_Speed = (M1_Speed * 180) / 255;
 		prev_M2_Speed = (M2_Speed * 180) / 255;
 
-		Serial.print("prev M1 Speed: "); Serial.println(prev_M1_Speed);
-
+		//setting max as 255
 		if(M1_Speed > 255) M1_Speed = 255;
 		if(M2_Speed > 255) M2_Speed = 255;
+
 		analogWrite(M1,M1_Speed);
 		analogWrite(M2,M2_Speed);
-		Serial.println();
-		Serial.println();
 		//printInfo();
 	}
 }
@@ -229,6 +229,7 @@ void WheelMotors::moveCommandHandler(moveCommand command){
 
 void WheelMotors::printInfo(){
 	Serial.println();
+	Serial.println();
 
 	Serial.println(Setpoint);
 	Serial.print("Motor 1 Input: ");
@@ -247,6 +248,8 @@ void WheelMotors::printInfo(){
     Serial.println(M1_Total);
 	Serial.print("Motor 2 Total Encoder count: ");
     Serial.println(M2_Total);
+	Serial.println("End of Info");
 
     Serial.println();
+	Serial.println();
 }
