@@ -233,7 +233,7 @@ func (this *Map) probabilityAtLocation(fragment Map, x int, y int) (int, int, in
 
 func (this *Map) TakeNextStep(lastX int, lastY int) {
 	// If we haven't scanned in a while: do a scan and return.
-	if distanceSinceLastScan < minimumScanDistance {
+	if distanceSinceLastScan > minimumScanDistance {
 		distanceSinceLastScan = 0
 		RobotDriverProtocol.Scan()
 		return
