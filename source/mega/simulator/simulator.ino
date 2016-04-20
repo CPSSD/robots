@@ -173,7 +173,7 @@ void respond(moveCommand* com){
 }
 
 void respond(rotateCommand* com) {
-  physicalAngle = ((com->angle + 90) % 360);
+  physicalAngle = (((90 - com->angle) + 360) % 360);
   SPI_Wrapper::sendRotateResponse(com->uniqueID, com->angle, true);
 }
 
@@ -188,7 +188,7 @@ void respond(scanResponse scanResp) {
 }
 
 void respond(compassCommand* com) {
-  SPI_Wrapper::sendCompassResponse(com->uniqueID, ((physicalAngle + 270) % 360), true);
+  SPI_Wrapper::sendCompassResponse(com->uniqueID, (((90 - physicalAngle) + 360) % 360), true);
 }
 
 void moveRobot(moveCommand* com) {
