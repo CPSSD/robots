@@ -206,6 +206,7 @@ void WheelMotors::runPID(){
 
 void WheelMotors::stopCommandHandler(stopCommand command){
 	Serial.println("Stop command recieved");
+	commandHandled = true;
 	stopMotors();
 }
 
