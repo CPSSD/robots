@@ -6,7 +6,6 @@
 class VectorMath{
 
     public:
-        static bool setSign(int angle);
         static bool getSign();
         static double degreesToRadians(double angle);
         static double radiansToDegrees(double angle);
