@@ -1,3 +1,4 @@
+#include <QueueList.h>
 #include <SPI.h>
 #include <SPI_Wrapper.h>
 
@@ -16,10 +17,10 @@ typedef enum {
 } comNums;
 
 const float SPEED = 1; //in mm per millisecond
-const int STARTING_X = 30; //This and all distances measured in cm
-const int STARTING_Y = 30;
+const int STARTING_X = 200; //This and all distances measured in cm
+const int STARTING_Y = 200;
 const unsigned long SCAN_RESPONSE_INTERVAL = 100; //Values as low as 80 worked in testing
-Point MAP_BOUNDS[] = { {Point(0, 0)}, {Point(300, 0)}, {Point(300, 300)}, {Point(0, 300)} };
+Point MAP_BOUNDS[] = { {Point(0, 0)}, {Point(600, 0)}, {Point(600, 600)}, {Point(0, 600)} };
 Room room = Room(4, MAP_BOUNDS, Point(STARTING_X, STARTING_Y), 1);
 
 unsigned long startedMoving, moveTimer, scanTimer, rotateTimer, distTravelled;
@@ -46,7 +47,7 @@ void setup() {
   amScanning = false;
   amMoving = false;
   amRotating = false;
-  Point newObjHolder[] = { {Point(145, 145)}, {Point(155, 145)}, {Point(155, 155)}, {Point(145, 155)} };
+  Point newObjHolder[] = { {Point(260, 260)}, {Point(340, 260)}, {Point(340, 340)}, {Point(260, 340)} };
   Serial.print("Adding object 1: ");
   Serial.println(room.addObject(0, 4, newObjHolder));
   scanTimer = millis();
@@ -63,16 +64,17 @@ void loop() {
   }
 
   if(amMoving && millis() >= moveTimer) {
-    respond((moveCommand*)com);
-    Serial.println("---------- Current Pos"); 
+    /*Serial.println("---------- Current Pos"); 
     Serial.print(currentPosition.x);
-    Serial.println(", ");
+    Serial.print(", ");
     Serial.println(currentPosition.y);
     Serial.println("--------- Destination");
     Serial.print(destination.x);
-    Serial.println(", ");
+    Serial.print(", ");
     Serial.println(destination.y);
-    currentPosition = destination;
+    delay(50);*/
+    respond((moveCommand*)com);
+    currentPosition = terminus;
     amMoving = false;
     delete com;
     com = NULL;
@@ -143,18 +145,23 @@ void processCommand(command* com) {
 }
 
 void respond(moveCommand* com){
-  SPI_Wrapper::sendMoveResponse(com->uniqueID, distTravelled, movingAngle, true);
+  SPI_Wrapper::sendMoveResponse(com->uniqueID, distTravelled, movingAngle, (distTravelled == com->magnitude));
 }
 
 void respond(scanResponse scanResp) {
   Serial.println("Sending Scan Response...");
+  /*Serial.print("Angle: ");
+  Serial.print(scanResp.angle);
+  Serial.print("\t Distance: ");
+  Serial.print(scanResp.magnitude);
+  Serial.println();*/
   SPI_Wrapper::sendScanResponse(com->uniqueID, scanResp.angle, scanResp.magnitude, scanResp.last, true);
 }
 
 void moveRobot(moveCommand* com) {
-  destination = calculations.makeLineFromPolar((float((com->angle + 90) % 360) * PI) / 180 , com->magnitude, currentPosition);
-  movingAngle = float(com->angle) + (int)lround((angleSlip * (degreeOfError / maxDegreeOfError)));
-  terminus = calculations.makeLineFromPolar((float((movingAngle + 90) % 360) * PI) / 180, com->magnitude, currentPosition);
+  destination = calculations.makeLineFromPolar(((float)(((90 - com->angle) + 360) % 360) * PI) / 180 , com->magnitude, currentPosition);
+  movingAngle = com->angle + (int)lround((angleSlip * (degreeOfError / maxDegreeOfError)));
+  terminus = calculations.makeLineFromPolar(((float)(((90 - movingAngle) + 360) % 360) * PI) / 180, com->magnitude, currentPosition);
   Line ray = Line(currentPosition, terminus);
   terminus = calculations.getDestination(ray, room);
   distTravelled = (unsigned long)lround(calculations.getDistBetweenTwoPoints(ray.start, terminus) * (1.0 - (degreeOfError / maxDegreeOfError)));
@@ -167,7 +174,7 @@ scanResponse scan(){
   scanResponse scanResp;
   scanResp.angle = laserAngle;
   com->uniqueID = 4;
-  Line ray = Line(currentPosition, (calculations.makeLineFromPolar((((float)((laserAngle + 90) % 360) * PI) / 180), 4096.0, currentPosition)));
+  Line ray = Line(currentPosition, (calculations.makeLineFromPolar((((float)(((90 - laserAngle) + 360) % 360) * PI) / 180), 4096.0, currentPosition)));
   nearestWall = calculations.getDestination(ray, room);
   scanResp.magnitude = (unsigned long)lround(calculations.getDistBetweenTwoPoints(ray.start, nearestWall));
   scanResp.last = (laserAngle == 360);
