@@ -1,5 +1,5 @@
 #include <LIDARLite.h>
-
+#include <Shared_Structs.h>
 #include <Motor.h>
 #include <LaserScanner.h>
 #include <Wire.h>
@@ -97,14 +97,14 @@ void detectObjects(int startAngle, int endAngle, int distance) {
   LaserScanner::setDetectionParameters(startAngle, endAngle, distance);
 
   motor.rotateWithCorrection(3360);
-  Serial.println("Finished Rotating Continuously");
+  //Serial.println("Finished Rotating Continuously");
   LaserScanner::reset();
   delay(1000);
 }
 
 void scanArea(int scanFreq, int distance, ScanType scanType) {
   motor.setSpeed(motorSpeed);
-  Serial.println("Scanning Area...");
+  //Serial.println("Scanning Area...");
 
   LaserScanner::setScanFreq(scanFreq, distance, scanType, totalRotations);
   totalScans = LaserScanner::scansToDo;
@@ -122,22 +122,21 @@ void scanArea(int scanFreq, int distance, ScanType scanType) {
     }
     LaserScanner::totalRotations = 0;
 
+    
+    LaserReading firstReading;
     for (int i = 0; i < LaserScanner::scansToDo; i++) {
       if (LaserScanner::lastRotationData[i].angle / totalRotations != i) {
-        Serial.println("\t- Error @ this location");
+        //Serial.println("\t- Error @ this location");
       } else {
+        firstReading = LaserScanner::lastRotationData[i];
         if (LaserScanner::pushScanData) {
-          Serial.println("\t- Sending Scan Data");
-          LaserScanner::sendScanResponse(LaserReading{LaserScanner::lastRotationData[i].angle / LaserScanner::queuedRotations, LaserScanner::lastRotationData[i].distance / LaserScanner::queuedRotations});
+          //Serial.println("\t- Sending Scan Data");
+          delay(20);
+          LaserScanner::sendScanResponse(LaserReading{LaserScanner::lastRotationData[i].angle / LaserScanner::queuedRotations, LaserScanner::lastRotationData[i].distance / LaserScanner::queuedRotations}, false);
         }
       }
-      Serial.print("[");
-      Serial.print("i");
-      Serial.print("]: ");
-      Serial.print(LaserScanner::lastRotationData[i].angle / totalRotations);
-      Serial.print(", ");
-      Serial.println(LaserScanner::lastRotationData[i].distance / totalRotations);
-    }
+    }  
+    LaserScanner::sendScanResponse(LaserReading{firstReading.angle / LaserScanner::queuedRotations, firstReading.distance / LaserScanner::queuedRotations}, true);    
   } else if (scanType == Default) {
     LaserScanner::pushScanData = true;
     motor.rotateWithCorrection(distance);
@@ -152,7 +151,7 @@ void scanArea(int scanFreq, int distance, ScanType scanType) {
     LaserScanner::reset();
   }
 
-  Serial.println("Finished sending data...");
+  //Serial.println("Finished sending data...");
 }
 
 // Set the state to SCAN until a scan is complete.
@@ -162,7 +161,7 @@ void scanCommandHandler(scanCommand command) {
     STATE = Scanning;
     waitingToScan = true;
   } else {
-    Serial.println("Unable to start scan. Invalid STATE or already scanning.");
+    //Serial.println("Unable to start scan. Invalid STATE or already scanning.");
   }
 }
 
@@ -172,23 +171,17 @@ void detectCommandHandler(detectCommand command) {
     detectBegin = degreesToEncoderCount(command.rangeBegin);
     detectEnd = degreesToEncoderCount(command.rangeEnd);
     detectDistance = command.maxDistance;
-    Serial.println("[Detection Command Recieved]");
-    Serial.print("Start: ");
-    Serial.println(detectBegin);
-    Serial.print("End: ");
-    Serial.println(detectEnd);
-    Serial.print("Distance: ");
-    Serial.println(detectDistance);
+    //Serial.println("[Detection Command Recieved]");
+    //Serial.print("Start: ");
+    //Serial.println(detectBegin);
+    //Serial.print("End: ");
+    //Serial.println(detectEnd);
+    //Serial.print("Distance: ");
+    //Serial.println(detectDistance);
     STATE = Detecting;
   } else {
-    Serial.println("Unable to change state to DETECT. Reason: Scan command in progress");
+    //Serial.println("Unable to change state to DETECT. Reason: Scan command in progress");
   }
-}
-
-// Set the current detection angle to the move angle.
-void moveCommandHandler(moveCommand command) {
-  Serial.print("Changing detection angle to ");
-  Serial.println(command.angle);
 }
 
 void setup() {
@@ -196,7 +189,6 @@ void setup() {
 
   I2C_Wrapper::init(Slave, slaveID);
   I2C_Wrapper::registerScanCommandHandler(&scanCommandHandler);
-  I2C_Wrapper::registerMoveCommandHandler(&moveCommandHandler);
   I2C_Wrapper::registerDetectCommandHandler(&detectCommandHandler);
 
   motor.setup();
@@ -204,12 +196,12 @@ void setup() {
 }
 
 void loop() {
-  Serial.println("Starting LaserMotorArm");
-  faceWall(3360/360, motor.singleRotation, 210, false);
-  faceWall(1, 420, 0, true);
-  Serial.println("*Laser now faces wall");
+  //Serial.println("Starting LaserMotorArm");
+  //faceWall(3360/360, motor.singleRotation, 210, false);
+  //faceWall(1, 420, 0, true);
+  //Serial.println("*Laser now faces wall");
 
-  Serial.println("Starting main loop...");
+  //Serial.println("Starting main loop...");
   while (1) {
     if (STATE == Detecting) {
       LaserScanner::totalRotations = 0;

@@ -114,8 +114,8 @@ func processScanResponse(responseBuffer []uint8) {
 	scanResponse.Type = 4
 	scanResponse.ID = (uint16(responseBuffer[0]) << 8) + uint16(responseBuffer[1])
 	scanResponse.Last = (responseBuffer[2] > 0)
-	scanResponse.Distance = (uint16(responseBuffer[3]) << 8) + uint16(responseBuffer[4])
-	scanResponse.Degree = (uint16(responseBuffer[5]) << 8) + uint16(responseBuffer[6])
+	scanResponse.Degree = (uint16(responseBuffer[3]) << 8) + uint16(responseBuffer[4])
+	scanResponse.Distance = (uint16(responseBuffer[5]) << 8) + uint16(responseBuffer[6])
 	scanResponse.Success = (responseBuffer[7] > 0)
 	fmt.Println("Passing scanResponse to responseHandler")
 	fireResponseHandler(scanResponse)
@@ -134,7 +134,7 @@ func processCompassResponse(responseBuffer []uint8) {
 
 // processResponse will process a response
 func processResponse(responseBuffer []uint8) {
-	fmt.Println(responseBuffer)
+	// fmt.Println(responseBuffer)
 	switch responseBuffer[0] {
 	case 1: //move response
 		processMoveResponse(responseBuffer[1:])
@@ -164,8 +164,8 @@ func sendNextCommand() bool {
 		length = data[0]
 	}
 	if length > 0 {
-		fmt.Println("Length > 0")
-		fmt.Println(length)
+		// fmt.Println("Length > 0")
+		// fmt.Println(length)
 
 		dataBuffer := make([]uint8, length)
 		if len(buffersToSend) > 0 {

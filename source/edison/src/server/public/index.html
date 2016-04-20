@@ -1,115 +1,153 @@
+<!DOCTYPE html>
 <html>
-	<link rel="stylesheet" type="text/css" href="stylesheet.css" />
-	<title>Robot Control</title>
-	
-	<script>
-		var angle = 0;
-		var magnitude = 0;
-		
-		function update(){
-			angle = document.getElementById("angle").value
-			document.getElementById("current-angle").textContent = ("Current Angle: " + angle);
-			
-			magnitude = document.getElementById("distance").value
-			document.getElementById("current-distance").textContent = ("Distance: " + magnitude + " cm");
-		}
-		
-		function submit(){
-			console.log({"Angle": angle, "Distance": magnitude})
-			var request = new XMLHttpRequest();
-			request.open("GET", "submit/"+angle+"/"+magnitude, false);
-			request.send(null);
-		}
-		
-		function sendScanCommand() {
-			console.log("Sending Scan Command...");
-			var request = new XMLHttpRequest();
-			request.open("GET", "../scan/", false);
-			request.send(null);
-		}
 
-		function updateResponses(){
-			console.log("Trying to get JSON from /drive/response/");
-			var request = new XMLHttpRequest();
-			request.onreadystatechange = function() {
-				// If Request Finished and Status is "OK"
-				if (request.readyState == 4 && request.status == 200) {
-					clearResponseTable();
-					jsonResponse = JSON.parse(request.responseText);
-					console.log(jsonResponse['Responses']);
-					for (var element in jsonResponse['Responses']) {
-						parseResponses(jsonResponse['Responses'][element]);
-					}
-				}
-			};
-			request.open("GET", "response/", true)
-			request.send();
-		}
-		
-		function parseResponses(response){
-			addResponse(response['Time'], response['Type'], response['Angle'], response['Magnitude'])
-		}
-		
-		function clearResponseTable(){
-			var table = document.getElementById("response-table")
-			while (table.lastChild) {
-				table.removeChild(table.lastChild);
-			}
-		}
-		
-		function addResponse(time, type, angle, magnitude){		
-			// Create and add new row to the table
-			var table = document.getElementById("response-table");
-			var row = table.insertRow(-1);
-			var cell1 = row.insertCell(0);
-			cell1.innerHTML = time;
-			var cell2 = row.insertCell(1);
-			cell2.innerHTML = type;
-			var cell3 = row.insertCell(2);
-			cell3.innerHTML = "Angle: " + angle + ""
-			var cell4 = row.insertCell(3);
-			cell4.innerHTML = "Magnitude: " + magnitude + ""
-			
-			// Keep scrollbar locked to bottom when adding new response
-			document.getElementById('response-div').scrollTop = document.getElementById('response-div').scrollHeight;
-		}
-		
-		function init(){
-			console.log("Starting...");
-			update();
-			updateResponses();
-			window.setInterval(updateResponses, 2000)
-		}
-		
-	</script>
-	
-	<body onload="init()">
-		<div class="header"></div>
-		
-		<div class="title">
-			<h1 class="header">CPSSD Robot Project</h1>
-		</div>
-		
-		<div class="content">
-			<div class="section">
-				<h2 class='title'><u>Controls</u></h1>			
-				<p id="current-angle">Current Angle: 0</p>
-				<input type="range" id="angle" min="0" max ="359" step="1" value="180" oninput="update()"/>
-				
-				<p id="current-distance">Distance: 0 cm</p>
-				<input type="range" id="distance" min="0" max ="200" step="5" value="100" oninput="update()"/>
-				
-				<br /><br />
-				<input class="button" value="Send Command" type="button" id="submit" onclick="submit()" />
-				<input class="button" value="Start Scan" type="button" id="scanSubmit" onclick="sendScanCommand()" />
-			</div>
-			<div class="section">
-				<h2 class='title'><u>Responses</u></h1>
-				<div class="response" id='response-div'>
-					<table id='response-table'></table>
-				</div>
-			</div>
-		</div>
-	</body>
-	
+    <head>
+        <title> Map View </title>
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.3/jquery.min.js"></script>
+
+        <script>
+// Change this to change the size of the map.
+var block_size = 20;
+
+// Store the input destination of the robot.
+var destX = -1;
+var destY = -1;
+
+function updateMap(canvasObject) {
+    var ctx = canvasObject.getContext("2d");
+    getMapData(ctx);
+}
+
+// Fetches map data from a URL and dispatches to draw the map.
+function getMapData(canvasContext) {
+    $.getJSON('/map/bit', function(data) {
+            //alert(data);
+            //console.log(data);
+            //console.log(JSON.parse(data));
+            drawMap(canvasContext, data);
+    });
+}
+
+// Draws the map with the current robot location, walls and empty spaces.
+function drawMap(canvasContext, mapObject) {
+    // Change the canvas size depending on the size of the map.
+    canvasContext.canvas.height = block_size*mapObject.map.length;
+    canvasContext.canvas.width = block_size*mapObject.map[0].length;
+
+    // Get the current robot position co-ordinates.
+    var robotX = mapObject.robotX;
+    var robotY = mapObject.robotY;
+
+    for (var i = 0; i < mapObject.map.length; i++) {
+        for (var j = 0; j < mapObject.map[i].length; j++) {
+            if (i == robotY && j == robotX) {
+                // Robot location
+                canvasContext.fillStyle = "#0000FF";
+            } else if (i == destY && j == destX) {
+                // Destination
+                canvasContext.fillStyle = "#00FF00";
+            } else if (mapObject.map[i][j]) {
+                // Wall
+                canvasContext.fillStyle = "#000000";
+            } else {
+                // Empty space
+                canvasContext.fillStyle = "#FFFFFF";
+            }
+            canvasContext.fillRect(block_size*j, block_size*i, block_size, block_size);
+        }
+    }
+}
+
+// Zooms out in the map by reducing the block size.
+function zoomOut() {
+    block_size -= 5;
+    updateMap(document.getElementById("mapCanvas"));
+}
+
+// Zooms in in the map by increasing the block size.
+function zoomIn() {
+    block_size += 5;
+    updateMap(document.getElementById("mapCanvas"));
+}
+
+// Refreshes the map.
+function refreshMap() {
+    updateMap(document.getElementById("mapCanvas"));
+}
+
+// Updates the destination on the map.
+// Called whenever the map is touched.
+function updateDestination() {
+    var canvasObject = document.getElementById("mapCanvas");
+    var ctx = canvasObject.getContext("2d");
+
+	console.log(destX, " -> ", destY);
+
+    canvasContext.fillStyle = "#00FF00";
+    canvasContext.fillRect(block_size*destX, block_size*destY, block_size, block_size);
+}
+
+// Sends a setDestination command to the server.
+function setDestination(X, Y) {
+    $.getJSON('/setDestination/'+X+'/'+Y, function(data) {
+            //alert(data);
+            //console.log(data);
+            //console.log(JSON.parse(data));
+
+            // Draw the destination on the map.
+            updateDestination();
+    });
+}
+
+// Function to set the destination variables when the canvas is clicked.
+function getPosition(event) {
+    var rawX = event.clientX;
+    var rawY = event.clientY;
+
+	var canvasObject = document.getElementById("mapCanvas").getBoundingClientRect();
+	rawX -= canvasObject.left;
+	rawY -= canvasObject.top;
+
+	// Translate raw coordinates to X/Y positions in the grid.
+	destX = Math.floor(rawX / block_size);
+    destY = Math.floor(rawY / block_size);
+
+    // Send command to set the destination and update the visible map.
+    setDestination(destX, destY);
+}
+
+// Registers a touch handler on the map to get the destination variables.
+function registerTouchHandler() {
+    var canvas =  document.getElementById("mapCanvas");
+    canvas.addEventListener("click", getPosition, false);
+}
+
+// Gets an initial map and registers a handler for clicks on the canvas.
+function init() {
+    refreshMap();
+    registerTouchHandler();
+}
+
+        </script>
+    </head>
+
+
+    <body>
+        <canvas id="mapCanvas" width="200" height="100" style="border:1px solid #c3c3c3;">
+            Your browser does not support the HTML5 canvas tag.
+        </canvas>
+        <br/>
+
+        <button value="Zoom Out" onClick="zoomOut()">Zoom Out</button>
+        <button value="Zoom In" onClick="zoomIn()"> Zoom In </button>
+        <br/>
+        <button value="Refresh Map" onClick="refreshMap()"> Refresh Map </button>
+        <br/>
+
+        <script>
+// Gets an initial map and registers a handler for clicks on the canvas.
+init();
+        </script>
+
+    </body>
 </html>

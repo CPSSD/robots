@@ -18,6 +18,8 @@ type jsonMap struct {
 	Code    string   `json:"code"`
 	Message string   `json:"message"`
 	Map     [][]bool `json:"map"`
+	RobotX  int      `json:"robotX"`
+	RobotY  int      `json:"robotY"`
 }
 
 type response struct {
@@ -45,10 +47,15 @@ func load(filename string) *page {
 	return &page{Title: filename, Body: body}
 }
 
+func indexHandler(w http.ResponseWriter, r *http.Request) {
+	page := load("../server/public/index.html")
+	fmt.Fprintf(w, "%s", page.Body)
+}
+
 func driveHandler(w http.ResponseWriter, r *http.Request) {
 	var page *page
 	if r.URL.Path == "/drive/" {
-		page = load("../server/public/index.html")
+		page = load("../server/public/manualControl.html")
 	} else {
 		page = load(("../server/public/" + r.URL.Path[len("/drive/"):]))
 	}
@@ -60,6 +67,18 @@ func scanCommand(w http.ResponseWriter, r *http.Request) {
 	RobotDriverProtocol.Scan()
 }
 
+// The URL should contain the filename to save the map to: /saveMap/<fileName>
+func saveMap(w http.ResponseWriter, r *http.Request) {
+	fileName := r.URL.Path[len("/saveMap/"):]
+	maps.RobotMap.SaveMap(fileName)
+}
+
+// The URL should contain the filename to load the map from: /saveMap/<fileName>
+func loadMap(w http.ResponseWriter, r *http.Request) {
+	fileName := r.URL.Path[len("/loadMap/"):]
+	maps.RobotMap.LoadMap(fileName)
+}
+
 // Angle first, then distance: ie.. /drive/submit/<angle>/<distance>
 func driveCommand(w http.ResponseWriter, r *http.Request) {
 	data := strings.Split(r.URL.Path[len("/drive/submit/"):], "/")
@@ -68,6 +87,29 @@ func driveCommand(w http.ResponseWriter, r *http.Request) {
 	cmd := moveCommand{angle, distance}
 	sendMoveCommand(cmd)
 	fmt.Fprintf(w, "Sending move command: %d/%d, (angle/distance)", angle, distance)
+}
+
+// X first, then Y: ie.. /setDestination/<X>/<Y> where X and Y are the X and Y co-ordinates of the destination on the map
+func destinationHandler(w http.ResponseWriter, r *http.Request) {
+	fmt.Print("Destination set to ")
+	data := strings.Split(r.URL.Path[len("/setDestination/"):], "/")
+	X, _ := strconv.Atoi(data[0])
+	Y, _ := strconv.Atoi(data[1])
+
+	fmt.Print(X, " ", Y, "\n")
+
+	if maps.FollowingPath() {
+		fmt.Fprintf(w, "Already following a path, no action taken")
+		return
+	}
+
+	path, possible := maps.GetRoute(maps.RobotMap, X, Y)
+	if possible {
+		fmt.Fprintf(w, "Moving robot to (%d, %d)", X, Y)
+		go maps.RobotMap.MoveRobotAlongPath(path, false)
+	} else {
+		fmt.Fprintf(w, "Path to (%d, %d) is not possible", X, Y)
+	}
 }
 
 func moveResponseDisplay(w http.ResponseWriter, r *http.Request) {
@@ -84,7 +126,8 @@ func moveResponseDisplay(w http.ResponseWriter, r *http.Request) {
 
 func displayBitmap(w http.ResponseWriter, r *http.Request) {
 	bitmap, _ := maps.RobotMap.GetBitmap()
-	var jsonmap = jsonMap{Code: "200", Message: "ok", Map: bitmap}
+	var jsonmap = jsonMap{Code: "200", Message: "ok", Map: bitmap,
+		RobotX: int(maps.RobotMap.GetRobot().GetX()), RobotY: int(maps.RobotMap.GetRobot().GetY())}
 
 	w.Header().Set("Content-Type", "application/json;charset=UTF-8")
 	w.Header().Set("Access-Control-Allow-Origin", "*")
@@ -152,11 +195,15 @@ func StartServer() {
 
 	RobotDriverProtocol.RegisterResponseHandler(ResponseHandler)
 
+	http.HandleFunc("/", indexHandler)
 	http.HandleFunc("/kill/", killHandler)
 	http.HandleFunc("/drive/", driveHandler)
 	http.HandleFunc("/drive/submit/", driveCommand)
 	http.HandleFunc("/drive/response/", moveResponseDisplay)
 	http.HandleFunc("/scan/", scanCommand)
+	http.HandleFunc("/setDestination/", destinationHandler)
 	http.HandleFunc("/map/bit", displayBitmap)
+	http.HandleFunc("/saveMap/", saveMap)
+	http.HandleFunc("/loadMap/", loadMap)
 	http.ListenAndServe(":8080", nil)
 }

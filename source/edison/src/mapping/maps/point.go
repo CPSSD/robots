@@ -2,9 +2,14 @@
 
 package maps
 
+// Point is a struct for each point (X, Y) on the map
 type Point struct {
 	X int
 	Y int
+}
+
+func (this Point) equals(point Point) bool {
+	return this.X == point.X && this.Y == point.Y
 }
 
 // Returns true if this point is connected horizontaly or vertically to 'point'.
