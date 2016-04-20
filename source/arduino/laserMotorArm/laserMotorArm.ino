@@ -197,8 +197,9 @@ void setup() {
 
 void loop() {
   //Serial.println("Starting LaserMotorArm");
-  //faceWall(3360/360, motor.singleRotation, 210, false);
-  //faceWall(1, 420, 0, true);
+  motor.changeDirection();
+  faceWall(3360/360, motor.singleRotation, 210, false);
+  faceWall(1, 420, 0, true);
   //Serial.println("*Laser now faces wall");
 
   //Serial.println("Starting main loop...");
