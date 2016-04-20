@@ -1,4 +1,3 @@
-#include <QueueList.h>
 #include <SPI.h>
 #include <SPI_Wrapper.h>
 
@@ -7,8 +6,10 @@
 #include "math.h"
 #include <Shared_Structs.h>
 #include <QueueList.h>
+#include <roomTestCases.h>
 
 calc calculations;
+roomTestCases rtc;
 
 typedef enum {
   moveNum  = 1,
@@ -19,17 +20,14 @@ typedef enum {
 } comNums;
 
 const float SPEED = 1; //in mm per millisecond
-const int STARTING_X = 200; //This and all distances measured in cm
-const int STARTING_Y = 200;
 const unsigned long SCAN_RESPONSE_INTERVAL = 100; //Values as low as 80 worked in testing
-Point MAP_BOUNDS[] = { {Point(0, 0)}, {Point(600, 0)}, {Point(600, 600)}, {Point(0, 600)} };
-Room room = Room(4, MAP_BOUNDS, Point(STARTING_X, STARTING_Y), 1);
+Room room;
 
 unsigned long startedMoving, moveTimer, scanTimer, rotateTimer, distTravelled;
 int magnitude, movingAngle, laserAngle, physicalAngle;
 bool amScanning, amMoving, amRotating;
 
-Point currentPosition, destination, terminus, nearestWall;
+Point destination, terminus, nearestWall;
 command* com;
 scanResponse scanResp;
 
@@ -37,7 +35,9 @@ float maxDegreeOfError = 100.0;
 float degreeOfError = 0.0;
 int angleSlip = 20;
 
+int testCaseNum = 1;
 void setup() {
+  room = rtc.pickRoom(testCaseNum);
   SPI_Wrapper::init();
   SPI_Wrapper::registerMoveCommandHandler(&moveCommandHandler);
   SPI_Wrapper::registerStopCommandHandler(&stopCommandHandler);
@@ -45,17 +45,12 @@ void setup() {
   SPI_Wrapper::registerScanCommandHandler(&scanCommandHandler);
   SPI_Wrapper::registerCompassCommandHandler(&compassCommandHandler);
   Serial.begin(9600);
-  Serial.println("Starting...");
-  currentPosition.x = STARTING_X;
-  currentPosition.y = STARTING_Y;
   amScanning = false;
   amMoving = false;
   amRotating = false;
-  Point newObjHolder[] = { {Point(260, 260)}, {Point(340, 260)}, {Point(340, 340)}, {Point(260, 340)} };
-  Serial.print("Adding object 1: ");
-  Serial.println(room.addObject(0, 4, newObjHolder));
   scanTimer = millis();
   rotateTimer = millis();
+  Serial.println("Starting...");
 }
 
 void loop() {
@@ -70,16 +65,16 @@ void loop() {
 
   if(amMoving && millis() >= moveTimer) {
     /*Serial.println("---------- Current Pos"); 
-    Serial.print(currentPosition.x);
+    Serial.print(room.robot.x);
     Serial.print(", ");
-    Serial.println(currentPosition.y);
+    Serial.println(room.robot.y);
     Serial.println("--------- Destination");
     Serial.print(destination.x);
     Serial.print(", ");
     Serial.println(destination.y);
     delay(50);*/
     respond((moveCommand*)com);
-    currentPosition = terminus;
+    room.robot = terminus;
     amMoving = false;
     delete com;
     com = NULL;
@@ -144,11 +139,11 @@ void processCommand(command* com) {
   }
   else if(com->commandNumber == stopNum) {
     amMoving = false;
-    unsigned long totalDistance = calculations.getDistBetweenTwoPoints(currentPosition, destination);
+    unsigned long totalDistance = calculations.getDistBetweenTwoPoints(room.robot, destination);
     float distanceMoved = (((float)(millis() - startedMoving))/(float)(moveTimer - startedMoving))*(float)(totalDistance);
     
-    // Change currentPosition to represent the distance moved
-    currentPosition = calculations.makeLineFromPolar(movingAngle, distanceMoved, currentPosition);
+    // Change robot's position in room to represent the distance moved
+    room.robot = calculations.makeLineFromPolar(movingAngle, distanceMoved, room.robot);
     
     SPI_Wrapper::sendStopResponse(com->uniqueID, distanceMoved, movingAngle, true);
   }
@@ -192,11 +187,11 @@ void respond(compassCommand* com) {
 }
 
 void moveRobot(moveCommand* com) {
-  destination = calculations.makeLineFromPolar(((float)(((90 - com->angle) + 360) % 360) * PI) / 180 , com->magnitude, currentPosition);
+  destination = calculations.makeLineFromPolar(((float)(((90 - com->angle) + 360) % 360) * PI) / 180 , com->magnitude, room.robot);
   movingAngle = com->angle + (int)lround((angleSlip * (degreeOfError / maxDegreeOfError)));
   physicalAngle = physicalAngle + (int)lround((angleSlip * (degreeOfError / maxDegreeOfError)));
-  terminus = calculations.makeLineFromPolar(((float)(((90 - movingAngle) + 360) % 360) * PI) / 180, com->magnitude, currentPosition);
-  Line ray = Line(currentPosition, terminus);
+  terminus = calculations.makeLineFromPolar(((float)(((90 - movingAngle) + 360) % 360) * PI) / 180, com->magnitude, room.robot);
+  Line ray = Line(room.robot, terminus);
   terminus = calculations.getDestination(ray, room);
   distTravelled = (unsigned long)lround(calculations.getDistBetweenTwoPoints(ray.start, terminus) * (1.0 - (degreeOfError / maxDegreeOfError)));
   amMoving = true;
@@ -207,7 +202,7 @@ void moveRobot(moveCommand* com) {
 scanResponse scan() {
   scanResponse scanResp;
   scanResp.angle = laserAngle;
-  Line ray = Line(currentPosition, (calculations.makeLineFromPolar((((float)(((90 - laserAngle) + 360) % 360) * PI) / 180), 4096.0, currentPosition)));
+  Line ray = Line(room.robot, (calculations.makeLineFromPolar((((float)(((90 - laserAngle) + 360) % 360) * PI) / 180), 4096.0, room.robot)));
   nearestWall = calculations.getDestination(ray, room);
   scanResp.magnitude = (unsigned long)lround(calculations.getDistBetweenTwoPoints(ray.start, nearestWall));
   scanResp.last = (laserAngle == 360);

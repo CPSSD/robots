@@ -42,6 +42,15 @@ Object::Object(int numSides, Point sides[]) {
 	this->sides[(numSides - 1)] = Line(sides[(numSides - 1)], sides[0]);
 }
 
+Room::Room() {
+	Point defaultWalls[] = { {Point(0, 0)}, {Point(300, 0)}, {Point(300, 300)}, {Point(0, 300)} };
+	this->walls = Object(4, defaultWalls);
+	this->robot = Point(150, 150);
+	this->numObjects = 0;
+	this->objects = new Object[this->numObjects];
+	this->maxNumObjSides = 4;
+}
+
 Room::Room(int numWalls, Point walls[], Point robotCoOrds, int numObjects) {
 	this->walls = Object(numWalls, &walls[0]);
 	this->robot = robotCoOrds;

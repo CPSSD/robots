@@ -29,6 +29,7 @@ class Object {
 
 class Room {
 	public:
+		Room();
 		Room(int numWalls, Point walls[], Point robotCoOrds, int numObjects);
 		Point robot;
 		Object walls;
