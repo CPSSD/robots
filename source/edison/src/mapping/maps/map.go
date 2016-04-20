@@ -56,18 +56,6 @@ func MapInit(bitmapScale int) {
 	RDPInit()
 	fmt.Println("[RDP Link Ready]")
 
-	for i := 0; i < 360; i++ {
-		if i >= 250 {
-			RobotMap.AddWallByLine(float64(i), 80)
-		} else {
-			RobotMap.AddWallByLine(float64(i), 200)
-		}
-	}
-	RobotMap.AddWallByLine(270, 200)
-	RobotMap.GetRobot().Rotate(0);
-	RobotMap.ContinueToNextArea()
-	RobotMap.Print(path)
-
 	scanBuffer = make([]RobotDriverProtocol.ScanResponse, 0)
 
 	//defer RobotMap.Print(nil)
@@ -576,7 +564,6 @@ func (this *Map) ContinueToNextArea() {
 			this.MoveRobotAlongPath(path, true)
 			return
 		}
-		print("No valid path to node", i, "checking next node.")
 	}
 	if !possible {
 		finishedMapping = true
