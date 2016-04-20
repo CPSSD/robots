@@ -121,6 +121,7 @@ func (this *Map) LoadMap(fileName string) {
 	mapCSV, err := os.Open(fileName)
 	if err != nil {
 		fmt.Println("Error loading map: ", err)
+		return
 	}
 	defer mapCSV.Close()
 
@@ -232,7 +233,7 @@ func (this *Map) TakeNextStep(lastX int, lastY int) {
 	if len(path) != 0 {
 		robotPoint := Point{int(this.GetRobot().GetX()), int(this.GetRobot().GetY())}
 		line, movesLeft := this.getNextMove(int(this.GetRobot().GetX()), int(this.GetRobot().GetY()), lastX, lastY, path)
-		
+
 		fmt.Println("currentLocation: ", robotPoint)
 		// If you are 1 move away from end point
 		if !movesLeft {

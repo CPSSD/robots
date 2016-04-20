@@ -121,6 +121,19 @@ function registerTouchHandler() {
     canvas.addEventListener("click", getPosition, false);
 }
 
+function saveMap() {
+    $.getJSON('/saveMap/' + document.getElementById("saveFileName").value, function(data) {
+    	 //console.log(data);
+    });
+}
+
+function loadMap() {
+    $.getJSON('/loadMap/' + document.getElementById("loadFileName").value, function(data) {
+ 		refreshMap();           
+		//console.log(data);
+    });
+}
+
 // Gets an initial map and registers a handler for clicks on the canvas.
 function init() {
     refreshMap();
@@ -143,17 +156,33 @@ function init() {
 				<canvas id="mapCanvas" width="200" height="100" style="border:1px solid #c3c3c3;">
             		Your browser does not support the HTML5 canvas tag.
         		</canvas>
-        		<br/>
+        		<br />
 			</div>
 
 			<div class="section">
 				<h2 class="title"><u>Buttons</u></h1>
         		<input class="button" value="Zoom Out" type="button" id="zoomOut" onClick="zoomOut()" />
         		<input class="button" value="Zoom In" type="button" id="zoomOut" onClick="zoomIn()" />
-        		<br/>
+        		<br />
         		
 				<input class="button" value="Refresh Map" type="button" id="refreshMap" onClick="refreshMap()" />
-        		<br/>
+        		<br />
+
+				<div class = "inlineButtons">
+					<input class="text" value="File Name" type="text" id="saveFileName" />
+					<input class="inlineButton" value="Save Map" type="button" id="saveMap" onClick="saveMap()" />
+				</div>
+
+				<div class="inlineButtons">
+					<input class="text" value="File Name" type="text" id="loadFileName" />
+					<input class="inlineButton" value="Load Map" type="button" id="loadMap" onClick="loadMap()" />
+				</div>
+				
+				<br />
+
+				<a href="drive/">Drive page</a>
+				<br />
+
 			</div>
 		</div>
     </body>
