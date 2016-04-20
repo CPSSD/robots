@@ -131,7 +131,7 @@ void scanArea(int scanFreq, int distance, ScanType scanType) {
         firstReading = LaserScanner::lastRotationData[i];
         if (LaserScanner::pushScanData) {
           //Serial.println("\t- Sending Scan Data");
-          delay(20);
+          delay(40);
           LaserScanner::sendScanResponse(LaserReading{LaserScanner::lastRotationData[i].angle / LaserScanner::queuedRotations, LaserScanner::lastRotationData[i].distance / LaserScanner::queuedRotations}, false);
         }
       }
@@ -197,8 +197,9 @@ void setup() {
 
 void loop() {
   //Serial.println("Starting LaserMotorArm");
-  //faceWall(3360/360, motor.singleRotation, 210, false);
-  //faceWall(1, 420, 0, true);
+  motor.changeDirection();
+  faceWall(3360/360, motor.singleRotation, 210, false);
+  faceWall(1, 420, 0, true);
   //Serial.println("*Laser now faces wall");
 
   //Serial.println("Starting main loop...");
