@@ -40,8 +40,9 @@ int angleSlip = 20;
 void setup() {
   SPI_Wrapper::init();
   SPI_Wrapper::registerMoveCommandHandler(&moveCommandHandler);
-  SPI_Wrapper::registerScanCommandHandler(&scanCommandHandler);
   SPI_Wrapper::registerStopCommandHandler(&stopCommandHandler);
+  SPI_Wrapper::registerRotateCommandHandler(&rotateCommandHandler);
+  SPI_Wrapper::registerScanCommandHandler(&scanCommandHandler);
   SPI_Wrapper::registerCompassCommandHandler(&compassCommandHandler);
   Serial.begin(9600);
   Serial.println("Starting...");
@@ -54,6 +55,7 @@ void setup() {
   Serial.print("Adding object 1: ");
   Serial.println(room.addObject(0, 4, newObjHolder));
   scanTimer = millis();
+  rotateTimer = millis();
 }
 
 void loop() {
@@ -117,6 +119,12 @@ void stopCommandHandler(stopCommand stopCom) {
   }
 }
 
+void rotateCommandHandler(rotateCommand rotCom) {
+  if (com == NULL) {
+    com =  new rotateCommand(rotCom);
+  }
+}
+
 void scanCommandHandler(scanCommand scanCom) {
   Serial.println("Recieved Scan Command...");
   if (com == NULL) {
@@ -144,8 +152,10 @@ void processCommand(command* com) {
     
     SPI_Wrapper::sendStopResponse(com->uniqueID, distanceMoved, movingAngle, true);
   }
-  else if(com->commandNumber == rotateNum){
-    // rotate command to be implemented
+  else if(com->commandNumber == rotateNum) {
+    respond((rotateCommand*)com);
+    delete com;
+    com = NULL;
   }
   else if(com->commandNumber == scanNum) {
     amScanning = true;
@@ -160,6 +170,11 @@ void processCommand(command* com) {
 
 void respond(moveCommand* com){
   SPI_Wrapper::sendMoveResponse(com->uniqueID, distTravelled, movingAngle, (distTravelled == com->magnitude));
+}
+
+void respond(rotateCommand* com) {
+  physicalAngle = ((com->angle + 90) % 360);
+  SPI_Wrapper::sendRotateResponse(com->uniqueID, com->angle, true);
 }
 
 void respond(scanResponse scanResp) {
