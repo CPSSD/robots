@@ -14,6 +14,14 @@ type Line struct {
 	Slope    int
 }
 
+func (this Line) split() (Line, Line) {
+	midPoint := Point{(this.P1.X + this.P2.X) / 2, (this.P1.Y + this.P2.Y) / 2}
+	line1, line2 := Line{P1: this.P1, P2: midPoint}, Line{P1: midPoint, P2: this.P2}
+	line1.Slope, line1.Vertical = line1.getSlope()
+	line2.Slope, line2.Vertical = line2.getSlope()
+	return line1, line2
+}
+
 // Gets the slope of the line. Returns (slope int, vertical bool). If vertical, Slope will be set to 0.
 func (this Line) getSlope() (int, bool) {
 	if this.P1.X == this.P2.X {

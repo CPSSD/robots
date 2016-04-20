@@ -24,6 +24,9 @@ var firstScan = true
 var checkLocation = false
 var followingPath = false
 
+var distanceSinceLastScan = 0
+var minimumScanDistance = 50
+
 var pathIndex = 0
 
 // RobotMap is a map of the current room being mapped
@@ -229,9 +232,19 @@ func (this *Map) probabilityAtLocation(fragment Map, x int, y int) (int, int, in
 }
 
 func (this *Map) TakeNextStep(lastX int, lastY int) {
+	// If we haven't scanned in a while: do a scan and return.
+	if distanceSinceLastScan < minimumScanDistance {
+		distanceSinceLastScan = 0
+		RobotDriverProtocol.Scan()
+		return
+	}
+
+	// Otherwise just continue moving
 	if len(path) != 0 {
+		followingPath = true
 		robotPoint := Point{int(this.GetRobot().GetX()), int(this.GetRobot().GetY())}
 		line, movesLeft := this.getNextMove(int(this.GetRobot().GetX()), int(this.GetRobot().GetY()), lastX, lastY, path)
+		distanceSinceLastScan += line.getLength()
 
 		fmt.Println("currentLocation: ", robotPoint)
 		// If you are 1 move away from end point
@@ -250,7 +263,8 @@ func (this *Map) TakeNextStep(lastX int, lastY int) {
 
 		degree := line.getAngleFrom(robotPoint)
 		magnitude := line.getLength()
-
+		offset := RobotMap.GetRobot().GetRotation()
+		degree = (degree + int(offset)) % 360
 		fmt.Println("[TakeNextStep]: Required Move: ", degree, " -> ", magnitude)
 
 		RobotDriverProtocol.Move(uint16(degree), uint32(magnitude))
@@ -291,6 +305,15 @@ func (this *Map) getNextMove(x, y, prevX, prevY int, path [][]bool) (line Line, 
 
 	robotPoint := Point{x, y}
 	prevRobotPoint := Point{prevX, prevY}
+
+	for i := 0; i < len(lines); i++ {
+		if line.getLength() > minimumScanDistance {
+			line1, line2 := line.split()
+			lines[i] = line1
+			lines = append(lines, line2)
+			i--
+		}
+	}
 
 	for _, line := range lines {
 		if Debug {
@@ -501,6 +524,9 @@ func (this *Map) MarkLineAsSeen(degree, distance float64) {
 			}
 			if this.seen[y][x] == 0 {
 				this.seen[y][x] = 1
+			}
+			if this.floor[y][x] && dist < int(distance-1) {
+				this.floor[y][x] = false
 			}
 		}
 	}
