@@ -1,11 +1,10 @@
-<!DOCTYPE html>
 <html>
 
-    <head>
-        <title> Map View </title>
-        <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.3/jquery.min.js"></script>
+	<link rel="stylesheet" type="text/css" href="stylesheet.css" />
+	<title> Map View </title>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.3/jquery.min.js"></script>
 
-        <script>
+    <script>
 // Change this to change the size of the map.
 var block_size = 20;
 
@@ -122,32 +121,69 @@ function registerTouchHandler() {
     canvas.addEventListener("click", getPosition, false);
 }
 
+function saveMap() {
+    $.getJSON('/saveMap/' + document.getElementById("saveFileName").value, function(data) {
+    	 //console.log(data);
+    });
+}
+
+function loadMap() {
+    $.getJSON('/loadMap/' + document.getElementById("loadFileName").value, function(data) {
+ 		refreshMap();           
+		//console.log(data);
+    });
+}
+
 // Gets an initial map and registers a handler for clicks on the canvas.
 function init() {
     refreshMap();
     registerTouchHandler();
+	window.setInterval(refreshMap, 2000);
 }
 
-        </script>
-    </head>
+    </script>
 
+	<body onload="init()">
+		<div class="header"></div>
 
-    <body>
-        <canvas id="mapCanvas" width="200" height="100" style="border:1px solid #c3c3c3;">
-            Your browser does not support the HTML5 canvas tag.
-        </canvas>
-        <br/>
+		<div class="title">
+			<h1 class="header">CPSSD Robot Project</h1>
+		</div>
+        
+		<div class="content">
+			<div class="section">
+				<h2 class="title"><u>Map</u></h1>
+				<canvas id="mapCanvas" width="200" height="100" style="border:1px solid #c3c3c3;">
+            		Your browser does not support the HTML5 canvas tag.
+        		</canvas>
+        		<br />
+			</div>
 
-        <button value="Zoom Out" onClick="zoomOut()">Zoom Out</button>
-        <button value="Zoom In" onClick="zoomIn()"> Zoom In </button>
-        <br/>
-        <button value="Refresh Map" onClick="refreshMap()"> Refresh Map </button>
-        <br/>
+			<div class="section">
+				<h2 class="title"><u>Buttons</u></h1>
+        		<input class="button" value="Zoom Out" type="button" id="zoomOut" onClick="zoomOut()" />
+        		<input class="button" value="Zoom In" type="button" id="zoomOut" onClick="zoomIn()" />
+        		<br />
+        		
+				<input class="button" value="Refresh Map" type="button" id="refreshMap" onClick="refreshMap()" />
+        		<br />
 
-        <script>
-// Gets an initial map and registers a handler for clicks on the canvas.
-init();
-        </script>
+				<div class = "inlineButtons">
+					<input class="text" value="File Name" type="text" id="saveFileName" />
+					<input class="inlineButton" value="Save Map" type="button" id="saveMap" onClick="saveMap()" />
+				</div>
 
+				<div class="inlineButtons">
+					<input class="text" value="File Name" type="text" id="loadFileName" />
+					<input class="inlineButton" value="Load Map" type="button" id="loadMap" onClick="loadMap()" />
+				</div>
+				
+				<br />
+
+				<a href="drive/">Drive page</a>
+				<br />
+
+			</div>
+		</div>
     </body>
 </html>
