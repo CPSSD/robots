@@ -11,7 +11,7 @@ void TapDetectionLib::init() {
     adxl.setTapDetectionOnZ(1);
 
     // Set values for what is a tap.
-    adxl.setTapThreshold(25); // 62.5mg per increment.
+    adxl.setTapThreshold(100); // 62.5mg per increment.
     adxl.setTapDuration(15); // 625us per increment.
 
     // Setting all interrupts to take place on int pin 1.

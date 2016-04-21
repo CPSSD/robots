@@ -20,7 +20,7 @@ td {
 
 div.content {
 	width: 700px;
-	height: 100%;
+	height: auto;
 	margin: 0 auto;
 }
 
@@ -39,6 +39,7 @@ div.section{
 	border-radius:5px;
 	background-color:white;
 	width: 700px;
+	min-height: 150px;
 	padding-top:10px;
 	padding-bottom: 10px;
 	margin: 30px auto;
@@ -57,6 +58,10 @@ div.response {
 	height:250px;
 	margin-top:3%;
 	overflow: scroll;
+}
+
+div.inlineButtons {
+	text-align: center;
 }
 
 li {
@@ -84,6 +89,15 @@ h2.title {
 	text-align: center;
 }
 
+canvas {
+	padding-left: 0;
+	padding-right: 0;
+	margin-left: auto;
+	margin-right: auto;		
+	margin-top: 5px;
+	display: block;
+}
+
 input {
 	margin: 0 auto;
 	width:60%;
@@ -94,6 +108,32 @@ input {
 input.button {
 	width:22%;
 	margin-left:39%;
+	margin-top: 5px;
+}
+
+input.inlineButton {
+	display: inline-block;
+	margin-top: 5px;
+	margin-left: 10px;
+	margin-right: 0;
+	width: 25%;
+	padding: 0;
+}
+
+input.text {
+	width: 30%;
+	margin-top: 5px;
+	margin-left: 0px;
+	margin-right: 0px;
+	display: inline-block;
+	padding:0;
+}
+
+a {
+	margin: 0 auto;
+	width: 100%;
+	text-align: center;
+	float: left;
 }
 
 ::-webkit-scrollbar {

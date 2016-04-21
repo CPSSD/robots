@@ -136,6 +136,7 @@ func (this *Map) LoadMap(fileName string) {
 	mapCSV, err := os.Open(fileName)
 	if err != nil {
 		fmt.Println("Error loading map: ", err)
+		return
 	}
 	defer mapCSV.Close()
 

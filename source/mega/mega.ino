@@ -45,6 +45,7 @@ void setup() {
   Serial.println("Ready to recieve.");
 
   accelerometer.init();
+  compass.init();
 }
 
 void stopCommandHandler(stopCommand cmd) {
