@@ -88,6 +88,7 @@ func loadMap(w http.ResponseWriter, r *http.Request) {
 // Stops the robot from mapping
 func stopMapping(w http.ResponseWriter, r *http.Request){
 	maps.CurrentlyMapping = false
+	maps.StopFollowingPath()
 }
 
 func startMapping(w http.ResponseWriter, r *http.Request){
@@ -128,7 +129,7 @@ func destinationHandler(w http.ResponseWriter, r *http.Request) {
 	path, possible := maps.GetRoute(maps.RobotMap, X, Y)
 	if possible {
 		fmt.Fprintf(w, "Moving robot to (%d, %d)", X, Y)
-		go maps.RobotMap.MoveRobotAlongPath(path, false)
+		maps.RobotMap.MoveRobotAlongPath(path, false)
 	} else {
 		fmt.Println("[Server] Path is not possible...")
 		fmt.Fprintf(w, "Path to (%d, %d) is not possible", X, Y)

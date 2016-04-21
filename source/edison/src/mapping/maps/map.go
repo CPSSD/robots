@@ -30,7 +30,7 @@ var compassHeading = 0
 var waitingForHeading = false
 
 var distanceSinceLastScan = 0
-var minimumScanDistance = 100
+var minimumScanDistance = 50
 
 var pathIndex = 0
 
@@ -93,6 +93,10 @@ func UpdateCompassHeading(angle int) {
 // FollowingPath Returns the followingPath boolean
 func FollowingPath() bool {
 	return followingPath
+}
+
+func StopFollowingPath() {
+	followingPath = false
 }
 
 // CreateMap creates an empty 1x1 map (this single point will be the robots starting position.)
@@ -520,7 +524,7 @@ func (this *Map) AddWallByLine(degree, distance float64) {
 	}
 	this.AddWall(x, y, true)
 	this.MarkLineAsSeen(degree, distance)
-	this.AddWall(x, y, true)
+	//this.AddWall(x, y, true)
 }
 
 // MarkLineAsSeen marks anything the line passes through as "seen".
@@ -542,7 +546,7 @@ func (this *Map) MarkLineAsSeen(degree, distance float64) {
 			if this.seen[y][x] == 0 {
 				this.seen[y][x] = 1
 			}
-			this.floor[y][x] = false
+			//this.floor[y][x] = false
 		}
 	}
 }
