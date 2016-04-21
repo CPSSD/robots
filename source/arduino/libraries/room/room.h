@@ -33,7 +33,7 @@ class Room {
 	public:
 		Room();
 		Room(int numWalls, Point walls[], Point robotCoOrds, int numObjects);
-		Point robot;
+		Point robot, farthest;
 		Object walls;
 		int numObjects, maxNumObjSides;
 		Object* objects;

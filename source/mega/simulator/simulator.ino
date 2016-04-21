@@ -23,7 +23,7 @@ const float SPEED = 1; //in mm per millisecond
 const unsigned long SCAN_RESPONSE_INTERVAL = 40; //Values as low as 80 worked in testing
 Room room;
 
-unsigned long startedMoving, moveTimer, scanTimer, rotateTimer, distTravelled;
+unsigned long startedMoving, moveTimer, scanTimer, rotateTimer, distTravelled, MAX_DISTANCE;
 int magnitude, movingAngle, laserAngle, physicalAngle;
 bool amScanning, amMoving, amRotating, bump;
 
@@ -39,6 +39,7 @@ int testCaseNum = 3;
 
 void setup() {
   room = rtc.pickRoom(testCaseNum);
+  MAX_DISTANCE = calculations.getDistBetweenTwoPoints(Point(0, 0), room.farthest);
   SPI_Wrapper::init();
   SPI_Wrapper::registerMoveCommandHandler(&moveCommandHandler);
   SPI_Wrapper::registerStopCommandHandler(&stopCommandHandler);
@@ -82,7 +83,7 @@ void loop() {
 
   if(amScanning && laserAngle <= 360 && millis() >= scanTimer) {
     scanResp = scan();
-    if(scanResp.magnitude != 4096) {
+    if(scanResp.magnitude < MAX_DISTANCE) {
       respond(scanResp);
     }
     laserAngle += 1;

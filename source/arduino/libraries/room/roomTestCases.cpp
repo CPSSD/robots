@@ -29,7 +29,7 @@ Room roomTestCases::pickRoom(int testCaseNum){
 		newObjHolder = 0;
 		return room;
 	} else if (testCaseNum == 3){
-		STARTING_X = 100;
+		STARTING_X = 400;
 		STARTING_Y = 100;
 		MAP_BOUNDS = new Point[6]{Point(0, 0), Point(600, 0), Point(600, 600), Point(300, 600), Point(300, 300), Point(0, 300)};
 		room = Room(6, MAP_BOUNDS, Point(STARTING_X, STARTING_Y), 2);

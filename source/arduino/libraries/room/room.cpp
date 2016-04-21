@@ -55,15 +55,23 @@ Room::Room() {
 	this->objects = new Object[this->numObjects];
 	this->maxNumObjSides = 4;
 	index = 0;
+	this->farthest = Point(300, 300);
 }
 
 Room::Room(int numWalls, Point walls[], Point robotCoOrds, int numObjects) {
+	float farX = 0.0f;
+	float farY = 0.0f;
 	this->walls = Object(numWalls, &walls[0]);
 	this->robot = robotCoOrds;
 	this->numObjects = numObjects;
 	this->objects = new Object[numObjects];
 	this->maxNumObjSides = numWalls;
 	index = 0;
+	for(int i = 0; i < numWalls; i++){
+		farX = max(max(farX, walls[i].x), max(farX, walls[i].y));
+		farY = farX;
+	}
+	this->farthest = Point(farX, farY);
 }
 
 bool Room::addObject(int numSides, Point sides[]) {
