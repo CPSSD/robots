@@ -177,7 +177,7 @@ func (this *Map) addBufferToMap() {
 
 // FindLocation finds and returns the location of the robot based on the current scan information and the previous map information
 func (this *Map) FindLocation() (int, int, float64) {
-	rotationAmmount := 30
+	rotationAmmount := 20
 	rotationJump := 1
 	x, y := int(this.GetRobot().GetX()), int(this.GetRobot().GetY())
 	var count = -999
@@ -200,11 +200,13 @@ func (this *Map) FindLocation() (int, int, float64) {
 func (this *Map) findLocation(fragment Map) (int, int, int) {
 	fmt.Println("Attempting to find location...")
 	mX, mY, mCount := int(this.GetRobot().GetX()), int(this.GetRobot().GetY()), 0
+	
+	areaToSearch := 200 / BitmapScale
 
 	fmt.Println("Robots Assumed Location: (", mX, ",", mY, ")")
 
-	for i := 0; i < this.width; i++ {
-		for j := 0; j < this.height; j++ {
+	for i := int(this.GetRobot().GetX()) - areaToSearch; i < int(this.GetRobot().GetX()) + areaToSearch; i++ {
+		for j := int(this.GetRobot().GetY()) - areaToSearch; j < int(this.GetRobot().GetY()) + areaToSearch; j++ {
 			if i >= 0 && j >= 0 && i < this.width && j < this.height {
 				count, _, _ := this.probabilityAtLocation(fragment, int(i), int(j))
 				if count != 0 {
@@ -258,6 +260,7 @@ func (this *Map) TakeNextStep(lastX int, lastY int) {
 		robotPoint := Point{int(this.GetRobot().GetX()), int(this.GetRobot().GetY())}
 		line, movesLeft := this.getNextMove(int(this.GetRobot().GetX()), int(this.GetRobot().GetY()), lastX, lastY, path)
 		distanceSinceLastScan += line.getLength()
+		fmt.Println("Current length of line: ", line.getLength())		
 
 		fmt.Println("currentLocation: ", robotPoint)
 		// If you are 1 move away from end point
@@ -463,7 +466,7 @@ func (this *Map) createExpandedMap(expandX, expandY int) (tempMap *Map) {
 // Print ouputs the state of the map in a nice way.
 func (this *Map) Print(path [][]bool) {
 	if !Debug {
-		//return
+		return
 	}
 	for y := 0; y < this.height; y++ {
 		for x := 0; x < this.width; x++ {
@@ -537,7 +540,7 @@ func (this *Map) MarkLineAsSeen(degree, distance float64) {
 			if this.seen[y][x] == 0 {
 				this.seen[y][x] = 1
 			}
-			if this.floor[y][x] && dist < int(distance-1) {
+			if this.floor[y][x] && dist < int(distance-2) {
 				this.floor[y][x] = false
 			}
 		}

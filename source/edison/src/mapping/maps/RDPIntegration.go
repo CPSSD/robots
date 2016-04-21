@@ -38,6 +38,13 @@ func compassResponse(response RobotDriverProtocol.CompassResponse) {
 
 func moveResponse(response RobotDriverProtocol.MoveResponse) {
 	fmt.Print("[Move Response] Angle:", response.Angle, " // Magnitude:", response.Magnitude)
+	
+	if !response.Success {
+		fmt.Println("Problem moving... Doing a scan.");
+		followingPath = false
+		RobotDriverProtocol.Scan()
+		return
+	}
 
 	if followingPath {
 		lastX := RobotMap.GetRobot().GetX()
@@ -101,7 +108,7 @@ func stopResponse(response RobotDriverProtocol.StopResponse) {
 	RobotMap.MoveRobotAlongLine(float64(response.Angle), float64(response.Magnitude))
 	lastAction = "Stop"
 	currentID = -1
-
+	followingPath = false
 	RobotDriverProtocol.Scan()
 
 }
