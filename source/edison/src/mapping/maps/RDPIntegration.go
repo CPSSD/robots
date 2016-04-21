@@ -38,7 +38,7 @@ func compassResponse(response RobotDriverProtocol.CompassResponse) {
 
 func moveResponse(response RobotDriverProtocol.MoveResponse) {
 	fmt.Print("[Move Response] Angle:", response.Angle, " // Magnitude:", response.Magnitude)
-	
+
 	if !response.Success {
 		fmt.Println("Problem moving... Doing a scan.");
 		followingPath = false
@@ -72,20 +72,26 @@ func scanResponse(response RobotDriverProtocol.ScanResponse) {
 	if response.Last {
 		if firstScan {
 			firstScan = false
-			RobotMap.addBufferToMap()
+			if CurrentlyMapping {
+				RobotMap.addBufferToMap()
+			}
 		} else {
 			fmt.Println("Robot should be here at this location: (", RobotMap.GetRobot().GetX(), ", ", RobotMap.GetRobot().GetY(), ")")
-			x, y, rotation := RobotMap.FindLocation()
+			x, y, rotation := RobotMap.FindLocation(200 / BitmapScale, 20, 1)
 			RobotMap.GetRobot().MoveToPoint(x, y, true)
 			RobotMap.GetRobot().Rotate(float64(rotation))
-			RobotMap.addBufferToMap()
+			if CurrentlyMapping {
+				RobotMap.addBufferToMap()
+			}
 		}
 
 		lastAction = "Scan"
 		currentID = -1
 
 		RobotMap.Print(nil)
-		RobotMap.ContinueToNextArea()
+		if CurrentlyMapping {
+			RobotMap.ContinueToNextArea()
+		}
 	}
 }
 
