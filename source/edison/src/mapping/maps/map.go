@@ -24,6 +24,10 @@ var firstScan = true
 var checkLocation = false
 var followingPath = false
 
+var compassOffset = -1
+var compassHeading = 0
+var waitingForHeading = false
+
 var distanceSinceLastScan = 0
 var minimumScanDistance = 50
 
@@ -62,7 +66,7 @@ func MapInit(bitmapScale int) {
 	scanBuffer = make([]RobotDriverProtocol.ScanResponse, 0)
 
 	//defer RobotMap.Print(nil)
-
+	
 	RobotDriverProtocol.Scan()
 }
 
@@ -79,6 +83,14 @@ func (this *Map) GetBitmap() ([][]bool, bool) {
 // GetRobot returns the maps robot.
 func (this *Map) GetRobot() *Robot {
 	return &this.robot
+}
+
+func UpdateCompassHeading(angle int) {
+	if compassOffset == -1 {
+		compassOffset = angle
+	}
+	compassHeading = (angle - compassOffset + 360) % 360 
+	waitingForHeading = false
 }
 
 // FollowingPath Returns the followingPath boolean
@@ -282,6 +294,18 @@ func (this *Map) TakeNextStep(lastX int, lastY int) {
 // Used when following a path into unseen areas to prevent crashes.
 func (this *Map) MoveRobotAlongPath(newPath [][]bool, stopBeforePoint bool) {
 	path = newPath
+	lines := BitmapToVector(path)
+
+	for i := 0; i < len(lines); i++ {
+		if lines[i].getLength() > minimumScanDistance {
+			line1, line2 := lines[i].split()
+			lines[i] = line1
+			lines = append(lines, line2)
+			i--
+		}
+	}	
+	
+	lineMap = lines
 	followingPath = true
 	this.TakeNextStep(-1, -1)
 	fmt.Println("Queued a path for movement...")
@@ -299,23 +323,10 @@ func (this *Map) MoveRobotToPoint(x, y int) {
 
 // Returns the next move in the path.
 func (this *Map) getNextMove(x, y, prevX, prevY int, path [][]bool) (line Line, possibleMove bool) {
-	lines := BitmapToVector(path)
-	fmt.Println("Line Map: ", lines)
-	fmt.Println("Index: ", pathIndex, " | Size: ", len(lines))
-
 	robotPoint := Point{x, y}
 	prevRobotPoint := Point{prevX, prevY}
 
-	for i := 0; i < len(lines); i++ {
-		if lines[i].getLength() > minimumScanDistance {
-			line1, line2 := lines[i].split()
-			lines[i] = line1
-			lines = append(lines, line2)
-			i--
-		}
-	}
-
-	for _, line := range lines {
+	for _, line := range lineMap {
 		if Debug {
 			fmt.Println("Did ", line, " get past here?")
 			fmt.Println("Previous Loc: ", prevRobotPoint)

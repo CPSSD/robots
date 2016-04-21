@@ -26,7 +26,14 @@ func RDPConnector(data interface{}) {
 		scanResponse(response)
 	case RobotDriverProtocol.StopResponse:
 		stopResponse(response)
+	case RobotDriverProtocol.CompassResponse:
+		compassResponse(response)
 	}
+}
+
+func compassResponse(response RobotDriverProtocol.CompassResponse) {
+	fmt.Println("[Compass Response] Angle: ", response.Angle)
+	UpdateCompassHeading(int(response.Angle))
 }
 
 func moveResponse(response RobotDriverProtocol.MoveResponse) {
