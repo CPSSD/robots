@@ -471,7 +471,7 @@ func (this *Map) createExpandedMap(expandX, expandY int) (tempMap *Map) {
 // Print ouputs the state of the map in a nice way.
 func (this *Map) Print(path [][]bool) {
 	if !Debug {
-		//return
+		return
 	}
 	for y := 0; y < this.height; y++ {
 		for x := 0; x < this.width; x++ {
