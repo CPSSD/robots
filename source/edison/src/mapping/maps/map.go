@@ -520,6 +520,7 @@ func (this *Map) AddWallByLine(degree, distance float64) {
 	}
 	this.AddWall(x, y, true)
 	this.MarkLineAsSeen(degree, distance)
+	this.AddWall(x, y, true)
 }
 
 // MarkLineAsSeen marks anything the line passes through as "seen".
@@ -541,9 +542,7 @@ func (this *Map) MarkLineAsSeen(degree, distance float64) {
 			if this.seen[y][x] == 0 {
 				this.seen[y][x] = 1
 			}
-			if this.floor[y][x] && dist < int(distance-2) {
-				this.floor[y][x] = false
-			}
+			this.floor[y][x] = false
 		}
 	}
 }
