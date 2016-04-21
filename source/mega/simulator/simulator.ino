@@ -25,9 +25,9 @@ Room room;
 
 unsigned long startedMoving, moveTimer, scanTimer, rotateTimer, distTravelled;
 int magnitude, movingAngle, laserAngle, physicalAngle;
-bool amScanning, amMoving, amRotating;
+bool amScanning, amMoving, amRotating, bump;
 
-Point destination, terminus, nearestWall;
+Point terminus, endpoint, nearestWall;
 command* com;
 scanResponse scanResp;
 
@@ -57,8 +57,7 @@ void loop() {
   if (com != NULL) {
     if(!amMoving && !amScanning) {
       processCommand(com);
-    }
-    else if (amMoving && com->commandNumber == stopNum) {
+    } else if (amMoving && com->commandNumber == stopNum) {
       processCommand(com);
     }
   }
@@ -69,12 +68,12 @@ void loop() {
     Serial.print(", ");
     Serial.println(room.robot.y);
     Serial.println("--------- Destination");
-    Serial.print(destination.x);
+    Serial.print(terminus.x);
     Serial.print(", ");
-    Serial.println(destination.y);
+    Serial.println(terminus.y);
     delay(50);*/
     respond((moveCommand*)com);
-    room.robot = terminus;
+    room.robot = endpoint;
     amMoving = false;
     delete com;
     com = NULL;
@@ -136,27 +135,23 @@ void compassCommandHandler(compassCommand compCom) {
 void processCommand(command* com) {
   if(com->commandNumber == moveNum) {
     moveRobot((moveCommand*)com);
-  }
-  else if(com->commandNumber == stopNum) {
+  } else if(com->commandNumber == stopNum) {
     amMoving = false;
-    unsigned long totalDistance = calculations.getDistBetweenTwoPoints(room.robot, destination);
-    float distanceMoved = (((float)(millis() - startedMoving))/(float)(moveTimer - startedMoving))*(float)(totalDistance);
+    unsigned long totalDistance = calculations.getDistBetweenTwoPoints(room.robot, terminus);
+    distTravelled = (((millis() - startedMoving))/(moveTimer - startedMoving))*(totalDistance);
     
     // Change robot's position in room to represent the distance moved
-    room.robot = calculations.makeLineFromPolar(movingAngle, distanceMoved, room.robot);
+    room.robot = calculations.makeLineFromPolar(movingAngle, distTravelled, room.robot);
     
-    SPI_Wrapper::sendStopResponse(com->uniqueID, distanceMoved, movingAngle, true);
-  }
-  else if(com->commandNumber == rotateNum) {
+    SPI_Wrapper::sendStopResponse(com->uniqueID, distTravelled, movingAngle, true);
+  } else if(com->commandNumber == rotateNum) {
     respond((rotateCommand*)com);
     delete com;
     com = NULL;
-  }
-  else if(com->commandNumber == scanNum) {
+  } else if(com->commandNumber == scanNum) {
     amScanning = true;
     scanTimer = millis() + SCAN_RESPONSE_INTERVAL;
-  }
-  else if(com->commandNumber == compassNum) {
+  } else if(com->commandNumber == compassNum) {
     respond((compassCommand*)com);
     delete com;
     com = NULL;
@@ -164,7 +159,7 @@ void processCommand(command* com) {
 }
 
 void respond(moveCommand* com){
-  SPI_Wrapper::sendMoveResponse(com->uniqueID, distTravelled, movingAngle, (distTravelled == com->magnitude));
+  SPI_Wrapper::sendMoveResponse(com->uniqueID, distTravelled, movingAngle, bump);
 }
 
 void respond(rotateCommand* com) {
@@ -187,14 +182,18 @@ void respond(compassCommand* com) {
 }
 
 void moveRobot(moveCommand* com) {
+  Point wallGuard, destination;
+  amMoving = true;
   destination = calculations.makeLineFromPolar(((float)(((90 - com->angle) + 360) % 360) * PI) / 180 , com->magnitude, room.robot);
   movingAngle = com->angle + (int)lround((angleSlip * (degreeOfError / maxDegreeOfError)));
   physicalAngle = physicalAngle + (int)lround((angleSlip * (degreeOfError / maxDegreeOfError)));
   terminus = calculations.makeLineFromPolar(((float)(((90 - movingAngle) + 360) % 360) * PI) / 180, com->magnitude, room.robot);
   Line ray = Line(room.robot, terminus);
-  terminus = calculations.getDestination(ray, room);
+  wallGuard = terminus;
+  terminus = calculations.getDestination(ray, room, amMoving);
+  bump = (wallGuard.x != terminus.x || wallGuard.y != terminus.y);
   distTravelled = (unsigned long)lround(calculations.getDistBetweenTwoPoints(ray.start, terminus) * (1.0 - (degreeOfError / maxDegreeOfError)));
-  amMoving = true;
+  endpoint = calculations.makeLineFromPolar(((float)(((90 - movingAngle) + 360) % 360) * PI) / 180, distTravelled, room.robot);
   startedMoving = millis();
   moveTimer = millis() + calculations.getTravelTime(((com->magnitude) * 10), SPEED);
 }
@@ -203,7 +202,7 @@ scanResponse scan() {
   scanResponse scanResp;
   scanResp.angle = laserAngle;
   Line ray = Line(room.robot, (calculations.makeLineFromPolar((((float)(((90 - laserAngle) + 360) % 360) * PI) / 180), 4096.0, room.robot)));
-  nearestWall = calculations.getDestination(ray, room);
+  nearestWall = calculations.getDestination(ray, room, amMoving);
   scanResp.magnitude = (unsigned long)lround(calculations.getDistBetweenTwoPoints(ray.start, nearestWall));
   scanResp.last = (laserAngle == 360);
   return scanResp;

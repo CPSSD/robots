@@ -18,8 +18,7 @@ float calc::getDistanceTravelled(float speed, unsigned long time) {
 bool calc::isWithinEpsilonOf(float value, float epsilon, float of) {
 	if(value >= (of - epsilon) && value <= (of + epsilon)) {
 		return true;
-	}
-	else {
+	} else {
 		return false;
 	}
 }
@@ -27,8 +26,7 @@ bool calc::isWithinEpsilonOf(float value, float epsilon, float of) {
 float calc::correctFloatErr(float value, float epsilon, float of) {
 	if(isWithinEpsilonOf(value, epsilon, of)) {
 		return of;
-	}
-	else {
+	} else {
 		return value;
 	}
 }
@@ -47,8 +45,7 @@ Point calc::makeLineFromPolar(float angle, float distance, Point currentPosition
 bool calc::checkIfVertical(Point start, Point end) {
 	if(isWithinEpsilonOf((end.x - start.x), 0.01f, 0.00f)) {
 		return true;
-	}
-	else {
+	} else {
 		return false;
 	}
 }
@@ -61,7 +58,7 @@ float calc::getCOfLine(float slope, Point start) {
 	return(-(slope * start.x) + start.y);
 }
 
-Point calc::getDestination(Line robotLine, Room room) {
+Point calc::getDestination(Line robotLine, Room room, bool state) {
 	//For each line, check for valid interception point, get interception point
 	Point nearestWall = robotLine.end;
 	Point validInterceptPoints[(room.numObjects) + 1][room.maxNumObjSides];
@@ -89,27 +86,11 @@ Point calc::getDestination(Line robotLine, Room room) {
 	diffInYValuesDest = correctFloatErr(diffInYValuesDest, 0.01f, 0.00f);
 
 	float diffInXValuesWall, diffInYValuesWall, distBetweenRobotAndDest, distBetweenRobotAndWall;
-	Point stepBack;
 	//Get distance between robot and destination
 	distBetweenRobotAndDest = getDistBetweenTwoPoints(robotLine.start, nearestWall);
 
 	for(int i = 0; i < ((room.numObjects) + 1); i++) {
 		for(int j = 0; j < indexVIP[i]; j++) {
-			//Check if near a wall or object, and  trying to go through it
-			if(validInterceptPoints[i][j].x == robotLine.start.x && validInterceptPoints[i][j].y == robotLine.start.y) {
-				stepBack = Point(((2 * (robotLine.start.x - robotLine.end.x)) + robotLine.end.x), ((2 * (robotLine.start.y - robotLine.end.y)) + robotLine.end.y)); //P = d(B - A) + A where:
-																																									//A is the starting point (x0, y0) of the line segment,
-																																									//B is the end point (x1, y1),
-																																									//d is the distance from starting point A to the desired collinear point,
-																																									//and P is the desired collinear point
-				//Check signs of translations. If they match, we're trying to go through
-				diffInXValuesWall = validInterceptPoints[i][j].x - stepBack.x;
-				diffInYValuesWall = validInterceptPoints[i][j].y - stepBack.y;
-				if(( (diffInXValuesDest > 0.0 && diffInXValuesWall > 0.0) || (diffInXValuesDest == 0.0 && diffInXValuesWall == 0.0) || (diffInXValuesDest < 0.0 && diffInXValuesWall < 0.0) )
-				&&( (diffInYValuesDest > 0.0 && diffInYValuesWall > 0.0) || (diffInYValuesDest == 0.0 && diffInYValuesWall == 0.0) || (diffInYValuesDest < 0.0 && diffInYValuesWall < 0.0) )) {
-					return robotLine.start;
-				}
-			}
 			//Determine sign of each translation for given interception point
 			diffInXValuesWall = validInterceptPoints[i][j].x - robotLine.start.x;
 			diffInYValuesWall = validInterceptPoints[i][j].y - robotLine.start.y;
@@ -128,14 +109,31 @@ Point calc::getDestination(Line robotLine, Room room) {
 			}
 		}
 	}
-	return nearestWall;
+	if(state){
+		Point stepBack;
+		for(int i = 0; i < ((room.numObjects) + 1); i++) {
+			for(int j = 0; j < indexVIP[i]; j++) {
+				//Check if near a wall or object, and  trying to go through it
+				if(validInterceptPoints[i][j].x == nearestWall.x && validInterceptPoints[i][j].y == nearestWall.y) {
+					if(robotLine.isVertical){
+						stepBack = Point(nearestWall.x, (nearestWall.y - 1.00f));
+					} else{
+						stepBack = makeLineFromPolar(atan(robotLine.m), (getDistBetweenTwoPoints(robotLine.start, validInterceptPoints[i][j]) - 1.00f), robotLine.start);
+					}
+					return stepBack;
+				}
+			}
+		}
+		return nearestWall;
+	} else{
+		return nearestWall;
+	}
 }
 
 bool calc::hasInterception(Line border, Line robotLine) {
 	if((robotLine.isVertical && border.isVertical) || (robotLine.m == border.m && (!robotLine.isVertical || !border.isVertical))) { //Lines are parallel
 		return false;
-	}
-	else {
+	} else {
 		//Line is in point-slope form (y = line.m(x - line.x) + line.y
 		//Convert to slope-intercept form: y = (line.m * x) + (line.m * line.x) + line.y
 		//y = line.m * x + ((line.m * line.x) + line.y)
@@ -144,34 +142,29 @@ bool calc::hasInterception(Line border, Line robotLine) {
 			if(robotLine.isVertical) {
 				if((border.start.x <= robotLine.start.x && robotLine.start.x <= border.end.x) || (border.start.x >= robotLine.start.x && robotLine.start.x >= border.end.x)) {
 					return true;
-				}
-				else {
+				} else {
 					return false;
 				}
 			}
 			if(border.isVertical) {
 				if(border.start.x < robotLine.start.x) {
 					yIntercept = (robotLine.start.y + (-(robotLine.m) * abs(robotLine.start.x - border.start.x)));
-				}
-				else {
+				} else {
 					yIntercept = (robotLine.start.y + (robotLine.m * abs(robotLine.start.x - border.start.x)));
 				}
 				yIntercept = correctFloatErr(yIntercept, 0.01f, 0.00f);
 				if( ( ( border.start.y < yIntercept || isWithinEpsilonOf(yIntercept, 0.01f, border.start.y) ) && ( yIntercept < border.end.y || isWithinEpsilonOf(yIntercept, 0.01f, border.end.y) ) ) || ( ( border.start.y > yIntercept || isWithinEpsilonOf(yIntercept, 0.01f, border.start.y) ) && ( yIntercept > border.end.y || isWithinEpsilonOf(yIntercept, 0.01f, border.end.y) ) ) ) {
 					return true;
-				}
-				else {
+				} else {
 					return false;
 				}
 			}
-		}
-		else {
+		} else {
 			xIntercept = ((border.c - robotLine.c) / (robotLine.m - border.m));
 			xIntercept = correctFloatErr(xIntercept, 0.01f, 0.00f);
 			if( ( ( border.start.x < xIntercept || isWithinEpsilonOf(xIntercept, 0.01f, border.start.x) ) && ( xIntercept < border.end.x || isWithinEpsilonOf(xIntercept, 0.01f, border.end.x) ) ) || ( ( border.start.x > xIntercept || isWithinEpsilonOf(xIntercept, 0.01f, border.start.x) ) && ( xIntercept > border.end.x || isWithinEpsilonOf(xIntercept, 0.01f, border.end.x) ) ) ) {
 				return true;
-			}
-			else {
+			} else {
 				return false;
 			}
 		}
@@ -186,12 +179,10 @@ Point calc::getInterceptPoint(Line robotLine, Line other) {
 	if(other.isVertical) {
 		intercept.x = other.start.x;
 		intercept.y = (robotLine.m * intercept.x) + robotLine.c;
-	}
-	else if(robotLine.isVertical) {
+	} else if(robotLine.isVertical) {
 		intercept.x = robotLine.start.x;
 		intercept.y = (other.m * intercept.x) + other.c;
-	}
-	else {
+	} else {
 		//We set the two equations equal to each other and manipulate the expression to solve for x.
 		// m1x + c1 = m2x + c2 -> m1x - m2x = c2 - c1 -> x = (c2 - c1) / (m1 - m2)
 		float denominator = robotLine.m - other.m;

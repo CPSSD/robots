@@ -6,6 +6,7 @@
 class Point {
 	public:
 		Point();
+		Point(float x, float y);
 		Point(int x, int y);
 		float x, y;
 };
@@ -28,6 +29,7 @@ class Object {
 };
 
 class Room {
+	int index;
 	public:
 		Room();
 		Room(int numWalls, Point walls[], Point robotCoOrds, int numObjects);
@@ -35,7 +37,7 @@ class Room {
 		Object walls;
 		int numObjects, maxNumObjSides;
 		Object* objects;
-		bool addObject(int index, int numSides, Point sides[]);
+		bool addObject(int numSides, Point sides[]);
 };
 
 #endif

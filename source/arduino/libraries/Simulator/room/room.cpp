@@ -7,9 +7,13 @@ Point::Point() {
 	this->y = 0.0;
 }
 
+Point::Point(float x, float y) {
+	this->x = x;
+	this->y = y;
+}
+
 Point::Point(int x, int y) {
-	this->x = (float)x;
-	this->y = (float)y;
+	Point((float)x, (float)y);
 }
 
 Line::Line() {
@@ -49,6 +53,7 @@ Room::Room() {
 	this->numObjects = 0;
 	this->objects = new Object[this->numObjects];
 	this->maxNumObjSides = 4;
+	index = 0;
 }
 
 Room::Room(int numWalls, Point walls[], Point robotCoOrds, int numObjects) {
@@ -57,15 +62,16 @@ Room::Room(int numWalls, Point walls[], Point robotCoOrds, int numObjects) {
 	this->numObjects = numObjects;
 	this->objects = new Object[numObjects];
 	this->maxNumObjSides = numWalls;
+	index = 0;
 }
 
-bool Room::addObject(int index, int numSides, Point sides[]) {
+bool Room::addObject(int numSides, Point sides[]) {
 	if(index >= this->numObjects) {
 		return false;
-	}
-	else {
+	} else {
 		this->objects[index] = Object(numSides, sides);
 		this->maxNumObjSides = max(maxNumObjSides, numSides);
+		index++;
 		return true;
 	}
 }
