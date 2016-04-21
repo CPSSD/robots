@@ -58,7 +58,7 @@ float calc::getCOfLine(float slope, Point start) {
 	return(-(slope * start.x) + start.y);
 }
 
-Point calc::getDestination(Line robotLine, Room room, bool state) {
+Point calc::getDestination(Line robotLine, Room room, bool isMoving) {
 	//For each line, check for valid interception point, get interception point
 	Point nearestWall = robotLine.end;
 	Point validInterceptPoints[(room.numObjects) + 1][room.maxNumObjSides];
@@ -109,7 +109,7 @@ Point calc::getDestination(Line robotLine, Room room, bool state) {
 			}
 		}
 	}
-	if(state){
+	if(isMoving){
 		Point stepBack;
 		for(int i = 0; i < ((room.numObjects) + 1); i++) {
 			for(int j = 0; j < indexVIP[i]; j++) {

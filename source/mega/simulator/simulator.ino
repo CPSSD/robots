@@ -202,7 +202,7 @@ scanResponse scan() {
   scanResponse scanResp;
   scanResp.angle = laserAngle;
   Line ray = Line(room.robot, (calculations.makeLineFromPolar((((float)(((90 - laserAngle) + 360) % 360) * PI) / 180), 4096.0, room.robot)));
-  nearestWall = calculations.getDestination(ray, room, amMoving);
+  nearestWall = calculations.getDestination(ray, room, false);
   scanResp.magnitude = (unsigned long)lround(calculations.getDistBetweenTwoPoints(ray.start, nearestWall));
   scanResp.last = (laserAngle == 360);
   return scanResp;

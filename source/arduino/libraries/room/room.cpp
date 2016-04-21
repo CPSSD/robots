@@ -12,8 +12,9 @@ Point::Point(float x, float y) {
 	this->y = y;
 }
 
-Point::Point(int x, int y) {
-	Point((float)x, (float)y);
+Point::Point(int x, int y) 
+	: Point((float)x, (float)y)
+{
 }
 
 Line::Line() {

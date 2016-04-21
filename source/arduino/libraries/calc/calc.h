@@ -19,7 +19,7 @@ class calc {
 		static bool checkIfVertical(Point start, Point end);
 		static float getSlopeOfLine(Point start, Point end);
 		static float getCOfLine(float slope, Point start);
-		Point getDestination(Line robotLine, Room room, bool state); //state is either moving (1) or scanning (0);
+		Point getDestination(Line robotLine, Room room, bool isMoving);
 		bool hasInterception(Line border, Line robotLine);
 		Point getInterceptPoint(Line robotLine, Line other);
 };
