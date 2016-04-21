@@ -523,12 +523,11 @@ func (this *Map) AddWallByLine(degree, distance float64) {
 		fmt.Println("Adding Wall @", x, y)
 	}
 	this.AddWall(x, y, true)
-	this.MarkLineAsSeen(degree, distance)
-	//this.AddWall(x, y, true)
+	this.MarkLineAsSeen(degree, distance, x, y)
 }
 
 // MarkLineAsSeen marks anything the line passes through as "seen".
-func (this *Map) MarkLineAsSeen(degree, distance float64) {
+func (this *Map) MarkLineAsSeen(degree, distance float64, wallX, wallY int) {
 	if Debug {
 		fmt.Println(RobotMap)
 		RobotMap.Print(nil)
@@ -546,7 +545,9 @@ func (this *Map) MarkLineAsSeen(degree, distance float64) {
 			if this.seen[y][x] == 0 {
 				this.seen[y][x] = 1
 			}
-			//this.floor[y][x] = false
+			if y != wallY && x != wallX {
+				this.floor[y][x] = false
+			}
 		}
 	}
 }
