@@ -130,6 +130,8 @@ func processCompassResponse(responseBuffer []uint8) {
 	compassResponse.ID = (uint16(responseBuffer[0]) << 8) + uint16(responseBuffer[1])
 	compassResponse.Angle = (uint16(responseBuffer[2]) << 8) + uint16(responseBuffer[3])
 	compassResponse.Success = (responseBuffer[4] > 0)
+	fmt.Println("Passing compassResponse to responseHandler")	
+	fireResponseHandler(compassResponse)
 }
 
 // processResponse will process a response
@@ -158,7 +160,7 @@ func sendNextCommand() bool {
 
 	data := make([]uint8, 1)
 	data[0] = length
-	time.Sleep(time.Millisecond/10)
+	time.Sleep(time.Millisecond / 10)
 	SPI.TransferAndReceiveData(data)
 	if data[0] > length {
 		length = data[0]
@@ -173,10 +175,10 @@ func sendNextCommand() bool {
 			buffersToSend = buffersToSend[1:]
 		}
 
-		time.Sleep(time.Millisecond/10)
+		time.Sleep(time.Millisecond / 10)
 
 		for i := 0; i < len(dataBuffer); i++ {
-			time.Sleep(time.Millisecond/10)
+			time.Sleep(time.Millisecond / 10)
 			data[0] = dataBuffer[i]
 			SPI.TransferAndReceiveData(data)
 			dataBuffer[i] = data[0]
@@ -193,7 +195,7 @@ func sendNextCommand() bool {
 			notFinished = true
 		}
 
-		time.Sleep(time.Millisecond/10)
+		time.Sleep(time.Millisecond / 10)
 		SPI.TransferAndReceiveData(data)
 
 		return (notFinished == true || data[0] == 1)

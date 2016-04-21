@@ -13,7 +13,7 @@ type Node struct {
 	solid          bool
 }
 
-var radius = 10 // Radius around robot.
+var radius = 40 // Radius around robot.
 // GetRoute Calls various functions below and returns the end result of the pathfinding algorithm.
 func GetRoute(robotMap Map, x, y int) ([][]bool, bool) {
 	if Debug {
@@ -27,7 +27,6 @@ func GetRoute(robotMap Map, x, y int) ([][]bool, bool) {
 func getOffset(x, y, distance, rotation int) (xOffset, yOffset int) {
 	xOffset = int(float64(distance) * math.Cos(float64(rotation)))
 	yOffset = int(float64(distance) * math.Sin(float64(rotation)))
-	fmt.Println("Offset should be -> ", xOffset, ", ", yOffset)
 	return
 }
 
@@ -45,9 +44,12 @@ func (this *Map) createNodeMap(radius int) (nodeMap [][]Node) {
 
 func isValidNode(robotMap [][]bool, x int, y int, radius int) bool {
 	distanceToScale := radius / BitmapScale
-	for yOffset := -distanceToScale; yOffset <= distanceToScale; yOffset++ {
+	laserOffsetX, laserOffsetY := getOffset(x, y, (radius/BitmapScale)/2, int(RobotMap.GetRobot().GetRotation()))
+	for i := -distanceToScale; i <= distanceToScale; i++ {
+		yOffset := i - laserOffsetY
 		if y+yOffset < len(robotMap) && y+yOffset >= 0 {
-			for xOffset := -distanceToScale; xOffset <= distanceToScale; xOffset++ {
+			for j := -distanceToScale; j <= distanceToScale; j++ {
+				xOffset := j - laserOffsetX
 				if x+xOffset < len(robotMap[y+yOffset]) && x+xOffset >= 0 {
 					if !(xOffset == 0 && yOffset == 0) {
 						if distanceToScale <= getDistanceToPoint(x, y, x+xOffset, y+yOffset) {
@@ -156,6 +158,9 @@ func (this *Node) addToList(nodeMap [][]Node, x, y int, list map[int]*Node, clos
 				// Never visited before. Initialise everything.
 				nodeMap[y][x].parent = this
 				nodeMap[y][x].moveCost = this.moveCost + nodeMap[y][x].distanceToGoal + 10
+				if RobotMap.seen[y][x] == 1 {
+					nodeMap[y][x].moveCost += 9999
+				}
 
 				_, inList := closedList[nodeMap[y][x].id]
 				if !inList {
