@@ -20,7 +20,7 @@ type jsonMap struct {
 	Map     [][]bool `json:"map"`
 	RobotX  int      `json:"robotX"`
 	RobotY  int      `json:"robotY"`
-	isFollowingPath bool `json:"isFollowingPath"`
+	IsFollowingPath bool `json:"isFollowingPath"`
 }
 
 type response struct {
@@ -120,6 +120,7 @@ func destinationHandler(w http.ResponseWriter, r *http.Request) {
 	fmt.Print(X, " ", Y, "\n")
 
 	if maps.FollowingPath() {
+		fmt.Println("[Server] Already following path...")
 		fmt.Fprintf(w, "Already following a path, no action taken")
 		return
 	}
@@ -129,6 +130,7 @@ func destinationHandler(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprintf(w, "Moving robot to (%d, %d)", X, Y)
 		go maps.RobotMap.MoveRobotAlongPath(path, false)
 	} else {
+		fmt.Println("[Server] Path is not possible...")
 		fmt.Fprintf(w, "Path to (%d, %d) is not possible", X, Y)
 	}
 }
@@ -147,7 +149,7 @@ func moveResponseDisplay(w http.ResponseWriter, r *http.Request) {
 
 func displayBitmap(w http.ResponseWriter, r *http.Request) {
 	bitmap, _ := maps.RobotMap.GetBitmap()
-	var jsonmap = jsonMap{Code: "200", Message: "ok", Map: bitmap, isFollowingPath: maps.FollowingPath(),
+	var jsonmap = jsonMap{Code: "200", Message: "ok", Map: bitmap, IsFollowingPath: maps.FollowingPath(),
 		RobotX: int(maps.RobotMap.GetRobot().GetX()), RobotY: int(maps.RobotMap.GetRobot().GetY())}
 
 	w.Header().Set("Content-Type", "application/json;charset=UTF-8")

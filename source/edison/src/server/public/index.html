@@ -33,7 +33,9 @@ function drawMap(canvasContext, mapObject) {
     canvasContext.canvas.height = block_size*mapObject.map.length;
     canvasContext.canvas.width = block_size*mapObject.map[0].length;
 
-	document.getElementById("followingPathLabel").value = (mapObject.isFollowingPath ? "Currently following path"  : "Not following path");
+    console.log(document.getElementById("followingPathLabel"));
+    console.log(mapObject);
+    document.getElementById("followingPathLabel").innerHTML = (mapObject.isFollowingPath ? "Currently following path"  : "Not following path");
 
     // Get the current robot position co-ordinates.
     var robotX = mapObject.robotX;
