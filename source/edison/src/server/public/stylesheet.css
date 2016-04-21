@@ -26,11 +26,11 @@ div.content {
 
 div.header {
 	background-color: #3F51B5;
-	width:100%;
+	width: 100%;
 	height:180px;
 	top: 0px;
 	position: absolute;
-	z-index:-1;
+	z-index: -1;
 	margin: 0px;
 	box-shadow: 0px 1px 5px rgba(0, 0, 0, 0.5);
 }
@@ -61,6 +61,10 @@ div.response {
 }
 
 div.inlineButtons {
+	margin-top: 5px;
+	margin-left: 0;
+	margin-right: 0;
+	width: 100%;
 	text-align: center;
 }
 
@@ -100,20 +104,19 @@ canvas {
 
 input {
 	margin: 0 auto;
-	width:60%;
+	width: 60%;
 	margin-left: 20%;
-	margin-right:20%;
+	margin-right: 20%;
 }
 
 input.button {
-	width:22%;
-	margin-left:39%;
+	width: 51%;
+	margin-left: 24.5%;
 	margin-top: 5px;
 }
 
 input.inlineButton {
 	display: inline-block;
-	margin-top: 5px;
 	margin-left: 10px;
 	margin-right: 0;
 	width: 25%;
@@ -121,16 +124,15 @@ input.inlineButton {
 }
 
 input.text {
-	width: 30%;
-	margin-top: 5px;
-	margin-left: 0px;
+	width: 25%;
+	margin-left: 10px;
 	margin-right: 0px;
 	display: inline-block;
 	padding:0;
 }
 
 a {
-	margin: 0 auto;
+	margin: 10px auto;
 	width: 100%;
 	text-align: center;
 	float: left;
