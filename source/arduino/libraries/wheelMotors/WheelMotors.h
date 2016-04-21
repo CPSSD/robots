@@ -27,6 +27,7 @@ class WheelMotors{
 		static PID myPID1,myPID2;
 		static void setSpeed(double speed);
 		static double getSpeed();
+		static void dontMove();
 
 	private:
 		static double Setpoint, M1_Input, M2_Input, M1_Output, M2_Output, prev_M1_Speed, prev_M2_Speed, speed;

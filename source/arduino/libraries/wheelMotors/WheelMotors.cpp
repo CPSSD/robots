@@ -146,6 +146,8 @@ void WheelMotors::stop(){
 void WheelMotors::stopMotors(){
 	analogWrite(M1,0);
 	analogWrite(M2,0);
+	I2C_Wrapper::sendMoveResponse(masterId,currentMove.uniqueID, currentMove.magnitude, currentMove.angle, false);
+	Serial.println("Stop Motors");
 }
 
 //stops wheels once distance has been reached
@@ -156,6 +158,12 @@ void WheelMotors::checkEndpointReached(int distance){
 		commandHandled = true;
 	}
 }
+
+void WheelMotors::dontMove(){
+	analogWrite(M1,0);
+	analogWrite(M2,0);
+}
+
 
 void WheelMotors::addToTotalCount(unsigned long M1, unsigned long M2){
 	M1_Total += M1;
@@ -168,7 +176,7 @@ void WheelMotors::runPID(){
 
 	if(last100ms - prevTimer > 100){
 		prevTimer = last100ms;
-		Serial.print("Setpoint: "); Serial.println(Setpoint);
+		//Serial.print("Setpoint: "); Serial.println(Setpoint);
 
 		M1_Input = M1_EncoderCount;
 		M2_Input = M2_EncoderCount;
@@ -205,7 +213,7 @@ void WheelMotors::runPID(){
 }
 
 void WheelMotors::stopCommandHandler(stopCommand command){
-	Serial.println("Stop command recieved");
+	//Serial.println("Stop command recieved");
 	commandHandled = true;
 	stopMotors();
 }
