@@ -20,7 +20,7 @@ typedef enum {
 } comNums;
 
 const float SPEED = 1; //in mm per millisecond
-const unsigned long SCAN_RESPONSE_INTERVAL = 100; //Values as low as 80 worked in testing
+const unsigned long SCAN_RESPONSE_INTERVAL = 40; //Values as low as 80 worked in testing
 Room room;
 
 unsigned long startedMoving, moveTimer, scanTimer, rotateTimer, distTravelled;
@@ -35,7 +35,8 @@ float maxDegreeOfError = 100.0;
 float degreeOfError = 0.0;
 int angleSlip = 20;
 
-int testCaseNum = 1;
+int testCaseNum = 3;
+
 void setup() {
   room = rtc.pickRoom(testCaseNum);
   SPI_Wrapper::init();
@@ -84,7 +85,7 @@ void loop() {
     if(scanResp.magnitude != 4096) {
       respond(scanResp);
     }
-    laserAngle += 5;
+    laserAngle += 1;
     scanTimer = millis() + SCAN_RESPONSE_INTERVAL;
   }
   
@@ -97,14 +98,14 @@ void loop() {
 }
 
 void moveCommandHandler(moveCommand movCom) {
-  Serial.println("Recieved Move Command...");
+  //Serial.println("Recieved Move Command...");
   if (com == NULL) {
     com = new moveCommand(movCom);
   }
 }
 
 void stopCommandHandler(stopCommand stopCom) {
-  Serial.println("Recieved Stop Command...");
+  //Serial.println("Recieved Stop Command...");
   if (amMoving) {
     if (com != NULL) {
       delete com;
@@ -120,7 +121,7 @@ void rotateCommandHandler(rotateCommand rotCom) {
 }
 
 void scanCommandHandler(scanCommand scanCom) {
-  Serial.println("Recieved Scan Command...");
+  //Serial.println("Recieved Scan Command...");
   if (com == NULL) {
     com =  new scanCommand(scanCom);
   }
@@ -168,7 +169,7 @@ void respond(rotateCommand* com) {
 }
 
 void respond(scanResponse scanResp) {
-  Serial.println("Sending Scan Response...");
+  //Serial.println("Sending Scan Response...");
   /*Serial.print("Angle: ");
   Serial.print(scanResp.angle);
   Serial.print("\t Distance: ");
