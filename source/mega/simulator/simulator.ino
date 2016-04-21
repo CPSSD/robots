@@ -159,7 +159,7 @@ void processCommand(command* com) {
 }
 
 void respond(moveCommand* com){
-  SPI_Wrapper::sendMoveResponse(com->uniqueID, distTravelled, movingAngle, bump);
+  SPI_Wrapper::sendMoveResponse(com->uniqueID, distTravelled, movingAngle, (!(bump)));
 }
 
 void respond(rotateCommand* com) {
