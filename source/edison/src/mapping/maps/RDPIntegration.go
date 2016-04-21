@@ -42,6 +42,7 @@ func moveResponse(response RobotDriverProtocol.MoveResponse) {
 	if !response.Success {
 		fmt.Println("Problem moving... Doing a scan.");
 		followingPath = false
+		RobotMap.MoveRobotAlongLine(float64(response.Angle), float64(response.Magnitude))
 		RobotDriverProtocol.Scan()
 		return
 	}

@@ -30,7 +30,7 @@ var compassHeading = 0
 var waitingForHeading = false
 
 var distanceSinceLastScan = 0
-var minimumScanDistance = 50
+var minimumScanDistance = 100
 
 var pathIndex = 0
 
