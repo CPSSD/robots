@@ -1,5 +1,7 @@
 #include "Arduino.h"
+#include "Wire.h"
 #include "SPI.h"
+#include <ADXL345.h>
 #include <QueueList.h>
 #include <HMC5883L.h>
 #include <Shared_Structs.h>
@@ -42,9 +44,14 @@ void setup() {
   I2C_Wrapper::registerMoveResponseHandler(&moveResponseHandler);
   I2C_Wrapper::registerScanResponseHandler(&scanResponseHandler);
   I2C_Wrapper::registerStopCommandHandler(&stopCommandHandler);
-  Serial.println("Ready to recieve.");
 
+  accelerometer = TapDetectionLib();
   accelerometer.init();
+
+  compass = Compass();
+  compass.init();
+
+  Serial.println("Ready to receive");
 }
 
 void stopCommandHandler(stopCommand cmd) {
@@ -94,9 +101,10 @@ void scanResponseHandler(scanResponse cmd) {
   
 void loop() {
   while (1) {
-	compass.updateHeading();
+	  compass.updateHeading();
 
     if (accelerometer.checkIfTapped()) {
+      Serial.println("Tapped");
       sendStopCommand = true;
     }
   
